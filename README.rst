@@ -36,13 +36,13 @@ For example:
         def __init__(self, endpoint):
             super(DogClient, self).__init__(endpoint)
 
-        @GET('api/breed/{breed_name}/list')
+        @GET('breed/{breed_name}/list')
         def list_subbreeds(self, breed_name):
             """List all sub-breeds"""
 
-    client = DogClient('https://dog.ceo/dog-api')
+    client = DogClient('https://dog.ceo/api')
 
-    print(str(client.list_subbreeds('hound'))
+    print(str(client.list_subbreeds('hound')))
 
 
 Installation
