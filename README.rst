@@ -1,7 +1,7 @@
 .. role:: py(code)
    :language: python
 
-decorest - decorator based REST client for Python
+decorest - decorator heavy REST client for Python
 #################################################
 
 .. image::	https://img.shields.io/travis/bkryza/decorest.svg
@@ -26,8 +26,8 @@ Overview
 decorest_ library provides an easy to use declarative REST API client interface,
 where definition of the API methods using decorators automatically gives
 a working REST client with no additional code. In practice the library provides
-only an interface to interact with REST services - the actual work is done
-underneath by the requests_ library.
+only an interface to describe and interact with REST services - the actual work
+is done underneath by the requests_ library.
 
 For example:
 
@@ -45,7 +45,7 @@ For example:
 
     client = DogClient('https://dog.ceo/api')
 
-    print(str(client.list_subbreeds('hound')))
+    print(client.list_subbreeds('hound'))
 
 
 Installation
@@ -63,7 +63,7 @@ Usage
 Basics
 ------
 
-For most typical cases the usage should be straightforward. Simply create a
+For most typical cases the usage should be farily straightforward. Simply create a
 sublcass of :py:`decorest.RestClient` and define methods, which will perform calls
 to the actual REST service. You can declare how each function should actually
 make the request to the service solely using decorators attached to the
@@ -87,7 +87,7 @@ in curly brackets, e.g.:
 
 .. code-block:: python
 
-        @GET('api/breed/{breed_name}/list')
+        @GET('breed/{breed_name}/list')
         def list_subbreeds(self, breed_name):
             """List all sub-breeds"""
 
@@ -102,10 +102,35 @@ the value using :py:`urlencode`, e.g.:
 
 .. code-block:: python
 
-        @GET('api/breed/{breed_name}/list')
-        @query('limit', 100)
-        def list_subbreeds(self, breed_name):
+        @GET('breed/{breed_name}/list')
+        @query('long_names', 'longNames')
+        @query('limit')
+        def list_subbreeds(self, breed_name, long_names, limit=100):
             """List all sub-breeds"""
+
+This decorator can take a single string parameter, which determines the name
+of the method argument whose value will be added as the query argument value
+of the same name.
+
+In case 2 arguments are provided, the second argument determines the actual
+query key name, which will be used in the request query (if for some reason
+it cannot be the same as the method argument name).
+
+Furthermore, if a default value is provided in a method declaration, it
+will be used whenever a value for this argument is not provided during
+invocation.
+
+For example, the following invocation of the above method:
+
+.. code-block:: python
+
+    client.list_subbreeds('hound', 1)
+
+will result in the following query:
+
+.. code-block::
+
+    https://dog.ceo/api/breed/hound?longNames=1&limit=100
 
 This decorator can be added to methods as well as the client class, however
 in the latter case it will be added to every method request in that class.
@@ -117,8 +142,7 @@ Adds a header key-value pair to the request, e.g.:
 
 .. code-block:: python
 
-        @GET('api/breed/{breed_name}/list')
-        @query('limit', 100)
+        @GET('breed/{breed_name}/list')
         @header('accept', 'application/json')
         def list_subbreeds(self, breed_name):
             """List all sub-breeds"""
@@ -167,8 +191,7 @@ It accepts any valid subclass of :py:`requests.auth.AuthBase`.
 
 .. code-block:: python
 
-        @GET('api/breed/{breed_name}/list')
-        @query('limit', 100)
+        @GET('breed/{breed_name}/list')
         @header('accept', 'application/json')
         @auth(HTTPBasicAuth('user', 'password'))
         def list_subbreeds(self, breed_name):
@@ -199,8 +222,7 @@ object, e.g.:
 
 .. code-block:: python
 
-        @GET('api/breed/{breed_name}/list')
-        @query('limit', 100)
+        @GET('breed/{breed_name}/list')
         @header('accept', 'application/json')
         @auth(HTTPBasicAuth('user', 'password'))
         @on(200, lambda r: r.json())
@@ -230,11 +252,27 @@ This decorator is a shortcut for :py:`@header('accept', ...)`, e.g:
 
 .. code-block:: python
 
-        @GET('api/breed/{breed_name}/list')
+        @GET('breed/{breed_name}/list')
         @content('application/json')
         @accept('application/xml')
         def list_subbreeds(self, breed_name):
             """List all sub-breeds"""
+
+@endpoint
+~~~~~~~~
+This decorator enables to define a default endpoint for the service,
+which then doesn't have to be provided in the client constructor:
+
+.. code-block:: python
+
+        @endpoint('https://dog.ceo/api')
+        class DogClient(RestClient):
+            """List all sub-breeds"""
+            def __init__(self, endpoint=None):
+                super(DogClient, self).__init__(endpoint)
+
+The endpoint provided in the client constructor will take precedence
+however.
 
 Sessions [TODO]
 ---------------
@@ -255,6 +293,15 @@ method is called on the client instance.
         client.list_subbreeds('hound')
         client.list_subbreeds('husky')
         client.stop_session()
+
+Grouping API methods [TODO]
+---------------------------
+
+For larger API's it can be useful to be able to split the API definition
+into multiple files but still use it from a single instance in the code.
+This can be achieved by creating separate client
+classes for each group of operations and then create a common class which
+inherits from all the group clients and provides entire API from one instance.
 
 License
 =======

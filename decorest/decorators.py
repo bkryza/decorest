@@ -1,3 +1,19 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright 2018 Bartosz Kryza <bkryza@gmail.com>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import logging as LOG
 import requests
 import inspect
@@ -37,6 +53,13 @@ def set_decor(t, name, value):
 def get_decor(t, name):
     """
     Retrieves a named decorator value from class or function.
+
+    Args:
+        t (type): Decorated type (can be class or function)
+        name (str): Name of the key
+
+    Returns:
+        object: any value assigned to the name key
     """
     if hasattr(t, '_decors') and t._decors.get(name):
         return t._decors[name]
@@ -61,9 +84,15 @@ def query(name, value=None):
     """
     Query parameter decorator
     """
-    def query_decorator(f):
-        set_decor(t, 'query', {name: value})
-        return f
+    def query_decorator(t):
+        value_ = value
+        if inspect.isclass(t):
+            raise "@query decorator can only be "\
+                  "applied to methods."
+        if not value_:
+            value_ = name
+        set_decor(t, 'query', {name: value_})
+        return t
     return query_decorator
 
 
@@ -76,6 +105,17 @@ def header(name, value):
         return t
     return header_decorator
 
+
+def endpoint(value):
+    """
+    Endpoint class and method decorator
+    """
+    def endpoint_decorator(t):
+        set_decor(t, 'endpoint', value)
+        return t
+    return endpoint_decorator
+
+
 def content(value):
     """
     Content-type header class and method decorator
@@ -85,6 +125,7 @@ def content(value):
         return t
     return content_decorator
 
+
 def accept(value):
     """
     Accept header class and method decorator
@@ -93,6 +134,7 @@ def accept(value):
         set_decor(t, 'header', {'accept': value})
         return t
     return accept_decorator
+
 
 def body(name, serializer=None):
     """
@@ -133,7 +175,18 @@ class HttpMethodDecorator(object):
         args_dict = dict_from_args(func, *args)
         req_path = render_path(self.path_template, args_dict)
 
-        query_parameters = get_decor(func, 'query')
+        # Merge query parameters from common values for all method
+        # invocations with query arguments provided in the method
+        # arguments
+        query_parameters_decor = get_decor(func, 'query')
+        query_parameters = {}
+        if query_parameters_decor:
+            for query_arg in query_parameters_decor:
+                if args_dict.get(query_arg):
+                    query_key = query_parameters_decor[query_arg]
+                    query_value = args_dict[query_arg]
+                    query_parameters[query_key] = query_value
+
         header_parameters = merge_dicts(
             get_decor(rest_client.__class__, 'header'),
             get_decor(func, 'header'))
@@ -160,6 +213,9 @@ class HttpMethodDecorator(object):
             get_decor(rest_client.__class__, 'on'), get_decor(func, 'on'))
 
         # Build request from endpoint and query params
+        if get_decor(rest_client.__class__, 'endpoint'):
+            rest_client.endpoint = get_decor(rest_client.__class__, 'endpoint')
+
         req = rest_client.build_request(
             req_path.split('/'), query_parameters)
 

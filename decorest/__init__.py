@@ -1,4 +1,4 @@
-__version__ = (0, 0, 1)
+__version__ = (0, 0, 2)
 
 from .GET import GET
 from .POST import POST
@@ -8,4 +8,4 @@ from .DELETE import DELETE
 from .UPDATE import UPDATE
 from .OPTIONS import OPTIONS
 from .client import RestClient
-from .decorators import query, body, header, auth, on, accept, content
+from .decorators import query, body, header, auth, on, accept, content, endpoint

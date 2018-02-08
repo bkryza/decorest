@@ -1,3 +1,19 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright 2018 Bartosz Kryza <bkryza@gmail.com>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import inspect
 import six
 
@@ -8,14 +24,35 @@ def dict_from_args(func, *args):
     """
     result = {}
     args_names = []
+    args_default_values = ()
 
     if six.PY2:
         args_names = inspect.getargspec(func)[0]
-    else:
-        args_names = list(inspect.signature(func).parameters.keys())
+        args_default_values = inspect.getargspec(func)[3]
+        # Add bound arguments to the dictionary
+        for i in range(len(args)):
+            result[args_names[i]] = args[i]
 
-    for i in range(len(args)):
-        result[args_names[i]] = args[i]
+        # Add any default arguments if were left unbound in method call
+        for j in range(len(args), len(args_names)):
+            result[args_names[j]] = args_default_values[
+                                        len(args_names) - (j + len(args) - 1)]
+    else:
+        parameters = inspect.signature(func).parameters
+        idx = 0
+        for name, parameter in parameters.items():
+            if idx < len(args):
+                # Add bound arguments to the dictionary
+                result[name] = args[idx]
+                idx += 1
+            elif parameter.default is not inspect.Parameter.empty:
+                # Add any default arguments if were left unbound in method call
+                result[name] = parameter.default
+                idx += 1
+            else:
+                pass
+
+        args_default_values = inspect.getargspec(func)[3]
 
     return result
 
@@ -29,4 +66,16 @@ def merge_dicts(*dict_args):
     for dictionary in dict_args:
         if dictionary is not None:
             result.update(dictionary)
+    return result
+
+
+def normalize_url(url):
+    """
+    Makes sure the url is in correct form
+    """
+    result = url
+
+    if not result.endswith("/"):
+        result = result + "/"
+
     return result
