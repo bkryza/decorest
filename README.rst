@@ -1,3 +1,6 @@
+.. role:: py(code)
+   :language: python
+
 decorest - decorator based REST client for Python
 #################################################
 
@@ -20,7 +23,7 @@ Declarative, decorator-based REST client for Python.
 Overview
 ========
 
-`decorest` library provides an easy to use declarative REST API client interface,
+decorest_ library provides an easy to use declarative REST API client interface,
 where definition of the API methods using decorators automatically gives
 a working REST client with no additional code. In practice the library provides
 only an interface to interact with REST services - the actual work is done
@@ -61,7 +64,7 @@ Basics
 ------
 
 For most typical cases the usage should be straightforward. Simply create a
-sublcass of `decorest.RestClient` and define methods, which will perform calls
+sublcass of :py:`decorest.RestClient` and define methods, which will perform calls
 to the actual REST service. You can declare how each function should actually
 make the request to the service solely using decorators attached to the
 method definition. The method itself is not expected to have any implementation
@@ -88,13 +91,14 @@ in curly brackets, e.g.:
         def list_subbreeds(self, breed_name):
             """List all sub-breeds"""
 
-This decorator applies only to methods.
+which will be replaced by the arguments from the method definition.
+These decorators apply only to methods.
 
 @query
 ~~~~~~
 
 Adds a query key-value pair to the request. URL encoding will be applied to
-the value using `urlencode`, e.g.:
+the value using :py:`urlencode`, e.g.:
 
 .. code-block:: python
 
@@ -138,12 +142,28 @@ the body content to the request, e.g.:
     def add_pet(self, pet):
         """Add a new pet to the store"""
 
+:py:`@body` decorator can take an optional argument which provides a serialization
+handler, which will be invoked automatically before passing the argument as
+body content, which can be a simple lambda or a more complex function with some
+logic. For example:
+
+.. code-block:: python
+
+    @POST('pet')
+    @header('content-type', 'application/json')
+    @header('accept', 'application/json')
+    @body('pet', lambda p: json.dumps(p))
+    def add_pet(self, pet):
+        """Add a new pet to the store"""
+
+The above code will automatically stringify the dictionary provided as
+value of 'pet' argument using :py:`json.dumps()` function.
 
 @auth
 ~~~~~
 
 Allows to specify the authentication method to be used for the requests.
-It accepts any valid subclass of `requests.auth.AuthBase`.
+It accepts any valid subclass of :py:`requests.auth.AuthBase`.
 
 .. code-block:: python
 
@@ -157,7 +177,6 @@ It accepts any valid subclass of `requests.auth.AuthBase`.
 When added to the client class it will be used for every method call,
 unless specific auth decorator is specified for that method.
 
-
 @on
 ~~~
 
@@ -166,11 +185,11 @@ but the response will depend on the content type of the reponse.
 
 In case the HTTP request succeeds the following results are expected:
 
-- `response.json()` if the content type of response is JSON
-- `response.content` if the content type is binary
-- `response.text` otherwise
+- :py:`response.json()` if the content type of response is JSON
+- :py:`response.content` if the content type is binary
+- :py:`response.text` otherwise
 
-In case the request fails, response.raise_for_status() is called and
+In case the request fails, :py:`response.raise_for_status()` is called and
 should be handled in the code.
 
 In case another behavior is required, custom handlers can be provided
@@ -192,6 +211,31 @@ This decorator can be applied to both methods and classes, however when
 applied to a class the handler will be called for method which receives
 the provided status code.
 
+@content
+~~~~~~~~
+This decorator is a shortcut for :py:`@header('content-type', ...)`, e.g:
+
+.. code-block:: python
+
+    @POST('pet')
+    @content('application/json')
+    @header('accept', 'application/json')
+    @body('pet', lambda p: json.dumps(p))
+    def add_pet(self, pet):
+        """Add a new pet to the store"""
+
+@accept
+~~~~~~~~
+This decorator is a shortcut for :py:`@header('accept', ...)`, e.g:
+
+.. code-block:: python
+
+        @GET('api/breed/{breed_name}/list')
+        @content('application/json')
+        @accept('application/xml')
+        def list_subbreeds(self, breed_name):
+            """List all sub-breeds"""
+
 Sessions [TODO]
 ---------------
 
@@ -200,10 +244,10 @@ session objects, sessions can be used instead of making a separate request
 on each method call thus significantly improving the performance of the
 client in case multiple reponses are peformed.
 
-To start and stop the session, simply call `start_session` on the client
-instance. Only the first method after this call will create the session,
-consecutive calls will reuse it until `stop_session` method is called on
-the client instance.
+To start and stop the session, simply call :py:`client.start_session()`
+on the client instance. Only the first method after this call will create
+the session, consecutive calls will reuse it until :py:`client.stop_session()`
+method is called on the client instance.
 
 .. code-block:: python
 
@@ -232,3 +276,4 @@ limitations under the License.
 
 .. _tests: https://github.com/bkryza/decorest/tests
 .. _requests: https://github.com/requests/requests
+.. _decorest: https://github.com/bkryza/decorest

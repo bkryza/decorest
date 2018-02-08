@@ -8,4 +8,4 @@ from .DELETE import DELETE
 from .UPDATE import UPDATE
 from .OPTIONS import OPTIONS
 from .client import RestClient
-from .decorators import query, body, header, auth, on
+from .decorators import query, body, header, auth, on, accept, content

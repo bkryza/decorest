@@ -76,6 +76,23 @@ def header(name, value):
         return t
     return header_decorator
 
+def content(value):
+    """
+    Content-type header class and method decorator
+    """
+    def content_decorator(t):
+        set_decor(t, 'header', {'content-type': value})
+        return t
+    return content_decorator
+
+def accept(value):
+    """
+    Accept header class and method decorator
+    """
+    def accept_decorator(t):
+        set_decor(t, 'header', {'accept': value})
+        return t
+    return accept_decorator
 
 def body(name, serializer=None):
     """

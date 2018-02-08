@@ -1,6 +1,6 @@
 from decorest import RestClient
 from decorest import GET, POST, PUT, DELETE
-from decorest import header, query, auth, on, body
+from decorest import header, query, auth, on, body, accept, content
 import xml.etree.ElementTree as ET
 import json
 
@@ -36,7 +36,7 @@ class PetstoreClient(RestClient):
         """Finds Pets by status"""
 
     @GET('pet/findByStatus')
-    @header('accept', 'application/xml')
+    @accept('application/xml')
     # Automatically return ElementTree from XML content
     @on(200, lambda r: ET.fromstring(r.text))
     def find_pet_by_status_xml(self):

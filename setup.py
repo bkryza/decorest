@@ -17,9 +17,7 @@ setup(
         "`decorest` library provides an easy to use declarative REST API " \
         "client interface, where definition of the API methods using " \
         "decorators automatically gives a working REST client with no " \
-        "additional code. In practice the library provides only an " \
-        "interface to interact with REST services - the actual work is done " \
-        "underneath by the requests_ library.",
+        "additional code.",
     long_description=read('README.rst'),
     url='https://github.com/bkryza/decorest',
     license='Apache 2.0',
@@ -34,6 +32,8 @@ setup(
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.6'
     ],
     install_requires=['requests', 'six'],
     tests_require=['pytest', 'tox', 'tox-docker']
