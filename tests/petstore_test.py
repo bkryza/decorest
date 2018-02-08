@@ -10,7 +10,8 @@ from .petstore_client import PetstoreClient
 
 @pytest.fixture
 def client():
-    time.sleep(3)
+    # Give Docker and Swagger Petstore some time to spin up
+    time.sleep(5)
     petstore_port = os.environ["SWAGGERAPI/PETSTORE_8080_TCP"]
     return PetstoreClient("http://0.0.0.0:{port}/v2".format(port=petstore_port))
 
@@ -24,10 +25,10 @@ def test_pet_methods(client):
     assert res.tag == 'pets'
 
     try:
-        res = client.add_pet(json.dumps({
+        res = client.add_pet({
             "name": "lucky",
             "photoUrls": ["http://example.com/lucky.jpg"],
-            "status": "available"}))
+            "status": "available"})
     except HTTPError as e:
         pytest.fail(e.response.text)
 

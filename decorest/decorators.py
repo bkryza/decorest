@@ -77,14 +77,14 @@ def header(name, value):
     return header_decorator
 
 
-def body(name):
+def body(name, serializer=None):
     """
     Body parameter decorator.
 
     Determines which method argument provides the body.
     """
     def body_decorator(t):
-        set_decor(t, 'body', name)
+        set_decor(t, 'body', (name, serializer))
         return t
     return body_decorator
 
@@ -123,8 +123,15 @@ class HttpMethodDecorator(object):
 
         # Get body content from named arguments
         body_parameter = get_decor(func, 'body')
-        body_content = args_dict.get(body_parameter)
-        LOG.debug("REQUEST BODY: {body}".format(body=body_content))
+        body_content = None
+        if body_parameter:
+            body_content = args_dict.get(body_parameter[0])
+            LOG.debug("REQUEST BODY: {body}".format(body=body_content))
+            # Serialize body content first if serialization handler
+            # was provided
+            if body_content and body_parameter[1]:
+                body_content = body_parameter[1](body_content)
+            LOG.debug("SERIALIZED BODY: {body}".format(body=body_content))
 
         # Get authentication method for this call
         auth = get_decor(func, 'auth')
@@ -154,22 +161,28 @@ class HttpMethodDecorator(object):
 
         if http_method == HttpMethod.GET:
             result = requests.get(req, auth=auth,
-                                  headers=header_parameters, data=body_content)
+                                  headers=header_parameters,
+                                  data=body_content)
         elif http_method == HttpMethod.POST:
             result = requests.post(req, auth=auth,
-                                   headers=header_parameters, data=body_content)
+                                   headers=header_parameters,
+                                   data=body_content)
         elif http_method == HttpMethod.PUT:
             result = requests.put(req, auth=auth,
-                                  headers=header_parameters, data=body_content)
+                                  headers=header_parameters,
+                                  data=body_content)
         elif http_method == HttpMethod.DELETE:
             result = requests.delete(req, auth=auth,
-                                     headers=header_parameters, data=body_content)
+                                     headers=header_parameters,
+                                     data=body_content)
         elif http_method == HttpMethod.UPDATE:
             result = requests.update(req, auth=auth,
-                                     headers=header_parameters, data=body_content)
+                                     headers=header_parameters,
+                                     data=body_content)
         elif http_method == HttpMethod.HEAD:
             result = requests.head(req, auth=auth,
-                                   headers=header_parameters, data=body_content)
+                                   headers=header_parameters,
+                                   data=body_content)
         else:
             raise 'Unsupported HTTP method: {method}'.format(
                 method=http_method)

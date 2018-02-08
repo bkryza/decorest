@@ -2,6 +2,7 @@ from decorest import RestClient
 from decorest import GET, POST, PUT, DELETE
 from decorest import header, query, auth, on, body
 import xml.etree.ElementTree as ET
+import json
 
 from requests.auth import HTTPBasicAuth, HTTPDigestAuth
 
@@ -17,7 +18,7 @@ class PetstoreClient(RestClient):
     @POST('pet')
     @header('content-type', 'application/json')
     @header('accept', 'application/json')
-    @body('pet')
+    @body('pet', lambda p: json.dumps(p))
     def add_pet(self, pet):
         """Add a new pet to the store"""
 
