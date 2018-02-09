@@ -16,6 +16,7 @@
 
 from .client import HttpMethod
 from .decorators import HttpMethodDecorator
+from functools import wraps
 
 
 class POST(HttpMethodDecorator):
@@ -24,6 +25,7 @@ class POST(HttpMethodDecorator):
         super(POST, self).__init__(path)
 
     def __call__(self, func):
+        @wraps(func)
         def post_decorator(*args, **kwargs):
             func._http__method = HttpMethod.POST
             return super(POST, self).call(func, *args, **kwargs)

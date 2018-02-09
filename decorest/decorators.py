@@ -17,37 +17,37 @@
 import logging as LOG
 import requests
 import inspect
-from functools import wraps
 
 from .client import RestClient, HttpMethod, render_path
 from .utils import merge_dicts, dict_from_args
 
 
 """
-Each RestClient subclass has a `_decors` property storing
+Each RestClient subclass has a `__decorest__` property storing
 a dictionary with decorator values provided by decorators
 added to the client class.
 """
 
+DECOR_KEY = '__decorest__'
 
 def set_decor(t, name, value):
     """
     Decorates a function or class by storing the value under specific
     path.
     """
-    if not hasattr(t, '_decors'):
-        t._decors = {}
+    if not hasattr(t, DECOR_KEY):
+        t.__decorest__ = {}
 
     if isinstance(value, dict):
-        if not t._decors.get(name):
-            t._decors[name] = {}
-        t._decors[name] = merge_dicts(t._decors[name], value)
+        if not t.__decorest__.get(name):
+            t.__decorest__[name] = {}
+        t.__decorest__[name] = merge_dicts(t.__decorest__[name], value)
     elif isinstance(value, list):
-        if not t._decors.get(name):
-            t._decors[name] = []
-        t._decors[name].extend(value)
+        if not t.__decorest__.get(name):
+            t.__decorest__[name] = []
+        t.__decorest__[name].extend(value)
     else:
-        t._decors[name] = value
+        t.__decorest__[name] = value
 
 
 def get_decor(t, name):
@@ -61,8 +61,8 @@ def get_decor(t, name):
     Returns:
         object: any value assigned to the name key
     """
-    if hasattr(t, '_decors') and t._decors.get(name):
-        return t._decors[name]
+    if hasattr(t, '__decorest__') and t.__decorest__.get(name):
+        return t.__decorest__[name]
 
     return None
 

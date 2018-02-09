@@ -16,6 +16,7 @@
 
 from .client import HttpMethod
 from .decorators import HttpMethodDecorator
+from functools import wraps
 
 
 class GET(HttpMethodDecorator):
@@ -24,6 +25,7 @@ class GET(HttpMethodDecorator):
         super(GET, self).__init__(path)
 
     def __call__(self, func):
+        @wraps(func)
         def get_decorator(*args, **kwargs):
             func._http__method = HttpMethod.GET
             return super(GET, self).call(func, *args, **kwargs)

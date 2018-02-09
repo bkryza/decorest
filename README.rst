@@ -5,7 +5,7 @@ decorest - decorator heavy REST client for Python
 #################################################
 
 .. image::	https://img.shields.io/travis/bkryza/decorest.svg
-    :target: https://pypi.python.org/pypi/decorest
+    :target: https://travis-ci.org/bkryza/decorest
 
 .. image:: https://img.shields.io/pypi/v/decorest.svg
     :target: https://pypi.python.org/pypi/decorest

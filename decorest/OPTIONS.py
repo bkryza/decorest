@@ -16,6 +16,7 @@
 
 from .client import HttpMethod
 from .decorators import HttpMethodDecorator
+from functools import wraps
 
 
 class OPTIONS(HttpMethodDecorator):
@@ -24,6 +25,7 @@ class OPTIONS(HttpMethodDecorator):
         super(OPTIONS, self).__init__(path)
 
     def __call__(self, func):
+        @wraps(func)
         def options_decorator(*args, **kwargs):
             func._http__method = HttpMethod.OPTIONS
             return super(OPTIONS, self).call(func, *args, **kwargs)

@@ -16,6 +16,7 @@
 
 from .client import HttpMethod
 from .decorators import HttpMethodDecorator
+from functools import wraps
 
 
 class UPDATE(HttpMethodDecorator):
@@ -24,6 +25,7 @@ class UPDATE(HttpMethodDecorator):
         super(UPDATE, self).__init__(path)
 
     def __call__(self, func):
+        @wraps(func)
         def update_decorator(*args, **kwargs):
             func._http__method = HttpMethod.UPDATE
             return super(UPDATE, self).call(func, *args, **kwargs)

@@ -52,8 +52,6 @@ def dict_from_args(func, *args):
             else:
                 pass
 
-        args_default_values = inspect.getargspec(func)[3]
-
     return result
 
 

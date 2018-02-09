@@ -73,4 +73,4 @@ def test_pet_methods(client):
     except HTTPError as e:
         assert e.response.status_code == 404
 
-    assert res == None
+    assert res is None
