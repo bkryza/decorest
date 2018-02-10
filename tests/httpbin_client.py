@@ -30,6 +30,11 @@ class HttpBinClient(RestClient):
     def user_agent(self):
         """Returns user-agent"""
 
+    @GET('headers')
+    @header('B', 'BB')
+    def headers(self):
+        """Returns header dict"""
+
     @GET('response-headers')
     @query('first_name', 'firstName')
     @query('last_name', 'lastName')

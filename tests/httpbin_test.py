@@ -32,6 +32,19 @@ def test_user_agent(client):
     assert res['user-agent'] == 'decorest user agent test'
 
 
+def test_headers(client):
+    """
+    GET /headers
+    """
+    res = client.headers(header={'A': 'AA', 'B': 'CC'})
+    assert res['headers']['User-Agent'] == 'decorest user agent test'
+    assert res['headers']['A'] == 'AA'
+    assert res['headers']['B'] == 'CC'
+
+    res = client.headers()
+    assert res['headers']['B'] == 'BB'
+
+
 def test_response_headers(client):
     """
     GET /response-headers

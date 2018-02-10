@@ -16,6 +16,7 @@
 
 import inspect
 import logging as LOG
+import numbers
 import requests
 from requests.structures import CaseInsensitiveDict
 
@@ -236,6 +237,62 @@ class HttpMethodDecorator(object):
         on_handlers = merge_dicts(
             get_decor(rest_client.__class__, 'on'), get_decor(func, 'on'))
 
+        # Get timeout
+        timeout = get_decor(rest_client.__class__, 'timeout')
+        if get_decor(func, 'timeout'):
+            timeout = get_decor(func, 'timeout')
+
+
+        #
+        # If the kwargs contains any decorest decorators that should
+        # be overloaded for this call, extract them.
+        #
+        # Pass the rest of kwargs to requests calls
+        #
+        if kwargs:
+            for decor in DECOR_LIST:
+                if decor in kwargs:
+                    if decor == 'header':
+                        if not isinstance(kwargs['header'], dict):
+                            raise TypeError(
+                                "'header' value must be an instance of dict")
+                        header_parameters = merge_dicts(
+                            header_parameters, kwargs['header'])
+                        del kwargs['header']
+                    if decor == 'on':
+                        if not isinstance(kwargs['on'], dict):
+                            raise TypeError(
+                                "'on' value must be an instance of dict")
+                        on_handlers = merge_dicts(on_handlers, kwargs['on'])
+                        del kwargs['on']
+                    elif decor == 'accept':
+                        if not isinstance(kwargs['accept'], str):
+                            raise TypeError(
+                                "'accept' value must be an instance of str")
+                        header_parameters['accept'] = kwargs['accept']
+                        del kwargs['accept']
+                    elif decor == 'content':
+                        if not isinstance(kwargs['content'], str):
+                            raise TypeError(
+                                "'content' value must be an instance of str")
+                        header_parameters['content-type'] = kwargs['content-type']
+                        del kwargs['content-type']
+                    elif decor == 'auth':
+                        if not isinstance(kwargs['auth'], auth.AuthBase):
+                            raise TypeError(
+                                "'auth' value must be an instance of AuthBase")
+                        auth = kwargs['auth']
+                        del kwargs['content-type']
+                    elif decor == 'timeout':
+                        if not isinstance(kwargs['timeout'], numbers.Number):
+                            raise TypeError(
+                                "'timeout' value must be a number")
+                        timeout = kwargs['timeout']
+                        del kwargs['timeout']
+
+                    else:
+                        pass
+
         # Build request from endpoint and query params
         if get_decor(rest_client.__class__, 'endpoint'):
             rest_client.endpoint = get_decor(rest_client.__class__, 'endpoint')
@@ -254,32 +311,33 @@ class HttpMethodDecorator(object):
         LOG.debug('REQUEST: {method} {request}'.format(
             method=http_method, request=req))
 
+        if auth:
+            kwargs['auth'] = auth
+        if timeout:
+            kwargs['timeout'] = timeout
+        if body_content:
+            kwargs['data'] = body_content
+        if header_parameters:
+            kwargs['headers'] = header_parameters
+
         result = None
 
         if http_method == HttpMethod.GET:
-            result = requests.get(req, auth=auth,
-                                  headers=header_parameters,
-                                  data=body_content)
+            result = requests.get(req, **kwargs)
         elif http_method == HttpMethod.POST:
-            result = requests.post(req, auth=auth,
-                                   headers=header_parameters,
-                                   data=body_content)
+            result = requests.post(req, **kwargs)
         elif http_method == HttpMethod.PUT:
-            result = requests.put(req, auth=auth,
-                                  headers=header_parameters,
-                                  data=body_content)
+            result = requests.put(req, **kwargs)
+        elif http_method == HttpMethod.PATCH:
+            result = requests.patch(req, **kwargs)
         elif http_method == HttpMethod.DELETE:
-            result = requests.delete(req, auth=auth,
-                                     headers=header_parameters,
-                                     data=body_content)
+            result = requests.delete(req, **kwargs)
         elif http_method == HttpMethod.UPDATE:
-            result = requests.update(req, auth=auth,
-                                     headers=header_parameters,
-                                     data=body_content)
+            result = requests.update(req, **kwargs)
         elif http_method == HttpMethod.HEAD:
-            result = requests.head(req, auth=auth,
-                                   headers=header_parameters,
-                                   data=body_content)
+            result = requests.head(req, **kwargs)
+        elif http_method == HttpMethod.OPTIONS:
+            result = requests.options(req, **kwargs)
         else:
             raise 'Unsupported HTTP method: {method}'.format(
                 method=http_method)

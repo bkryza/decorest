@@ -44,7 +44,7 @@ def test_pet_methods(client):
         res = client.add_pet({
             "name": "lucky",
             "photoUrls": ["http://example.com/lucky.jpg"],
-            "status": "available"})
+            "status": "available"}, timeout=5)
     except HTTPError as e:
         pytest.fail(e.response.text)
 
