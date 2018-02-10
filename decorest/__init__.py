@@ -6,6 +6,7 @@ from .PUT import PUT
 from .PATCH import PATCH
 from .DELETE import DELETE
 from .UPDATE import UPDATE
+from .HEAD import HEAD
 from .OPTIONS import OPTIONS
-from .client import RestClient
+from .client import RestClient, HttpMethod
 from .decorators import query, body, header, auth, on, accept, content, endpoint

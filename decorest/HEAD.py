@@ -19,16 +19,16 @@ from .decorators import HttpMethodDecorator, set_decor
 from functools import wraps
 
 
-class GET(HttpMethodDecorator):
+class HEAD(HttpMethodDecorator):
 
     def __init__(self, path):
-        super(GET, self).__init__(path)
+        super(HEAD, self).__init__(path)
 
     def __call__(self, func):
-        set_decor(func, 'http_method', HttpMethod.GET)
+        set_decor(func, 'http_method', HttpMethod.HEAD)
 
         @wraps(func)
-        def get_decorator(*args, **kwargs):
-            return super(GET, self).call(func, *args, **kwargs)
+        def options_decorator(*args, **kwargs):
+            return super(HEAD, self).call(func, *args, **kwargs)
 
-        return get_decorator
+        return options_decorator

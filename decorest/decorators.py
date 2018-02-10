@@ -14,9 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import inspect
 import logging as LOG
 import requests
-import inspect
+from requests.structures import CaseInsensitiveDict
 
 from .client import RestClient, HttpMethod, render_path
 from .utils import merge_dicts, dict_from_args
@@ -25,29 +26,36 @@ from .utils import merge_dicts, dict_from_args
 """
 Each RestClient subclass has a `__decorest__` property storing
 a dictionary with decorator values provided by decorators
-added to the client class.
+added to the client class or method.
 """
 
 DECOR_KEY = '__decorest__'
 
+
 def set_decor(t, name, value):
     """
     Decorates a function or class by storing the value under specific
-    path.
+    key.
     """
     if not hasattr(t, DECOR_KEY):
-        t.__decorest__ = {}
+        setattr(t, DECOR_KEY, {})
 
-    if isinstance(value, dict):
-        if not t.__decorest__.get(name):
-            t.__decorest__[name] = {}
-        t.__decorest__[name] = merge_dicts(t.__decorest__[name], value)
+    d = getattr(t, DECOR_KEY)
+
+    if isinstance(value, CaseInsensitiveDict):
+        if not d.get(name):
+            d[name] = CaseInsensitiveDict()
+        d[name] = merge_dicts(d[name], value)
+    elif isinstance(value, dict):
+        if not d.get(name):
+            d[name] = {}
+        d[name] = merge_dicts(d[name], value)
     elif isinstance(value, list):
-        if not t.__decorest__.get(name):
-            t.__decorest__[name] = []
-        t.__decorest__[name].extend(value)
+        if not d.get(name):
+            d[name] = []
+        d[name].extend(value)
     else:
-        t.__decorest__[name] = value
+        d[name] = value
 
 
 def get_decor(t, name):
@@ -61,10 +69,14 @@ def get_decor(t, name):
     Returns:
         object: any value assigned to the name key
     """
-    if hasattr(t, '__decorest__') and t.__decorest__.get(name):
-        return t.__decorest__[name]
+    if hasattr(t, DECOR_KEY) and getattr(t, DECOR_KEY).get(name):
+        return getattr(t, DECOR_KEY)[name]
 
     return None
+
+
+DECOR_LIST = ['on', 'query', 'header', 'endpoint', 'content', 'accept', 'body',
+              'auth', 'timeout']
 
 
 def on(status, handler):
@@ -101,7 +113,7 @@ def header(name, value):
     Header class and method decorator
     """
     def header_decorator(t):
-        set_decor(t, 'header', {name: value})
+        set_decor(t, 'header', CaseInsensitiveDict({name: value}))
         return t
     return header_decorator
 
@@ -121,7 +133,7 @@ def content(value):
     Content-type header class and method decorator
     """
     def content_decorator(t):
-        set_decor(t, 'header', {'content-type': value})
+        set_decor(t, 'header', CaseInsensitiveDict({'Content-Type': value}))
         return t
     return content_decorator
 
@@ -131,7 +143,7 @@ def accept(value):
     Accept header class and method decorator
     """
     def accept_decorator(t):
-        set_decor(t, 'header', {'accept': value})
+        set_decor(t, 'header', CaseInsensitiveDict({'Accept': value}))
         return t
     return accept_decorator
 
@@ -161,6 +173,18 @@ def auth(value):
     return auth_decorator
 
 
+def timeout(name, value):
+    """
+    Timeout parameter decorator.
+
+    Specifies a default timeout value for method or entire API.
+    """
+    def body_decorator(t):
+        set_decor(t, 'timeout', (name, value))
+        return t
+    return body_decorator
+
+
 class HttpMethodDecorator(object):
     """
     Abstract decorator for HTTP method decorators
@@ -170,7 +194,7 @@ class HttpMethodDecorator(object):
         self.path_template = path
 
     def call(self, func, *args, **kwargs):
-        http_method = func._http__method
+        http_method = get_decor(func, 'http_method')
         rest_client = args[0]
         args_dict = dict_from_args(func, *args)
         req_path = render_path(self.path_template, args_dict)
@@ -260,7 +284,7 @@ class HttpMethodDecorator(object):
             raise 'Unsupported HTTP method: {method}'.format(
                 method=http_method)
 
-        if result.status_code in on_handlers:
+        if on_handlers and result.status_code in on_handlers:
             # Use a registered handler for the returned status code
             return on_handlers[result.status_code](result)
         else:

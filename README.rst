@@ -274,6 +274,20 @@ which then doesn't have to be provided in the client constructor:
 The endpoint provided in the client constructor will take precedence
 however.
 
+
+@timeout
+~~~~~~~~
+Specifies a default timeout value (in seconds) for method or entire API.
+
+.. code-block:: python
+
+        @endpoint('https://dog.ceo/api')
+        @timeout(5)
+        class DogClient(RestClient):
+            """List all sub-breeds"""
+            def __init__(self, endpoint=None):
+                super(DogClient, self).__init__(endpoint)
+
 Sessions [TODO]
 ---------------
 

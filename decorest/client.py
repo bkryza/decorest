@@ -44,6 +44,7 @@ class HttpMethod(object):
     UPDATE = 'UPDATE'
     DELETE = 'DELETE'
     HEAD = 'HEAD'
+    OPTIONS = 'OPTIONS'
 
 
 class RestClient(object):

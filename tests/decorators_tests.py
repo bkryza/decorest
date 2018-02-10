@@ -14,15 +14,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from decorest import RestClient
-from decorest import GET
-from decorest import header, query, accept, endpoint, content
-
+from requests.auth import HTTPBasicAuth
 import pytest
 
+from decorest import RestClient, HttpMethod
+from decorest import GET, POST, PUT, PATCH, UPDATE, DELETE, HEAD, OPTIONS
+from decorest import header, query, accept, endpoint, content, auth
+from decorest.decorators import get_decor
 
+
+@accept('application/json')
+@content('application/xml')
+@header('X-Auth-Key', 'ABCD')
+@endpoint('https://dog.ceo/')
+@auth(HTTPBasicAuth('user', 'password'))
 class DogClient(RestClient):
-    def __init__(self, endpoint):
+    """DogClient client"""
+
+    def __init__(self, endpoint=None):
         super(DogClient, self).__init__(endpoint)
 
     @GET('breed/{breed_name}/list')
@@ -52,39 +61,92 @@ class DogClient(RestClient):
     def plain_headers(self, a, b, c):
         """Headers"""
 
+    @GET('get')
+    def get(self, a):
+        """Get something"""
+
+    @POST('post')
+    def post(self, a):
+        """Post something"""
+
+    @PUT('put')
+    def put(self, a):
+        """Put something"""
+
+    @PATCH('patch')
+    def patch(self, a):
+        """Patch something"""
+
+    @DELETE('delete')
+    def delete(self, a):
+        """Delete something"""
+
+    @HEAD('head')
+    def head(self, a):
+        """Heads up"""
+
+    @OPTIONS('options')
+    def options(self, a):
+        """What can I do?"""
+
+
+def test_set_decor():
+    """
+    Check that decorators store proper values in the decorated
+    class and methods.
+    """
+
+    assert get_decor(DogClient, 'header')['Accept'] == 'application/json'
+    assert get_decor(DogClient, 'header')['content-Type'] == 'application/xml'
+    assert get_decor(DogClient, 'header')['x-auth-key'] == 'ABCD'
+    assert get_decor(DogClient, 'endpoint') == 'https://dog.ceo/'
+    assert get_decor(DogClient, 'auth') == HTTPBasicAuth('user', 'password')
+
+    assert get_decor(DogClient.get, 'http_method') == HttpMethod.GET
+    assert get_decor(DogClient.post, 'http_method') == HttpMethod.POST
+    assert get_decor(DogClient.put, 'http_method') == HttpMethod.PUT
+    assert get_decor(DogClient.patch, 'http_method') == HttpMethod.PATCH
+    assert get_decor(DogClient.delete, 'http_method') == HttpMethod.DELETE
+    assert get_decor(DogClient.head, 'http_method') == HttpMethod.HEAD
+    assert get_decor(DogClient.options, 'http_method') == HttpMethod.OPTIONS
+
 
 def test_introspection():
     """
     Make sure the decorators maintain the original methods
     signatures.
     """
+    client = DogClient()
 
-    assert(DogClient.list_subbreeds.__doc__ ==
-           DogClient.plain_list_subbreeds.__doc__)
+    assert DogClient.__name__ == 'DogClient'
+    assert client.__class__.__name__ == 'DogClient'
+    assert DogClient.__doc__ == 'DogClient client'
+
+    assert DogClient.list_subbreeds.__name__ == 'list_subbreeds'
+
+    assert DogClient.list_subbreeds.__doc__ == DogClient.plain_list_subbreeds.__doc__
 
     d = DogClient.list_subbreeds.__dict__
     if '__wrapped__' in d:
         del d['__wrapped__']
-    assert(d == DogClient.plain_list_subbreeds.__dict__)
+    if '__decorest__' in d:
+        del d['__decorest__']
+    assert d == DogClient.plain_list_subbreeds.__dict__
 
-    assert(DogClient.queries.__doc__ == DogClient.plain_queries.__doc__)
+    assert DogClient.queries.__doc__ == DogClient.plain_queries.__doc__
 
     d = DogClient.queries.__dict__
     if '__wrapped__' in d:
         del d['__wrapped__']
     if '__decorest__' in d:
         del d['__decorest__']
-    assert(d == DogClient.plain_queries.__dict__)
+    assert d == DogClient.plain_queries.__dict__
 
-
-    assert(DogClient.headers.__doc__ == DogClient.plain_headers.__doc__)
+    assert DogClient.headers.__doc__ == DogClient.plain_headers.__doc__
 
     d = DogClient.headers.__dict__
     if '__wrapped__' in d:
         del d['__wrapped__']
     if '__decorest__' in d:
         del d['__decorest__']
-    assert(d == DogClient.plain_headers.__dict__)
-
-
-
+    assert d == DogClient.plain_headers.__dict__

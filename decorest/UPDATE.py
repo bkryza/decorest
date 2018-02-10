@@ -15,7 +15,7 @@
 # limitations under the License.
 
 from .client import HttpMethod
-from .decorators import HttpMethodDecorator
+from .decorators import HttpMethodDecorator, set_decor
 from functools import wraps
 
 
@@ -25,8 +25,10 @@ class UPDATE(HttpMethodDecorator):
         super(UPDATE, self).__init__(path)
 
     def __call__(self, func):
+        set_decor(func, 'http_method', HttpMethod.UPDATE)
+
         @wraps(func)
         def update_decorator(*args, **kwargs):
-            func._http__method = HttpMethod.UPDATE
             return super(UPDATE, self).call(func, *args, **kwargs)
+
         return update_decorator

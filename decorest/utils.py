@@ -60,10 +60,13 @@ def merge_dicts(*dict_args):
     Merges all dicts passed as arguments, skips None objects.
     Repeating keys will replace the keys from previous dicts.
     """
-    result = {}
+    result = None
     for dictionary in dict_args:
         if dictionary is not None:
-            result.update(dictionary)
+            if result is None:
+                result = dictionary
+            else:
+                result.update(dictionary)
     return result
 
 
