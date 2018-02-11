@@ -18,9 +18,12 @@ import inspect
 import logging as LOG
 import numbers
 import requests
+import json
 from requests.structures import CaseInsensitiveDict
+from requests.auth import AuthBase
+from six import iteritems
 
-from .client import RestClient, HttpMethod, render_path
+from .client import RestClient, HttpMethod, HttpStatus, render_path
 from .utils import merge_dicts, dict_from_args
 
 
@@ -166,7 +169,7 @@ def auth(value):
     Authentication decorator
     """
     def auth_decorator(t):
-        if not isinstance(value, requests.auth.AuthBase):
+        if not isinstance(value, AuthBase):
             raise "@auth decorator accepts only subclasses " \
                 "of 'requests.auth.AuthBase'"
         set_decor(t, 'auth', value)
@@ -174,16 +177,16 @@ def auth(value):
     return auth_decorator
 
 
-def timeout(name, value):
+def timeout(value):
     """
     Timeout parameter decorator.
 
     Specifies a default timeout value for method or entire API.
     """
-    def body_decorator(t):
-        set_decor(t, 'timeout', (name, value))
+    def timeout_decorator(t):
+        set_decor(t, 'timeout', value)
         return t
-    return body_decorator
+    return timeout_decorator
 
 
 class HttpMethodDecorator(object):
@@ -206,22 +209,23 @@ class HttpMethodDecorator(object):
         query_parameters_decor = get_decor(func, 'query')
         query_parameters = {}
         if query_parameters_decor:
-            for query_arg in query_parameters_decor:
+            for query_arg, query_param in iteritems(query_parameters_decor):
                 if args_dict.get(query_arg):
-                    query_key = query_parameters_decor[query_arg]
                     query_value = args_dict[query_arg]
-                    query_parameters[query_key] = query_value
+                    query_parameters[query_param] = query_value
 
         header_parameters = merge_dicts(
             get_decor(rest_client.__class__, 'header'),
             get_decor(func, 'header'))
 
-        # Get body content from named arguments
+        # Get body content from positional arguments if one is specified
+        # using @body decorator
         body_parameter = get_decor(func, 'body')
         body_content = None
         if body_parameter:
+            LOG.debug("BODY PARAM NAME: " + body_parameter[0])
             body_content = args_dict.get(body_parameter[0])
-            LOG.debug("REQUEST BODY: {body}".format(body=body_content))
+            LOG.debug("REQUEST BODY: {body}".format(body=str(body_content)))
             # Serialize body content first if serialization handler
             # was provided
             if body_content and body_parameter[1]:
@@ -242,7 +246,6 @@ class HttpMethodDecorator(object):
         if get_decor(func, 'timeout'):
             timeout = get_decor(func, 'timeout')
 
-
         #
         # If the kwargs contains any decorest decorators that should
         # be overloaded for this call, extract them.
@@ -259,7 +262,14 @@ class HttpMethodDecorator(object):
                         header_parameters = merge_dicts(
                             header_parameters, kwargs['header'])
                         del kwargs['header']
-                    if decor == 'on':
+                    elif decor == 'query':
+                        if not isinstance(kwargs['query'], dict):
+                            raise TypeError(
+                                "'query' value must be an instance of dict")
+                        query_parameters = merge_dicts(
+                            query_parameters, kwargs['query'])
+                        del kwargs['query']
+                    elif decor == 'on':
                         if not isinstance(kwargs['on'], dict):
                             raise TypeError(
                                 "'on' value must be an instance of dict")
@@ -275,21 +285,23 @@ class HttpMethodDecorator(object):
                         if not isinstance(kwargs['content'], str):
                             raise TypeError(
                                 "'content' value must be an instance of str")
-                        header_parameters['content-type'] = kwargs['content-type']
-                        del kwargs['content-type']
+                        header_parameters['content-type'] = kwargs['content']
+                        del kwargs['content']
                     elif decor == 'auth':
-                        if not isinstance(kwargs['auth'], auth.AuthBase):
+                        if not isinstance(kwargs['auth'], AuthBase):
                             raise TypeError(
                                 "'auth' value must be an instance of AuthBase")
                         auth = kwargs['auth']
-                        del kwargs['content-type']
+                        del kwargs['auth']
                     elif decor == 'timeout':
                         if not isinstance(kwargs['timeout'], numbers.Number):
                             raise TypeError(
                                 "'timeout' value must be a number")
                         timeout = kwargs['timeout']
                         del kwargs['timeout']
-
+                    elif decor == 'body':
+                        body_content = kwargs['body']
+                        del kwargs['body']
                     else:
                         pass
 
@@ -297,8 +309,7 @@ class HttpMethodDecorator(object):
         if get_decor(rest_client.__class__, 'endpoint'):
             rest_client.endpoint = get_decor(rest_client.__class__, 'endpoint')
 
-        req = rest_client.build_request(
-            req_path.split('/'), query_parameters)
+        req = rest_client.build_request(req_path.split('/'))
 
         # Assume default content type
         if 'content-type' not in header_parameters:
@@ -316,9 +327,19 @@ class HttpMethodDecorator(object):
         if timeout:
             kwargs['timeout'] = timeout
         if body_content:
-            kwargs['data'] = body_content
+            if header_parameters.get('content-type') == 'application/json':
+                if isinstance(body_content, dict):
+                    kwargs['data'] = json.dumps(body_content)
+                else:
+                    kwargs['data'] = body_content
+            else:
+                kwargs['data'] = body_content
+            LOG.debug("BODY TYPE: " + str(type(kwargs['data'])))
         if header_parameters:
             kwargs['headers'] = header_parameters
+            LOG.debug("CONTENT_TYPE " + header_parameters['content-type'])
+        if query_parameters:
+            kwargs['params'] = query_parameters
 
         result = None
 
@@ -332,8 +353,6 @@ class HttpMethodDecorator(object):
             result = requests.patch(req, **kwargs)
         elif http_method == HttpMethod.DELETE:
             result = requests.delete(req, **kwargs)
-        elif http_method == HttpMethod.UPDATE:
-            result = requests.update(req, **kwargs)
         elif http_method == HttpMethod.HEAD:
             result = requests.head(req, **kwargs)
         elif http_method == HttpMethod.OPTIONS:
@@ -345,7 +364,15 @@ class HttpMethodDecorator(object):
         if on_handlers and result.status_code in on_handlers:
             # Use a registered handler for the returned status code
             return on_handlers[result.status_code](result)
+        elif on_handlers and HttpStatus.ANY in on_handlers:
+            # If a catch all status handler is provided - use it
+            return on_handlers[HttpStatus.ANY](result)
         else:
+            # If stream option was passed and no content handler
+            # was defined, return requests response
+            if kwargs.get('stream') is True:
+                return result
+
             # Default response handler
             result.raise_for_status()
 

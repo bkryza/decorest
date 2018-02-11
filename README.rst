@@ -70,13 +70,24 @@ make the request to the service solely using decorators attached to the
 method definition. The method itself is not expected to have any implementation
 except maybe for a docstring.
 
-After the your client class definition is ready, simply create an instance
-of it with the base endpoint and exec
+After your API client class definition is complete, simply create an instance
+of it and it's ready to go. This library relies on the functionality provided
+by the requests_ library, which means that any valid named argument which
+could be passed to a requests_ HTTP call can be also passed to the calls
+of the client methods and will be forwarded as is.
 
 For more information checkout the examples in tests.
 
 Decorators
 ----------
+
+Below is a list of all supported decorators along with short explanation and
+examples. Some decorators can be attached to both client class as well as
+methods, in which case the class-level decorator is applied to all HTTP methods
+in that class. Furthermore, each decorator can be overriden directly during
+the method call by providing a named argument with name equal to the decorator
+name.
+
 
 @GET, @PUT, @POST, @PATCH, @UPDATE, @DELETE, @HEAD, @OPTIONS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

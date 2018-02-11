@@ -6,4 +6,4 @@ python:
   - "2.7"
   - "3.6"
 install: pip install tox-travis tox-docker
-script: tox
+script: tox -e basic,swaggerpetstore,httpbin
