@@ -22,6 +22,7 @@ import json
 from requests.structures import CaseInsensitiveDict
 from requests.auth import AuthBase
 from six import iteritems
+from functools import wraps, partial
 
 from .client import RestClient, HttpMethod, HttpStatus, render_path
 from .utils import merge_dicts, dict_from_args
@@ -41,6 +42,9 @@ def set_decor(t, name, value):
     Decorates a function or class by storing the value under specific
     key.
     """
+    if hasattr(t, '__wrapped__') and hasattr(t.__wrapped__, DECOR_KEY):
+        setattr(t, DECOR_KEY, t.__wrapped__.__decorest__)
+
     if not hasattr(t, DECOR_KEY):
         setattr(t, DECOR_KEY, {})
 
@@ -189,6 +193,17 @@ def timeout(value):
     return timeout_decorator
 
 
+def stream(t):
+    """
+    Stream parameter decorator, takes boolean True or False.
+
+    If specified, adds `stream=value` to requests and the value returned
+    from such method will be the requests object.
+    """
+    set_decor(t, 'stream', True)
+    return t
+
+
 class HttpMethodDecorator(object):
     """
     Abstract decorator for HTTP method decorators
@@ -202,6 +217,7 @@ class HttpMethodDecorator(object):
         rest_client = args[0]
         args_dict = dict_from_args(func, *args)
         req_path = render_path(self.path_template, args_dict)
+        stream = False
 
         # Merge query parameters from common values for all method
         # invocations with query arguments provided in the method
@@ -245,6 +261,11 @@ class HttpMethodDecorator(object):
         timeout = get_decor(rest_client.__class__, 'timeout')
         if get_decor(func, 'timeout'):
             timeout = get_decor(func, 'timeout')
+
+        # Check if stream is requested for this call
+        stream = get_decor(func, 'stream')
+        if stream is None:
+            stream = get_decor(rest_client.__class__, 'stream')
 
         #
         # If the kwargs contains any decorest decorators that should
@@ -299,6 +320,11 @@ class HttpMethodDecorator(object):
                                 "'timeout' value must be a number")
                         timeout = kwargs['timeout']
                         del kwargs['timeout']
+                    elif decor == 'stream':
+                        if not isinstance(kwargs['stream'], bool):
+                            raise TypeError("'stream' value must be a bool")
+                        stream = kwargs['stream']
+                        del kwargs['stream']
                     elif decor == 'body':
                         body_content = kwargs['body']
                         del kwargs['body']
@@ -340,6 +366,8 @@ class HttpMethodDecorator(object):
             LOG.debug("CONTENT_TYPE " + header_parameters['content-type'])
         if query_parameters:
             kwargs['params'] = query_parameters
+        if stream:
+            kwargs['stream'] = stream
 
         result = None
 
@@ -370,7 +398,7 @@ class HttpMethodDecorator(object):
         else:
             # If stream option was passed and no content handler
             # was defined, return requests response
-            if kwargs.get('stream') is True:
+            if stream:
                 return result
 
             # Default response handler

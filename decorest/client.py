@@ -41,7 +41,6 @@ class HttpMethod(object):
     POST = 'POST'
     PUT = 'PUT'
     PATCH = 'PATCH'
-    UPDATE = 'UPDATE'
     DELETE = 'DELETE'
     HEAD = 'HEAD'
     OPTIONS = 'OPTIONS'

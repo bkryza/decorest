@@ -27,7 +27,7 @@ from .petstore_client import PetstoreClient
 @pytest.fixture
 def client():
     # Give Docker and Swagger Petstore some time to spin up
-    time.sleep(5)
+    time.sleep(3)
     petstore_port = os.environ["SWAGGERAPI/PETSTORE_8080_TCP"]
     return PetstoreClient("http://0.0.0.0:{port}/v2".format(port=petstore_port))
 

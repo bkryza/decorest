@@ -89,7 +89,7 @@ the method call by providing a named argument with name equal to the decorator
 name.
 
 
-@GET, @PUT, @POST, @PATCH, @UPDATE, @DELETE, @HEAD, @OPTIONS
+@GET, @PUT, @POST, @PATCH, @DELETE, @HEAD, @OPTIONS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Marks the request with a specific HTTP method and the path relative to
@@ -299,6 +299,34 @@ Specifies a default timeout value (in seconds) for method or entire API.
             def __init__(self, endpoint=None):
                 super(DogClient, self).__init__(endpoint)
 
+@stream
+~~~~~~~
+This decorator allows to specify a method which returns binary stream of data.
+Adding this decorator to a method will add a :py:`stream=True`
+argument to the requests_ call and will by default return entire requests
+object which then can be accessed for instance using :py:`iter_content()` method.
+
+.. code-block:: python
+
+    ...
+
+    class MyClient(RestClient):
+        ...
+
+        @GET('stream/{n}/{m}')
+        @query('size')
+        @stream
+        @query('offset', 'off')
+        def stream(self, n, m, size, offset):
+            """Get data range"""
+
+    ...
+
+    with client.stream(2,4, 1024, 200) as r:
+        for b in r.iter_content(chunk_size=100):
+            content.append(b)
+
+
 Sessions [TODO]
 ---------------
 
@@ -328,6 +356,50 @@ This can be achieved by creating separate client
 classes for each group of operations and then create a common class which
 inherits from all the group clients and provides entire API from one instance.
 
+
+Caveats
+-------
+
+Decorator order
+~~~~~~~~~~~~~~~
+
+Decorators can be basically added in any order, except for the HTTP method
+decorator (e.g. :py:`@GET()`, which should always be at the top of the given
+decorator list. Third party decorators should be added above the HTTP method
+decorators.
+
+Name conflicts
+~~~~~~~~~~~~~~
+
+Decorators can sometimes generate conflicts with decorated method or function
+names in case they have the same name as they get merged into the :py:`__globals__`
+dictionary. In case this is an issue decorest decorators should be used with full
+module namespace:
+
+.. code-block:: python
+
+    @decorest.POST('pet')
+    @decorest.content('application/json')
+    @decorest.header('accept', 'application/json')
+    @decorest.body('pet', lambda p: json.dumps(p))
+    def add_pet(self, pet):
+        """Add a new pet to the store"""
+
+
+Compatibility with other decorators
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In general the decorators should work with other decorators which return
+function objects, but your mileage may vary. In general third-party decorators
+should be added above the HTTP method decorators as only the HTTP decorators
+make the actual HTTP request. Thus, typical decorators, which try to wrap
+the actual call should get the HTTP callable returned by HTTP method decorators
+such as :py:`@GET()`.
+
+Currently, it is not possible to add decorators such as :py:`@classmethod`
+or :py:`@staticmethod` to API methods, as the invocation requires an instance
+of client class.
+
 License
 =======
 
@@ -349,3 +421,4 @@ limitations under the License.
 .. _tests: https://github.com/bkryza/decorest/tests
 .. _requests: https://github.com/requests/requests
 .. _decorest: https://github.com/bkryza/decorest
+.. _`descriptor objects`: https://docs.python.org/3/c-api/descriptor.html

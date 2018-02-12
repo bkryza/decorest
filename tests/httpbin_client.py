@@ -20,12 +20,24 @@ import gzip
 import zlib
 import brotli
 import json
+import functools
 
 from decorest import RestClient, HttpStatus
 from decorest import GET, POST, PATCH, PUT, DELETE
 from decorest import header, query, endpoint, timeout, body, on
-from decorest import accept, content
+from decorest import accept, content, stream
 from decorest import decorest_version
+
+
+def repeatdecorator(f):
+    """Example third-party decorator which repeats the call 5 times"""
+    @functools.wraps(f)
+    def wrapped(*args, **kwargs):
+        result = []
+        for i in range(5):
+            result.append(f(*args, **kwargs))
+        return result
+    return wrapped
 
 
 def parse_image(response):
@@ -50,6 +62,11 @@ class HttpBinClient(RestClient):
     @GET('ip')
     def ip(self):
         """Returns Origin IP"""
+
+    @repeatdecorator
+    @GET('ip')
+    def ip_repeat(self):
+        """Returns Origin IP repeated n times"""
 
     @GET('uuid')
     def uuid(self):
@@ -184,7 +201,8 @@ class HttpBinClient(RestClient):
         """Challenges HTTP Digest Auth"""
 
     @GET('stream/{n}')
-    def stream(self, n):
+    @stream
+    def stream_n(self, n):
         """Streams min(n, 100) lines"""
 
     @GET('delay/{n}')
@@ -193,6 +211,7 @@ class HttpBinClient(RestClient):
         """Delays responding for min(n, 10) seconds"""
 
     @GET('drip')
+    @stream
     @query('numbytes')
     @query('duration')
     @query('delay')
@@ -202,6 +221,7 @@ class HttpBinClient(RestClient):
            then (optionally) returns with the given status code"""
 
     @GET('range/{n}')
+    @stream
     @query('duration')
     @query('chunk_size')
     def range(self, n, duration, chunk_size):

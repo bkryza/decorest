@@ -16,10 +16,11 @@
 
 from requests.auth import HTTPBasicAuth
 import pytest
+import functools
 
 from decorest import RestClient, HttpMethod
-from decorest import GET, POST, PUT, PATCH, UPDATE, DELETE, HEAD, OPTIONS
-from decorest import header, query, accept, endpoint, content, auth
+from decorest import GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS
+from decorest import header, query, accept, endpoint, content, auth, stream
 from decorest.decorators import get_decor
 
 
@@ -89,6 +90,16 @@ class DogClient(RestClient):
     def options(self, a):
         """What can I do?"""
 
+    @GET('stream/{n}/{m}')
+    @stream
+    @query('size')
+    @query('offset', 'off')
+    def stream_range(self, n, m, size, offset):
+        """Get data range"""
+
+    def plain_stream_range(self, n, m, size, offset):
+        """Get data range"""
+
 
 def test_set_decor():
     """
@@ -109,6 +120,11 @@ def test_set_decor():
     assert get_decor(DogClient.delete, 'http_method') == HttpMethod.DELETE
     assert get_decor(DogClient.head, 'http_method') == HttpMethod.HEAD
     assert get_decor(DogClient.options, 'http_method') == HttpMethod.OPTIONS
+    assert get_decor(DogClient.stream_range, 'http_method') == HttpMethod.GET
+
+    assert get_decor(DogClient.stream_range, 'stream') is True
+    assert get_decor(DogClient.stream_range, 'query') == {
+        'offset': 'off', 'size': 'size'}
 
 
 def test_introspection():
@@ -125,6 +141,7 @@ def test_introspection():
     assert DogClient.list_subbreeds.__name__ == 'list_subbreeds'
 
     assert DogClient.list_subbreeds.__doc__ == DogClient.plain_list_subbreeds.__doc__
+    assert DogClient.list_subbreeds.__module__ == DogClient.plain_list_subbreeds.__module__
 
     d = DogClient.list_subbreeds.__dict__
     if '__wrapped__' in d:
@@ -150,3 +167,13 @@ def test_introspection():
     if '__decorest__' in d:
         del d['__decorest__']
     assert d == DogClient.plain_headers.__dict__
+
+    assert DogClient.stream_range.__doc__ == DogClient.plain_stream_range.__doc__
+    assert DogClient.stream_range.__module__ == DogClient.plain_stream_range.__module__
+
+    d = DogClient.stream_range.__dict__
+    if '__wrapped__' in d:
+        del d['__wrapped__']
+    if '__decorest__' in d:
+        del d['__decorest__']
+    assert d == DogClient.plain_stream_range.__dict__

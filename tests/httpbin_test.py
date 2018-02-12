@@ -31,7 +31,7 @@ from .httpbin_client import HttpBinClient, parse_image, HttpStatus
 @pytest.fixture
 def client():
     # Give Docker and HTTPBin some time to spin up
-    time.sleep(2)
+    time.sleep(3)
     httpbin_port = os.environ["KENNETHREITZ/HTTPBIN_8080_TCP"]
     return HttpBinClient("http://0.0.0.0:{port}".format(port=httpbin_port))
 
@@ -44,6 +44,15 @@ def test_ip(client):
     res = client.ip()
 
     assert "origin" in res
+
+
+def test_ip_repeat(client):
+    """
+    """
+    res = client.ip_repeat()
+
+    for ip in res:
+        assert "origin" in ip
 
 
 def test_uuid(client):
@@ -327,12 +336,11 @@ def test_digest_auth(client):
     assert res['authenticated'] is True
 
 
-def test_stream(client):
+def test_stream_n(client):
     """
     """
     count = 0
-    # TODO add @stream decorator
-    with client.stream(5, on={200: lambda res: res}, stream=True) as r:
+    with client.stream_n(5) as r:
         for line in r.iter_lines():
             count += 1
 
@@ -356,8 +364,7 @@ def test_drip(client):
     """
     """
     content = []
-    # TODO add @stream decorator
-    with client.drip(10, 5, 1, 200, on={200: lambda res: res}, stream=True) as r:
+    with client.drip(10, 5, 1, 200) as r:
         for b in r.iter_content(chunk_size=1):
             content.append(b)
 
@@ -368,11 +375,7 @@ def test_range(client):
     """
     """
     content = []
-    # TODO add @stream decorator
-    with client.range(128, 1, 2,
-                      header={"Range": "bytes=10-19"},
-                      on={200: lambda res: res},
-                      stream=True) as r:
+    with client.range(128, 1, 2, header={"Range": "bytes=10-19"}) as r:
         for b in r.iter_content(chunk_size=2):
             content.append(b)
 
