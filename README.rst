@@ -347,14 +347,17 @@ method is called on the client instance.
         client.list_subbreeds('husky')
         client.stop_session()
 
-Grouping API methods [TODO]
+Grouping API methods
 ---------------------------
 
 For larger API's it can be useful to be able to split the API definition
 into multiple files but still use it from a single instance in the code.
-This can be achieved by creating separate client
-classes for each group of operations and then create a common class which
-inherits from all the group clients and provides entire API from one instance.
+
+This can be achieved by creating separate client classes for each group
+of operations and then create a common class, which inherits from all the
+group clients and provides entire API from one instance.
+
+For example of this checkout the `Petstore Swagger client example`_ in tests.
 
 
 Caveats
@@ -418,7 +421,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 
-.. _tests: https://github.com/bkryza/decorest/tests
+.. _tests: https://github.com/bkryza/decorest/tree/master/tests
 .. _requests: https://github.com/requests/requests
 .. _decorest: https://github.com/bkryza/decorest
 .. _`descriptor objects`: https://docs.python.org/3/c-api/descriptor.html
+.. _`Petstore Swagger client example`: https://github.com/bkryza/decorest/blob/master/tests/petstore_client.py

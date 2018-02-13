@@ -47,7 +47,12 @@ class HttpMethod(object):
 
 
 class HttpStatus(object):
-    ANY = 99999
+    INFORMATIONAL_RESPONSE = 1
+    SUCCESS = 2
+    REDIRECTION = 3
+    CLIENT_ERROR = 4
+    SERVER_ERROR = 5
+    ANY = 999
 
 
 class RestClient(object):

@@ -2,14 +2,14 @@
 #
 # Copyright 2018 Bartosz Kryza <bkryza@gmail.com>
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the Apache License, Version 2.0 (the 'License');
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #    http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
+# distributed under the License is distributed on an 'AS IS' BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
@@ -27,9 +27,9 @@ from .petstore_client import PetstoreClient
 @pytest.fixture
 def client():
     # Give Docker and Swagger Petstore some time to spin up
-    time.sleep(3)
-    petstore_port = os.environ["SWAGGERAPI/PETSTORE_8080_TCP"]
-    return PetstoreClient("http://0.0.0.0:{port}/v2".format(port=petstore_port))
+    time.sleep(5)
+    petstore_port = os.environ['SWAGGERAPI/PETSTORE_8080_TCP']
+    return PetstoreClient('http://0.0.0.0:{port}/v2'.format(port=petstore_port))
 
 
 def test_pet_methods(client):
@@ -42,9 +42,9 @@ def test_pet_methods(client):
 
     try:
         res = client.add_pet({
-            "name": "lucky",
-            "photoUrls": ["http://example.com/lucky.jpg"],
-            "status": "available"}, timeout=5)
+            'name': 'lucky',
+            'photoUrls': ['http://example.com/lucky.jpg'],
+            'status': 'available'}, timeout=5)
     except HTTPError as e:
         pytest.fail(e.response.text)
 
@@ -55,8 +55,8 @@ def test_pet_methods(client):
 
     try:
         res = client.update_pet(json.dumps({
-            "id": pet_id,
-            "status": "sold"}))
+            'id': pet_id,
+            'status': 'sold'}))
     except HTTPError as e:
         pytest.fail(e.response.text)
 
@@ -74,3 +74,72 @@ def test_pet_methods(client):
         assert e.response.status_code == 404
 
     assert res is None
+
+
+def test_store_methods(client):
+
+    res = client.place_order({
+        'petId': 123,
+        'quantity': 2,
+        'shipDate': '2018-02-13T21:53:00.637Z',
+        'status': 'placed',
+    })
+
+    assert res['petId'] == 123
+    assert res['status'] == 'placed'
+
+    order_id = res['id']
+    res = client.get_order(order_id)
+
+    assert res['petId'] == 123
+    assert res['status'] == 'placed'
+
+    res = client.get_inventory()
+    assert 'available' in res
+
+    client.delete_order(order_id)
+
+    with pytest.raises(HTTPError) as e:
+        client.get_order(order_id)
+
+
+def test_user_methods(client):
+
+    res = client.create_user({
+        'username': 'swagger',
+        'firstName': 'Swagger',
+        'lastName': 'Petstore',
+        'email': 'swagger@example.com',
+        'password': 'guess',
+        'phone': '001-111-CALL-ME',
+        "userStatus": 0
+    })
+
+    assert res is True
+
+    res = client.login('swagger', 'petstore')
+
+    assert res.decode("utf-8").startswith('logged in user session:')
+
+    res = client.get_user('swagger')
+
+    assert res['phone'] == '001-111-CALL-ME'
+
+    client.update_user('swagger', {
+        'username': 'swagger',
+        'firstName': 'Swagger',
+        'lastName': 'Petstore',
+        'email': 'petstore@example.com',
+        'password': 'guess',
+        'phone': '001-111-CALL-ME',
+        "userStatus": 0
+    })
+
+    res = client.get_user('swagger')
+
+    assert res['email'] == 'petstore@example.com'
+
+    client.delete_user('swagger')
+
+    with pytest.raises(HTTPError) as e:
+        client.get_user('swagger')

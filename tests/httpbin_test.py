@@ -31,7 +31,7 @@ from .httpbin_client import HttpBinClient, parse_image, HttpStatus
 @pytest.fixture
 def client():
     # Give Docker and HTTPBin some time to spin up
-    time.sleep(3)
+    time.sleep(5)
     httpbin_port = os.environ["KENNETHREITZ/HTTPBIN_8080_TCP"]
     return HttpBinClient("http://0.0.0.0:{port}".format(port=httpbin_port))
 
