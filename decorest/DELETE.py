@@ -13,18 +13,23 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""DELETE Http method decorator."""
+
+from functools import wraps
 
 from .client import HttpMethod
 from .decorators import HttpMethodDecorator, set_decor
-from functools import wraps
 
 
 class DELETE(HttpMethodDecorator):
+    """DELETE HTTP method decorator."""
 
     def __init__(self, path):
+        """Initialize with endpoint relative path."""
         super(DELETE, self).__init__(path)
 
     def __call__(self, func):
+        """Callable operator."""
         set_decor(func, 'http_method', HttpMethod.DELETE)
 
         @wraps(func)

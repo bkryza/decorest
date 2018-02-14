@@ -13,17 +13,21 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""
+Base Http client implementation.
 
+This module contains also some enums for HTTP protocol.
+"""
 import logging as LOG
 import re
-from six.moves.urllib.parse import urlencode, urljoin
+
+from six.moves.urllib.parse import urljoin
+
 from .utils import normalize_url
 
 
 def render_path(path, args):
-    """
-    Render REST path from *args
-    """
+    """Render REST path from *args."""
     LOG.debug('RENDERING PATH FROM: %s,  %s', path, args)
     result = path
     matches = re.search(r'{([^}.]*)}', result)
@@ -37,6 +41,8 @@ def render_path(path, args):
 
 
 class HttpMethod(object):
+    """Enum with HTTP methods."""
+
     GET = 'GET'
     POST = 'POST'
     PUT = 'PUT'
@@ -47,6 +53,8 @@ class HttpMethod(object):
 
 
 class HttpStatus(object):
+    """Enum with HTTP error code classes."""
+
     INFORMATIONAL_RESPONSE = 1
     SUCCESS = 2
     REDIRECTION = 3
@@ -56,17 +64,17 @@ class HttpStatus(object):
 
 
 class RestClient(object):
-    """
-    Base class for decorest REST clients.
-    """
+    """Base class for decorest REST clients."""
 
     def __init__(self, endpoint=None):
+        """Initialize the client with optional endpoint."""
         self.endpoint = endpoint
 
     def start_session(self):
         """
-        Initializes 'requests' session object. All consecutive requests
-        will go via the session object.
+        Initialize 'requests' session object.
+
+        All consecutive requests will go via the session object.
 
         If this method is not called on the client, the requests will be
         performed using standard requests without a session.
@@ -75,14 +83,18 @@ class RestClient(object):
 
     def stop_session(self):
         """
-        Stops the requests session, i.e. all consecutive requests will be
+        Stop the requests session.
+
+        All consecutive requests will be
         called using standard requests without session object.
         """
         pass
 
     def build_request(self, path_components=[]):
         """
-        Builds request by combining the endpoint with path
+        Build request.
+
+        Request is built by combining the endpoint with path
         and query components.
         """
         LOG.debug("Building request from path tokens: %s", path_components)

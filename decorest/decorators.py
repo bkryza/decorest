@@ -13,35 +13,33 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Decorators implementation.
 
-import inspect
-import logging as LOG
-import numbers
-import requests
-import json
-from requests.structures import CaseInsensitiveDict
-from requests.auth import AuthBase
-from six import iteritems
-from functools import wraps, partial
-
-from .client import RestClient, HttpMethod, HttpStatus, render_path
-from .utils import merge_dicts, dict_from_args
-
-
-"""
 Each RestClient subclass has a `__decorest__` property storing
 a dictionary with decorator values provided by decorators
 added to the client class or method.
 """
 
+import inspect
+import json
+import logging as LOG
+import numbers
+
+import requests
+from requests.auth import AuthBase
+from requests.structures import CaseInsensitiveDict
+
+from six import iteritems
+
+from .client import HttpMethod, HttpStatus, render_path
+from .utils import dict_from_args, merge_dicts
+
+
 DECOR_KEY = '__decorest__'
 
 
 def set_decor(t, name, value):
-    """
-    Decorates a function or class by storing the value under specific
-    key.
-    """
+    """Decorate a function or class by storing the value under specific key."""
     if hasattr(t, '__wrapped__') and hasattr(t.__wrapped__, DECOR_KEY):
         setattr(t, DECOR_KEY, t.__wrapped__.__decorest__)
 
@@ -68,7 +66,7 @@ def set_decor(t, name, value):
 
 def get_decor(t, name):
     """
-    Retrieves a named decorator value from class or function.
+    Retrieve a named decorator value from class or function.
 
     Args:
         t (type): Decorated type (can be class or function)
@@ -76,6 +74,7 @@ def get_decor(t, name):
 
     Returns:
         object: any value assigned to the name key
+
     """
     if hasattr(t, DECOR_KEY) and getattr(t, DECOR_KEY).get(name):
         return getattr(t, DECOR_KEY)[name]
@@ -89,7 +88,7 @@ DECOR_LIST = ['on', 'query', 'header', 'endpoint', 'content', 'accept', 'body',
 
 def on(status, handler):
     """
-    On status result handlers decorator
+    On status result handlers decorator.
 
     The handler is a function or lambda which will receive as
     the sole parameter the requests response object.
@@ -101,9 +100,7 @@ def on(status, handler):
 
 
 def query(name, value=None):
-    """
-    Query parameter decorator
-    """
+    """Query parameter decorator."""
     def query_decorator(t):
         value_ = value
         if inspect.isclass(t):
@@ -117,9 +114,7 @@ def query(name, value=None):
 
 
 def header(name, value):
-    """
-    Header class and method decorator
-    """
+    """Header class and method decorator."""
     def header_decorator(t):
         set_decor(t, 'header', CaseInsensitiveDict({name: value}))
         return t
@@ -127,9 +122,7 @@ def header(name, value):
 
 
 def endpoint(value):
-    """
-    Endpoint class and method decorator
-    """
+    """Endpoint class and method decorator."""
     def endpoint_decorator(t):
         set_decor(t, 'endpoint', value)
         return t
@@ -137,9 +130,7 @@ def endpoint(value):
 
 
 def content(value):
-    """
-    Content-type header class and method decorator
-    """
+    """Content-type header class and method decorator."""
     def content_decorator(t):
         set_decor(t, 'header', CaseInsensitiveDict({'Content-Type': value}))
         return t
@@ -147,9 +138,7 @@ def content(value):
 
 
 def accept(value):
-    """
-    Accept header class and method decorator
-    """
+    """Accept header class and method decorator."""
     def accept_decorator(t):
         set_decor(t, 'header', CaseInsensitiveDict({'Accept': value}))
         return t
@@ -169,9 +158,7 @@ def body(name, serializer=None):
 
 
 def auth(value):
-    """
-    Authentication decorator
-    """
+    """Add authentication method."""
     def auth_decorator(t):
         if not isinstance(value, AuthBase):
             raise "@auth decorator accepts only subclasses " \
@@ -205,14 +192,14 @@ def stream(t):
 
 
 class HttpMethodDecorator(object):
-    """
-    Abstract decorator for HTTP method decorators
-    """
+    """Abstract decorator for HTTP method decorators."""
 
     def __init__(self, path):
+        """Initialize decorator with endpoint relative path."""
         self.path_template = path
 
     def call(self, func, *args, **kwargs):
+        """Execute the API HTTP request."""
         http_method = get_decor(func, 'http_method')
         rest_client = args[0]
         args_dict = dict_from_args(func, *args)

@@ -13,15 +13,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Utility functions."""
 
 import inspect
+
 import six
 
 
 def dict_from_args(func, *args):
-    """
-    Convert function arguments to a dictionary
-    """
+    """Convert function arguments to a dictionary."""
     result = {}
     args_names = []
     args_default_values = ()
@@ -36,7 +36,7 @@ def dict_from_args(func, *args):
         # Add any default arguments if were left unbound in method call
         for j in range(len(args), len(args_names)):
             result[args_names[j]] = args_default_values[
-                                        len(args_names) - (j + len(args) - 1)]
+                len(args_names) - (j + len(args) - 1)]
     else:
         parameters = inspect.signature(func).parameters
         idx = 0
@@ -57,7 +57,8 @@ def dict_from_args(func, *args):
 
 def merge_dicts(*dict_args):
     """
-    Merges all dicts passed as arguments, skips None objects.
+    Merge all dicts passed as arguments, skips None objects.
+
     Repeating keys will replace the keys from previous dicts.
     """
     result = None
@@ -71,9 +72,7 @@ def merge_dicts(*dict_args):
 
 
 def normalize_url(url):
-    """
-    Makes sure the url is in correct form
-    """
+    """Make sure the url is in correct form."""
     result = url
 
     if not result.endswith("/"):
