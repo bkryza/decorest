@@ -14,21 +14,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-Example decorest based client to Swagger Petstore sample service:
+Example decorest based client to Swagger Petstore sample service.
 
     http://petstore.swagger.io/
 
 """
 
-from decorest import RestClient, HttpStatus
-from decorest import GET, POST, PUT, DELETE
-from decorest import header, query, auth, on, body, accept, content, endpoint
-import xml.etree.ElementTree as ET
 import json
+import xml.etree.ElementTree as ET
 
-from requests.auth import HTTPBasicAuth, HTTPDigestAuth
 
-# Default authentication method for all calls
+from decorest import DELETE, GET, POST, PUT
+from decorest import HttpStatus, RestClient
+from decorest import accept, auth, body, content, endpoint, header, on, query
+
+from requests.auth import HTTPBasicAuth
 
 
 @auth(HTTPBasicAuth('user', 'password'))
@@ -37,9 +37,10 @@ from requests.auth import HTTPBasicAuth, HTTPDigestAuth
 @accept('application/json')
 @endpoint('http://petstore.example.com')
 class PetAPI(RestClient):
-    """Everything about your Pets"""
+    """Everything about your Pets."""
 
     def __init__(self, endpoint=None):
+        """Construct PetAPI."""
         super(PetAPI, self).__init__(endpoint)
 
     @POST('pet')
@@ -47,115 +48,118 @@ class PetAPI(RestClient):
     @accept('application/json')
     @body('pet', lambda p: json.dumps(p))
     def add_pet(self, pet):
-        """Add a new pet to the store"""
+        """Add a new pet to the store."""
 
     @PUT('pet')
     @body('pet')
     def update_pet(self, pet):
-        """Update an existing pet"""
+        """Update an existing pet."""
 
     @GET('pet/findByStatus')
     @on(200, lambda r: r.json())
     @on(HttpStatus.ANY, lambda r: r.raise_for_status())
     def find_pet_by_status(self):
-        """Finds Pets by status"""
+        """Find Pets by status."""
 
     @GET('pet/findByStatus')
     @accept('application/xml')
     @on(200, lambda r: ET.fromstring(r.text))
     def find_pet_by_status_xml(self):
-        """Finds Pets by status"""
+        """Find Pets by status."""
 
     @GET('pet/{pet_id}')
     def find_pet_by_id(self, pet_id):
-        """Find Pet by ID"""
+        """Find Pet by ID."""
 
     @POST('pet/{pet_id}')
     def update_pet_by_id(self, pet_id):
-        """Updates a pet in the store with form data"""
+        """Update a pet in the store with form data."""
 
     @DELETE('pet/{pet_id}')
     def delete_pet(self, pet_id):
-        """Deletes a pet"""
+        """Delete a pet."""
 
     @POST('pet/{pet_id}/uploadImage')
     def upload_pet_image(self, pet_id, image):
-        """uploads an image"""
+        """Upload an image."""
 
 
 class StoreAPI(RestClient):
-    """Access to Petstore orders"""
+    """Access to Petstore orders."""
 
     def __init__(self, endpoint=None):
+        """Construct StoreAPI."""
         super(StoreAPI, self).__init__(endpoint)
 
     @GET('store/inventory')
     def get_inventory(self):
-        """Returns pet inventories by status"""
+        """Return pet inventories by status."""
 
     @POST('store/order')
     @body('order', lambda o: json.dumps(o))
     def place_order(self, order):
-        """Place an order for a pet"""
+        """Place an order for a pet."""
 
     @GET('store/order/{order_id}')
     def get_order(self, order_id):
-        """Find purchase order by ID"""
+        """Find purchase order by ID."""
 
     @DELETE('store/order/{order_id}')
     def delete_order(self, order_id):
-        """Delete purchase order by ID"""
+        """Delete purchase order by ID."""
 
 
 class UserAPI(RestClient):
-    """Operations about user"""
+    """Operations about user."""
 
     def __init__(self, endpoint=None):
+        """Construct UserAPI."""
         super(UserAPI, self).__init__(endpoint)
 
     @POST('user')
     @body('user', lambda o: json.dumps(o))
     @on(200, lambda r: True)
     def create_user(self, user):
-        """Create user"""
+        """Create user."""
 
     @POST('user/createWithArray')
     @body('user', lambda o: json.dumps(o))
     def create_users_from_array(self, user):
-        """Creates list of users with given input array"""
+        """Create list of users with given input array."""
 
     @POST('user/createWithList')
     @body('user', lambda o: json.dumps(o))
     def create_users_from_list(self, user):
-        """Creates list of users with given input array"""
+        """Create list of users with given input array."""
 
     @GET('user/login')
     @query('username')
     @query('password')
     @on(200, lambda r: r.content)
     def login(self, username, password):
-        """Logs user into the system"""
+        """Log user into the system."""
 
     @GET('user/logout')
     def logout(self):
-        """Logs out current logged in user session"""
+        """Log out current logged in user session."""
 
     @GET('user/{username}')
     def get_user(self, username):
-        """Get user by user name"""
+        """Get user by user name."""
 
     @PUT('user/{username}')
     @body('user', lambda o: json.dumps(o))
     def update_user(self, username, user):
-        """Updated user"""
+        """Update user."""
 
     @DELETE('user/{username}')
     def delete_user(self, username):
-        """Delete user"""
+        """Delete user."""
 
 
 class PetstoreClient(PetAPI, StoreAPI, UserAPI):
-    """Swagger Petstore client"""
+    """Swagger Petstore client."""
 
     def __init__(self, endpoint):
+        """Construct PetstoreClient."""
         super(PetstoreClient, self).__init__(endpoint)

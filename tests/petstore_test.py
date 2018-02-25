@@ -15,13 +15,15 @@
 # limitations under the License.
 
 import os
+import sys
 import pytest
 import time
 import json
 import xml.etree.ElementTree as ET
 from requests.exceptions import HTTPError
 
-from .petstore_client import PetstoreClient
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../examples")
+from swagger_petstore.petstore_client import PetstoreClient
 
 
 @pytest.fixture

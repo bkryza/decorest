@@ -76,7 +76,7 @@ by the requests_ library, which means that any valid named argument which
 could be passed to a requests_ HTTP call can be also passed to the calls
 of the client methods and will be forwarded as is.
 
-For more information checkout the examples in tests.
+For more information checkout sample clients in `examples`.
 
 Decorators
 ----------
@@ -362,7 +362,7 @@ This can be achieved by creating separate client classes for each group
 of operations and then create a common class, which inherits from all the
 group clients and provides entire API from one instance.
 
-For example of this checkout the `Petstore Swagger client example`_ in tests.
+For example of this checkout the `Petstore Swagger client example`_.
 
 
 Caveats
@@ -430,4 +430,4 @@ limitations under the License.
 .. _requests: https://github.com/requests/requests
 .. _decorest: https://github.com/bkryza/decorest
 .. _`descriptor objects`: https://docs.python.org/3/c-api/descriptor.html
-.. _`Petstore Swagger client example`: https://github.com/bkryza/decorest/blob/master/tests/petstore_client.py
+.. _`Petstore Swagger client example`: https://github.com/bkryza/decorest/blob/master/examples/swagger_petstore/petstore_client.py

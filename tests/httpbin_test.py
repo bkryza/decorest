@@ -17,16 +17,17 @@
 import pytest
 import time
 import os
+import sys
 import json
-from decorest import decorest_version
+from decorest import decorest_version, HttpStatus
 from requests import cookies
 from requests.exceptions import ReadTimeout
 from requests.auth import HTTPBasicAuth, HTTPDigestAuth
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 import xml.etree.ElementTree as ET
 
-from .httpbin_client import HttpBinClient, parse_image, HttpStatus
-
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../examples")
+from httpbin.httpbin_client import HttpBinClient, parse_image
 
 @pytest.fixture
 def client():
