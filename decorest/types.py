@@ -15,8 +15,18 @@
 # limitations under the License.
 """Various types related to HTTP and REST."""
 
+from six import PY3
 
-class HttpMethod(object):
+DEnum = object
+DIntEnum = object
+
+if PY3:
+    import enum
+    DEnum = enum.Enum
+    DIntEnum = enum.IntEnum
+
+
+class HttpMethod(DEnum):
     """Enum with HTTP methods."""
 
     GET = 'GET'
@@ -28,7 +38,7 @@ class HttpMethod(object):
     OPTIONS = 'OPTIONS'
 
 
-class HttpStatus(object):
+class HttpStatus(DIntEnum):
     """Enum with HTTP error code classes."""
 
     INFORMATIONAL_RESPONSE = 1
