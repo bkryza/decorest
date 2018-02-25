@@ -60,7 +60,7 @@ class HttpStatus(object):
     REDIRECTION = 3
     CLIENT_ERROR = 4
     SERVER_ERROR = 5
-    ANY = 999
+    ANY = 999  # Same as Ellipsis '...'
 
 
 class RestClient(object):

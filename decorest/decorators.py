@@ -29,7 +29,7 @@ import requests
 from requests.auth import AuthBase
 from requests.structures import CaseInsensitiveDict
 
-from six import iteritems
+from six import iteritems, integer_types
 
 from .client import HttpMethod, HttpStatus, render_path
 from .utils import dict_from_args, merge_dicts
@@ -94,7 +94,12 @@ def on(status, handler):
     the sole parameter the requests response object.
     """
     def on_decorator(t):
-        set_decor(t, 'on', {status: handler})
+        if(status is Ellipsis):
+            set_decor(t, 'on', {HttpStatus.ANY: handler})
+        elif isinstance(status, integer_types):
+            set_decor(t, 'on', {status: handler})
+        else:
+            raise TypeError("Status in @on decorator must be integer or '...'")
         return t
     return on_decorator
 

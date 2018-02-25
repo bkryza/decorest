@@ -244,6 +244,11 @@ This decorator can be applied to both methods and classes, however when
 applied to a class the handler will be called for method which receives
 the provided status code.
 
+The first argument of this decorator must be an integer. On Python 3 it
+also possible to pass :py:`...` (i.e. Ellipsis) object, which is equivalent
+to :py:`HttpStatus.ANY`. Any other value passed for this argument will
+raise :py:`TypeError`.
+
 @content
 ~~~~~~~~
 This decorator is a shortcut for :py:`@header('content-type', ...)`, e.g:
