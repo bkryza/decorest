@@ -127,6 +127,20 @@ def test_set_decor():
         'offset': 'off', 'size': 'size'}
 
 
+def test_endpoint_decorator():
+    """
+    Tests if endpoint decorator sets the service endpoint properly.
+    """
+
+    default_client = DogClient()
+
+    assert default_client.endpoint == 'https://dog.ceo/'
+
+    custom_client = DogClient('http://dogceo.example.com')
+
+    assert custom_client.endpoint == 'http://dogceo.example.com'
+
+
 def test_introspection():
     """
     Make sure the decorators maintain the original methods

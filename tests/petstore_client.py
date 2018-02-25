@@ -22,7 +22,7 @@ Example decorest based client to Swagger Petstore sample service:
 
 from decorest import RestClient, HttpStatus
 from decorest import GET, POST, PUT, DELETE
-from decorest import header, query, auth, on, body, accept, content
+from decorest import header, query, auth, on, body, accept, content, endpoint
 import xml.etree.ElementTree as ET
 import json
 
@@ -35,6 +35,7 @@ from requests.auth import HTTPBasicAuth, HTTPDigestAuth
 @header('user-agent', 'decorest/0.0.2')
 @content('application/json')
 @accept('application/json')
+@endpoint('http://petstore.example.com')
 class PetAPI(RestClient):
     """Everything about your Pets"""
 

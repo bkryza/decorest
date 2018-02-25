@@ -19,48 +19,11 @@ Base Http client implementation.
 This module contains also some enums for HTTP protocol.
 """
 import logging as LOG
-import re
 
 from six.moves.urllib.parse import urljoin
 
+from .decorators import get_decor
 from .utils import normalize_url
-
-
-def render_path(path, args):
-    """Render REST path from *args."""
-    LOG.debug('RENDERING PATH FROM: %s,  %s', path, args)
-    result = path
-    matches = re.search(r'{([^}.]*)}', result)
-    while matches:
-        path_token = matches.group(1)
-        if path_token not in args:
-            raise ValueError("Missing argument %s in REST call" % (path_token))
-        result = re.sub('{%s}' % (path_token), str(args[path_token]), result)
-        matches = re.search(r'{([^}.]*)}', result)
-    return result
-
-
-class HttpMethod(object):
-    """Enum with HTTP methods."""
-
-    GET = 'GET'
-    POST = 'POST'
-    PUT = 'PUT'
-    PATCH = 'PATCH'
-    DELETE = 'DELETE'
-    HEAD = 'HEAD'
-    OPTIONS = 'OPTIONS'
-
-
-class HttpStatus(object):
-    """Enum with HTTP error code classes."""
-
-    INFORMATIONAL_RESPONSE = 1
-    SUCCESS = 2
-    REDIRECTION = 3
-    CLIENT_ERROR = 4
-    SERVER_ERROR = 5
-    ANY = 999  # Same as Ellipsis '...'
 
 
 class RestClient(object):
@@ -68,7 +31,9 @@ class RestClient(object):
 
     def __init__(self, endpoint=None):
         """Initialize the client with optional endpoint."""
-        self.endpoint = endpoint
+        self.endpoint = get_decor(self, 'endpoint')
+        if endpoint is not None:
+            self.endpoint = endpoint
 
     def start_session(self):
         """

@@ -16,8 +16,24 @@
 """Utility functions."""
 
 import inspect
+import logging as LOG
+import re
 
 import six
+
+
+def render_path(path, args):
+    """Render REST path from *args."""
+    LOG.debug('RENDERING PATH FROM: %s,  %s', path, args)
+    result = path
+    matches = re.search(r'{([^}.]*)}', result)
+    while matches:
+        path_token = matches.group(1)
+        if path_token not in args:
+            raise ValueError("Missing argument %s in REST call" % (path_token))
+        result = re.sub('{%s}' % (path_token), str(args[path_token]), result)
+        matches = re.search(r'{([^}.]*)}', result)
+    return result
 
 
 def dict_from_args(func, *args):

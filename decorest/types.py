@@ -13,27 +13,27 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""GET Http method decorator."""
-
-from functools import wraps
-
-from .decorators import HttpMethodDecorator, set_decor
-from .types import HttpMethod
+"""Various types related to HTTP and REST."""
 
 
-class GET(HttpMethodDecorator):
-    """GET HTTP method decorator."""
+class HttpMethod(object):
+    """Enum with HTTP methods."""
 
-    def __init__(self, path):
-        """Initialize with endpoint relative path."""
-        super(GET, self).__init__(path)
+    GET = 'GET'
+    POST = 'POST'
+    PUT = 'PUT'
+    PATCH = 'PATCH'
+    DELETE = 'DELETE'
+    HEAD = 'HEAD'
+    OPTIONS = 'OPTIONS'
 
-    def __call__(self, func):
-        """Callable operator."""
-        set_decor(func, 'http_method', HttpMethod.GET)
 
-        @wraps(func)
-        def get_decorator(*args, **kwargs):
-            return super(GET, self).call(func, *args, **kwargs)
+class HttpStatus(object):
+    """Enum with HTTP error code classes."""
 
-        return get_decorator
+    INFORMATIONAL_RESPONSE = 1
+    SUCCESS = 2
+    REDIRECTION = 3
+    CLIENT_ERROR = 4
+    SERVER_ERROR = 5
+    ANY = 999  # Same as Ellipsis '...'

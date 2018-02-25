@@ -29,10 +29,10 @@ import requests
 from requests.auth import AuthBase
 from requests.structures import CaseInsensitiveDict
 
-from six import iteritems, integer_types
+from six import integer_types, iteritems
 
-from .client import HttpMethod, HttpStatus, render_path
-from .utils import dict_from_args, merge_dicts
+from .types import HttpMethod, HttpStatus
+from .utils import dict_from_args, merge_dicts, render_path
 
 
 DECOR_KEY = '__decorest__'
@@ -324,9 +324,6 @@ class HttpMethodDecorator(object):
                         pass
 
         # Build request from endpoint and query params
-        if get_decor(rest_client.__class__, 'endpoint'):
-            rest_client.endpoint = get_decor(rest_client.__class__, 'endpoint')
-
         req = rest_client.build_request(req_path.split('/'))
 
         # Assume default content type

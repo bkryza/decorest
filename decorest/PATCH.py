@@ -17,8 +17,8 @@
 
 from functools import wraps
 
-from .client import HttpMethod
 from .decorators import HttpMethodDecorator, set_decor
+from .types import HttpMethod
 
 
 class PATCH(HttpMethodDecorator):
