@@ -20,7 +20,7 @@ import functools
 
 from decorest import RestClient, HttpMethod
 from decorest import GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS
-from decorest import header, query, accept, endpoint, content, auth, stream
+from decorest import accept, auth, content, endpoint, form, header, query, stream
 from decorest.decorators import get_decor
 
 
@@ -69,6 +69,12 @@ class DogClient(RestClient):
     @POST('post')
     def post(self, a):
         """Post something"""
+
+    @POST('post')
+    @form('key1')
+    @form('key2', 'keyTwo')
+    def post_form(self, key1, key2):
+        """Post 2 keys"""
 
     @PUT('put')
     def put(self, a):
@@ -121,6 +127,9 @@ def test_set_decor():
     assert get_decor(DogClient.head, 'http_method') == HttpMethod.HEAD
     assert get_decor(DogClient.options, 'http_method') == HttpMethod.OPTIONS
     assert get_decor(DogClient.stream_range, 'http_method') == HttpMethod.GET
+
+    assert get_decor(DogClient.post_form, 'form') == {'key1': 'key1', 'key2': 'keyTwo'}
+    assert get_decor(DogClient.queries, 'query') == {'a': 'a', 'b': 'b', 'c': 'd'}
 
     assert get_decor(DogClient.stream_range, 'stream') is True
     assert get_decor(DogClient.stream_range, 'query') == {

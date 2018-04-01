@@ -25,7 +25,7 @@ import brotli
 
 from decorest import DELETE, GET, PATCH, POST, PUT
 from decorest import HttpStatus, RestClient
-from decorest import accept, body, content, decorest_version, endpoint
+from decorest import accept, body, content, decorest_version, endpoint, form
 from decorest import header, on, query, stream, timeout
 
 
@@ -84,6 +84,13 @@ class HttpBinClient(RestClient):
     @GET('get')
     def get(self):
         """Return GET data."""
+
+    @POST('post')
+    @form('key1')
+    @form('key2')
+    @form('key3')
+    def post_form(self, key1, key2, key3):
+        """Return POST form data."""
 
     @POST('post')
     @body('post_data')

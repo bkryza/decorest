@@ -83,7 +83,7 @@ def get_decor(t, name):
 
 
 DECOR_LIST = ['on', 'query', 'header', 'endpoint', 'content', 'accept', 'body',
-              'auth', 'timeout']
+              'auth', 'timeout', 'form']
 
 
 def on(status, handler):
@@ -116,6 +116,20 @@ def query(name, value=None):
         set_decor(t, 'query', {name: value_})
         return t
     return query_decorator
+
+
+def form(name, value=None):
+    """Form parameter decorator."""
+    def form_decorator(t):
+        value_ = value
+        if inspect.isclass(t):
+            raise "@form decorator can only be "\
+                  "applied to methods."
+        if not value_:
+            value_ = name
+        set_decor(t, 'form', {name: value_})
+        return t
+    return form_decorator
 
 
 def header(name, value):
@@ -222,6 +236,14 @@ class HttpMethodDecorator(object):
                     query_value = args_dict[query_arg]
                     query_parameters[query_param] = query_value
 
+        form_parameters_decor = get_decor(func, 'form')
+        form_parameters = {}
+        if form_parameters_decor:
+            for form_arg, form_param in iteritems(form_parameters_decor):
+                if args_dict.get(form_arg):
+                    form_value = args_dict[form_arg]
+                    form_parameters[form_param] = form_value
+
         header_parameters = merge_dicts(
             get_decor(rest_client.__class__, 'header'),
             get_decor(func, 'header'))
@@ -231,14 +253,11 @@ class HttpMethodDecorator(object):
         body_parameter = get_decor(func, 'body')
         body_content = None
         if body_parameter:
-            LOG.debug("BODY PARAM NAME: " + body_parameter[0])
             body_content = args_dict.get(body_parameter[0])
-            LOG.debug("REQUEST BODY: {body}".format(body=str(body_content)))
             # Serialize body content first if serialization handler
             # was provided
             if body_content and body_parameter[1]:
                 body_content = body_parameter[1](body_content)
-            LOG.debug("SERIALIZED BODY: {body}".format(body=body_content))
 
         # Get authentication method for this call
         auth = get_decor(func, 'auth')
@@ -282,6 +301,13 @@ class HttpMethodDecorator(object):
                         query_parameters = merge_dicts(
                             query_parameters, kwargs['query'])
                         del kwargs['query']
+                    elif decor == 'form':
+                        if not isinstance(kwargs['form'], dict):
+                            raise TypeError(
+                                "'form' value must be an instance of dict")
+                        form_parameters = merge_dicts(
+                            form_parameters, kwargs['form'])
+                        del kwargs['form']
                     elif decor == 'on':
                         if not isinstance(kwargs['on'], dict):
                             raise TypeError(
@@ -355,6 +381,11 @@ class HttpMethodDecorator(object):
             LOG.debug("CONTENT_TYPE " + header_parameters['content-type'])
         if query_parameters:
             kwargs['params'] = query_parameters
+        if form_parameters:
+            # If form parameters were passed, override the content-type
+            header_parameters['content-type'] \
+                = 'application/x-www-form-urlencoded'
+            kwargs['data'] = form_parameters
         if stream:
             kwargs['stream'] = stream
 

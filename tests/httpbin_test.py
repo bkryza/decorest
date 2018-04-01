@@ -106,6 +106,16 @@ def test_post(client):
     assert res["json"] == data
 
 
+def test_post_form(client):
+    """
+    """
+    res = client.post_form("value1", "value2", "value3")
+
+    assert res["form"]["key1"] == "value1"
+    assert res["form"]["key2"] == "value2"
+    assert res["form"]["key3"] == "value3"
+
+
 def test_post_multipart(client):
     """
     """
@@ -118,15 +128,6 @@ def test_post_multipart(client):
     res = client.post(None, content=m.content_type, data=m)
 
     assert res["files"]["test"] == open(file, 'rb').read().decode("utf-8")
-
-
-def test_post_form(client):
-    """
-    """
-    form = {'firstName': 'HTTP', 'lastName': 'BIN'}
-    res = client.post(form, content='application/x-www-form-urlencoded')
-
-    assert res["form"] == form
 
 
 def test_patch(client):

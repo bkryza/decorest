@@ -108,7 +108,7 @@ These decorators apply only to methods.
 @query
 ~~~~~~
 
-Adds a query key-value pair to the request. URL encoding will be applied to
+Adds a query parameter to the request. URL encoding will be applied to
 the value using :py:`urlencode`, e.g.:
 
 .. code-block:: python
@@ -143,8 +143,33 @@ will result in the following query:
 
     https://dog.ceo/api/breed/hound?longNames=1&limit=100
 
-This decorator can be added to methods as well as the client class, however
-in the latter case it will be added to every method request in that class.
+This decorator can be added only to methods.
+
+@form
+~~~~~~
+
+Adds a form parameter to the request. For example:
+
+.. code-block:: python
+
+        @POST('breed')
+        @form('breed_name')
+        @form('breed_url', 'breed_wikipedia_link')
+        def add_breed(self, breed_name, breed_url):
+            """Add sub-breed"""
+
+This decorator can take a single string parameter, which determines the name
+of the method argument whose value will be added as the query argument value
+of the same name.
+
+In case 2 arguments are provided, the second argument determines the actual
+query key name, which will be used in the request query (if for some reason
+it cannot be the same as the method argument name).
+
+If a method has at least one `@form` decorator attached, the `Content-type`
+header value will be always set to `application/x-www-form-urlencoded`.
+
+This decorator can be added only to methods.
 
 @header
 ~~~~~~~
