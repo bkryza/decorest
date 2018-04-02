@@ -24,9 +24,9 @@ copyright = u'2018, Bartek Kryza'
 author = u'Bartek Kryza'
 
 # The short X.Y version
-version = u''
+version = u'0.0.3'
 # The full version, including alpha/beta/rc tags
-release = u''
+release = u'0.0.3'
 
 
 # -- General configuration ---------------------------------------------------
