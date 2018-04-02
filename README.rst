@@ -1,6 +1,3 @@
-.. role:: py(code)
-   :language: python
-
 decorest - decorator heavy REST client for Python
 #################################################
 
@@ -17,6 +14,10 @@ decorest - decorator heavy REST client for Python
     :target: https://pypi.python.org/pypi/decorest
 
 Declarative, decorator-based REST client for Python.
+
+.. role:: py(code)
+   :language: python
+
 
 .. contents::
 
@@ -166,7 +167,7 @@ In case 2 arguments are provided, the second argument determines the actual
 query key name, which will be used in the request query (if for some reason
 it cannot be the same as the method argument name).
 
-If a method has at least one `@form` decorator attached, the `Content-type`
+If a method has at least one :py:`@form` decorator attached, the `Content-type`
 header value will be always set to `application/x-www-form-urlencoded`.
 
 This decorator can be added only to methods.
@@ -357,25 +358,46 @@ object which then can be accessed for instance using :py:`iter_content()` method
             content.append(b)
 
 
-Sessions [TODO]
----------------
+Sessions
+--------
 
 Based on the functionality provided by requests_ library in the form of
-session objects, sessions can be used instead of making a separate request
-on each method call thus significantly improving the performance of the
-client in case multiple reponses are peformed.
+session objects, sessions can significantly improve the performance of the
+client in case multiple reponses are peformed as well as maintain certain
+information between requests such as session cookies.
 
-To start and stop the session, simply call :py:`client.start_session()`
-on the client instance. Only the first method after this call will create
-the session, consecutive calls will reuse it until :py:`client.stop_session()`
-method is called on the client instance.
+Sessions in decorest_ can either be created and closed manually:
 
 .. code-block:: python
 
-        client.start_session()
-        client.list_subbreeds('hound')
-        client.list_subbreeds('husky')
-        client.stop_session()
+        s = client._session()
+        s.list_subbreeds('hound')
+        s.list_subbreeds('husky')
+        s._close()
+
+or can be used via the context manager :py:`with` operator:
+
+.. code-block:: python
+
+        with client._session() as s:
+            s.list_subbreeds('hound')
+            s.list_subbreeds('husky')
+
+All session specific methods begin with a single underscore, in order not
+to interfere with any possible API method names defined in the base client
+class.
+
+If some additional customization of the session is required, the underlying
+`requests session`_ object can be retrieved from decorest_ session object
+using :py:`_requests_session` attribute:
+
+.. code-block:: python
+
+        with client._session() as s:
+            s._requests_session.verify = '/path/to/cert.pem'
+            s.list_subbreeds('hound')
+            s.list_subbreeds('husky')
+
 
 Grouping API methods
 ---------------------------
@@ -453,6 +475,7 @@ limitations under the License.
 
 .. _tests: https://github.com/bkryza/decorest/tree/master/tests
 .. _requests: https://github.com/requests/requests
+.. _`requests session`: http://docs.python-requests.org/en/master/user/advanced/#session-objects
 .. _decorest: https://github.com/bkryza/decorest
 .. _`descriptor objects`: https://docs.python.org/3/c-api/descriptor.html
 .. _`Petstore Swagger client example`: https://github.com/bkryza/decorest/blob/master/examples/swagger_petstore/petstore_client.py

@@ -224,6 +224,10 @@ class HttpMethodDecorator(object):
         args_dict = dict_from_args(func, *args)
         req_path = render_path(self.path_template, args_dict)
         stream = False
+        session = None
+        if '__session' in kwargs:
+            session = kwargs['__session']
+            del kwargs['__session']
 
         # Merge query parameters from common values for all method
         # invocations with query arguments provided in the method
@@ -391,20 +395,27 @@ class HttpMethodDecorator(object):
 
         result = None
 
+        # If '__session' was passed in the kwargs, execute this request
+        # using the session context, otherwise execute directly via the
+        # requests module
+        execution_context = requests
+        if session:
+            execution_context = session
+
         if http_method == HttpMethod.GET:
-            result = requests.get(req, **kwargs)
+            result = execution_context.get(req, **kwargs)
         elif http_method == HttpMethod.POST:
-            result = requests.post(req, **kwargs)
+            result = execution_context.post(req, **kwargs)
         elif http_method == HttpMethod.PUT:
-            result = requests.put(req, **kwargs)
+            result = execution_context.put(req, **kwargs)
         elif http_method == HttpMethod.PATCH:
-            result = requests.patch(req, **kwargs)
+            result = execution_context.patch(req, **kwargs)
         elif http_method == HttpMethod.DELETE:
-            result = requests.delete(req, **kwargs)
+            result = execution_context.delete(req, **kwargs)
         elif http_method == HttpMethod.HEAD:
-            result = requests.head(req, **kwargs)
+            result = execution_context.head(req, **kwargs)
         elif http_method == HttpMethod.OPTIONS:
-            result = requests.options(req, **kwargs)
+            result = execution_context.options(req, **kwargs)
         else:
             raise 'Unsupported HTTP method: {method}'.format(
                 method=http_method)

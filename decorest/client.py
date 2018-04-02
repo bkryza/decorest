@@ -20,10 +20,47 @@ This module contains also some enums for HTTP protocol.
 """
 import logging as LOG
 
+import requests
+
 from six.moves.urllib.parse import urljoin
 
 from .decorators import get_decor
 from .utils import normalize_url
+
+
+class RestClientSession(object):
+    """Wrap a `requests` session for specific API client."""
+
+    def __init__(self, client):
+        """Initialize the session instance with a specific API client."""
+        self.__client = client
+        self.__session = requests.Session()
+        pass
+
+    def __enter__(self):
+        """Context manager initialization."""
+        return self
+
+    def __exit__(self, *args):
+        """Context manager destruction."""
+        self.__session.close()
+        return False
+
+    def __getattr__(self, name):
+        """Forward any method invocation to actual client with session."""
+        if name == '_requests_session':
+            return self.__session
+
+        if name == '_client':
+            return self.__client
+
+        if name == '_close':
+            return self.__session.close
+
+        def invoker(*args, **kwargs):
+            kwargs['__session'] = self.__session
+            return getattr(self.__client, name)(*args, **kwargs)
+        return invoker
 
 
 class RestClient(object):
@@ -35,25 +72,16 @@ class RestClient(object):
         if endpoint is not None:
             self.endpoint = endpoint
 
-    def start_session(self):
+    def _session(self):
         """
-        Initialize 'requests' session object.
+        Initialize RestClientSession session object.
 
-        All consecutive requests will go via the session object.
+        The `decorest` session object wraps a `requests` session object.
 
-        If this method is not called on the client, the requests will be
-        performed using standard requests without a session.
+        Each valid API method defined in the API client can be called
+        directly via the session object.
         """
-        pass
-
-    def stop_session(self):
-        """
-        Stop the requests session.
-
-        All consecutive requests will be
-        called using standard requests without session object.
-        """
-        pass
+        return RestClientSession(self)
 
     def build_request(self, path_components=[]):
         """
