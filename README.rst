@@ -25,7 +25,7 @@ Overview
 ========
 
 decorest_ library provides an easy to use declarative REST API client interface,
-where definition of the API methods using decorators automatically gives
+where definition of the API methods using decorators automatically produces
 a working REST client with no additional code. In practice the library provides
 only an interface to describe and interact with REST services - the actual work
 is done underneath by the requests_ library.
@@ -64,16 +64,16 @@ Usage
 Basics
 ------
 
-For most typical cases the usage should be farily straightforward. Simply create a
-sublcass of :py:`decorest.RestClient` and define methods, which will perform calls
-to the actual REST service. You can declare how each function should actually
-make the request to the service solely using decorators attached to the
-method definition. The method itself is not expected to have any implementation
+For most typical cases the usage should be fairly straightforward. Simply create a
+subclass of :py:`decorest.RestClient` and define methods, which will perform calls
+to the actual REST service. You can declare how each function should perform
+the request to the service solely using decorators attached to the
+method definition. The method itself is not expected to have any implementation,
 except maybe for a docstring.
 
 After your API client class definition is complete, simply create an instance
-of it and it's ready to go. This library relies on the functionality provided
-by the requests_ library, which means that any valid named argument which
+of it and you're good to go. This library relies on the functionality provided
+by the requests_ library, which means that any valid named argument, which
 could be passed to a requests_ HTTP call can be also passed to the calls
 of the client methods and will be forwarded as is.
 
@@ -85,7 +85,7 @@ Decorators
 Below is a list of all supported decorators along with short explanation and
 examples. Some decorators can be attached to both client class as well as
 methods, in which case the class-level decorator is applied to all HTTP methods
-in that class. Furthermore, each decorator can be overriden directly during
+in that class. Furthermore, each decorator can be overridden directly during
 the method call by providing a named argument with name equal to the decorator
 name.
 
@@ -126,7 +126,7 @@ of the same name.
 
 In case 2 arguments are provided, the second argument determines the actual
 query key name, which will be used in the request query (if for some reason
-it cannot be the same as the method argument name).
+it should be different than the method argument name).
 
 Furthermore, if a default value is provided in a method declaration, it
 will be used whenever a value for this argument is not provided during
@@ -164,7 +164,7 @@ of the method argument whose value will be added as the query argument value
 of the same name.
 
 In case 2 arguments are provided, the second argument determines the actual
-query key name, which will be used in the request query (if for some reason
+form field name, which will be used in the request form (if for some reason
 it cannot be the same as the method argument name).
 
 If a method has at least one :py:`@form` decorator attached, the `Content-type`
@@ -185,13 +185,13 @@ Adds a header key-value pair to the request, e.g.:
             """List all sub-breeds"""
 
 This decorator can be added to both methods and client class. The class level
-decorators will be added to every method and can be overriden using method
+decorators will be added to every method and can be overridden using method
 level decorators.
 
 @body
 ~~~~~
 
-Body decorator enables to specify which of the method params should provide
+Body decorator enables to specify which of the method parameters should provide
 the body content to the request, e.g.:
 
 .. code-block:: python
@@ -235,13 +235,13 @@ It accepts any valid subclass of :py:`requests.auth.AuthBase`.
             """List all sub-breeds"""
 
 When added to the client class it will be used for every method call,
-unless specific auth decorator is specified for that method.
+unless specific `@auth` decorator is specified for that method.
 
 @on
 ~~~
 
-By default the request method will not return requests_ response object
-but the response will depend on the content type of the reponse.
+By default the request method will not return requests_ response object,
+but the response will depend on the content type of the response.
 
 In case the HTTP request succeeds the following results are expected:
 
@@ -261,7 +261,6 @@ object, e.g.:
 
         @GET('breed/{breed_name}/list')
         @header('accept', 'application/json')
-        @auth(HTTPBasicAuth('user', 'password'))
         @on(200, lambda r: r.json())
         def list_subbreeds(self, breed_name):
             """List all sub-breeds"""
@@ -345,8 +344,8 @@ object which then can be accessed for instance using :py:`iter_content()` method
         ...
 
         @GET('stream/{n}/{m}')
-        @query('size')
         @stream
+        @query('size')
         @query('offset', 'off')
         def stream(self, n, m, size, offset):
             """Get data range"""
@@ -363,7 +362,7 @@ Sessions
 
 Based on the functionality provided by requests_ library in the form of
 session objects, sessions can significantly improve the performance of the
-client in case multiple reponses are peformed as well as maintain certain
+client in case multiple responses are performed as well as maintain certain
 information between requests such as session cookies.
 
 Sessions in decorest_ can either be created and closed manually:
@@ -419,7 +418,7 @@ Decorator order
 ~~~~~~~~~~~~~~~
 
 Decorators can be basically added in any order, except for the HTTP method
-decorator (e.g. :py:`@GET()`, which should always be at the top of the given
+decorator (e.g. :py:`@GET()`), which should always be at the top of the given
 decorator list. Third party decorators should be added above the HTTP method
 decorators.
 
@@ -428,7 +427,7 @@ Name conflicts
 
 Decorators can sometimes generate conflicts with decorated method or function
 names in case they have the same name as they get merged into the :py:`__globals__`
-dictionary. In case this is an issue decorest decorators should be used with full
+dictionary. In case this is an issue, decorest decorators should be used with full
 module namespace:
 
 .. code-block:: python
