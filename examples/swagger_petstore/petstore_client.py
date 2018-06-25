@@ -26,12 +26,9 @@ import xml.etree.ElementTree as ET
 
 from decorest import DELETE, GET, POST, PUT
 from decorest import HttpStatus, RestClient
-from decorest import accept, auth, body, content, endpoint, header, on, query
-
-from requests.auth import HTTPBasicAuth
+from decorest import accept, body, content, endpoint, header, on, query
 
 
-@auth(HTTPBasicAuth('user', 'password'))
 @header('user-agent', 'decorest/0.0.2')
 @content('application/json')
 @accept('application/json')

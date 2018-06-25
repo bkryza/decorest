@@ -23,15 +23,15 @@ from .PATCH import PATCH
 from .POST import POST
 from .PUT import PUT
 from .client import RestClient
-from .decorators import accept, auth, body, content, endpoint, form, header
+from .decorators import accept, body, content, endpoint, form, header
 from .decorators import on, query, stream, timeout
 from .types import HttpMethod, HttpStatus
 
 __all__ = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS',
            'RestClient', 'HttpMethod', 'HttpStatus',
-           'query', 'body', 'header', 'auth', 'on', 'accept', 'content',
+           'query', 'body', 'header', 'on', 'accept', 'content',
            'endpoint', 'timeout', 'stream', 'form']
 
-__version__ = (0, 0, 3)
+__version__ = (0, 0, 4)
 
 decorest_version = '.'.join(map(str, __version__))

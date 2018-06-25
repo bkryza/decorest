@@ -14,13 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from requests.auth import HTTPBasicAuth
 import pytest
 import functools
 
 from decorest import RestClient, HttpMethod
 from decorest import GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS
-from decorest import accept, auth, content, endpoint, form, header, query, stream
+from decorest import accept, content, endpoint, form, header, query, stream
 from decorest.decorators import get_decor
 
 
@@ -28,7 +27,6 @@ from decorest.decorators import get_decor
 @content('application/xml')
 @header('X-Auth-Key', 'ABCD')
 @endpoint('https://dog.ceo/')
-@auth(HTTPBasicAuth('user', 'password'))
 class DogClient(RestClient):
     """DogClient client"""
 
@@ -117,7 +115,6 @@ def test_set_decor():
     assert get_decor(DogClient, 'header')['content-Type'] == 'application/xml'
     assert get_decor(DogClient, 'header')['x-auth-key'] == 'ABCD'
     assert get_decor(DogClient, 'endpoint') == 'https://dog.ceo/'
-    assert get_decor(DogClient, 'auth') == HTTPBasicAuth('user', 'password')
 
     assert get_decor(DogClient.get, 'http_method') == HttpMethod.GET
     assert get_decor(DogClient.post, 'http_method') == HttpMethod.POST

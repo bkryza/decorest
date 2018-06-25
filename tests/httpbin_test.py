@@ -21,7 +21,7 @@ import sys
 import json
 from decorest import decorest_version, HttpStatus
 from requests import cookies
-from requests.exceptions import ReadTimeout
+from requests.exceptions import ReadTimeout, HTTPError
 from requests.auth import HTTPBasicAuth, HTTPDigestAuth
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 import xml.etree.ElementTree as ET
@@ -33,10 +33,18 @@ from httpbin.httpbin_client import HttpBinClient, parse_image
 def client():
     # Give Docker and HTTPBin some time to spin up
     time.sleep(5)
-    httpbin_port = os.environ["KENNETHREITZ/HTTPBIN_8080_TCP"]
+    httpbin_port = os.environ["KENNETHREITZ/HTTPBIN_80_TCP"]
     return HttpBinClient("http://0.0.0.0:{port}".format(port=httpbin_port))
 
-    return HttpBinClient()
+@pytest.fixture
+def basic_auth_client():
+    # Give Docker and HTTPBin some time to spin up
+    time.sleep(5)
+    httpbin_port = os.environ["KENNETHREITZ/HTTPBIN_80_TCP"]
+    client = HttpBinClient("http://0.0.0.0:{port}".format(port=httpbin_port))
+    client._set_auth(HTTPBasicAuth('user', 'password'))
+    return client
+
 
 
 def test_ip(client):
@@ -334,11 +342,24 @@ def test_cookies_delete(client):
     assert "cookie1" not in res["cookies"]
 
 
-def test_basic_auth(client):
+def test_basic_auth(client, basic_auth_client):
     """
     """
-    res = client.basic_auth(
-        'user', 'password', auth=HTTPBasicAuth('user', 'password'))
+    with pytest.raises(HTTPError) as e:
+        res = client.basic_auth('user', 'password')
+
+    assert isinstance(e.value, HTTPError)
+
+    res = basic_auth_client.basic_auth('user', 'password')
+    assert res['authenticated'] is True
+
+
+def test_basic_auth_with_session(basic_auth_client):
+    """
+    """
+    res = None
+    with basic_auth_client._session() as s:
+        res = s.basic_auth('user', 'password')
 
     assert res['authenticated'] is True
 

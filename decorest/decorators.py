@@ -26,7 +26,6 @@ import logging as LOG
 import numbers
 
 import requests
-from requests.auth import AuthBase
 from requests.structures import CaseInsensitiveDict
 
 from six import integer_types, iteritems
@@ -83,7 +82,7 @@ def get_decor(t, name):
 
 
 DECOR_LIST = ['on', 'query', 'header', 'endpoint', 'content', 'accept', 'body',
-              'auth', 'timeout', 'form']
+              'timeout', 'form']
 
 
 def on(status, handler):
@@ -176,17 +175,6 @@ def body(name, serializer=None):
     return body_decorator
 
 
-def auth(value):
-    """Add authentication method."""
-    def auth_decorator(t):
-        if not isinstance(value, AuthBase):
-            raise "@auth decorator accepts only subclasses " \
-                "of 'requests.auth.AuthBase'"
-        set_decor(t, 'auth', value)
-        return t
-    return auth_decorator
-
-
 def timeout(value):
     """
     Timeout parameter decorator.
@@ -264,9 +252,7 @@ class HttpMethodDecorator(object):
                 body_content = body_parameter[1](body_content)
 
         # Get authentication method for this call
-        auth = get_decor(func, 'auth')
-        if auth is None:
-            auth = get_decor(rest_client.__class__, 'auth')
+        auth = rest_client._auth()
 
         # Get status handlers
         on_handlers = merge_dicts(
@@ -330,12 +316,6 @@ class HttpMethodDecorator(object):
                                 "'content' value must be an instance of str")
                         header_parameters['content-type'] = kwargs['content']
                         del kwargs['content']
-                    elif decor == 'auth':
-                        if not isinstance(kwargs['auth'], AuthBase):
-                            raise TypeError(
-                                "'auth' value must be an instance of AuthBase")
-                        auth = kwargs['auth']
-                        del kwargs['auth']
                     elif decor == 'timeout':
                         if not isinstance(kwargs['timeout'], numbers.Number):
                             raise TypeError(

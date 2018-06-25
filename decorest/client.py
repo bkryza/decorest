@@ -35,6 +35,8 @@ class RestClientSession(object):
         """Initialize the session instance with a specific API client."""
         self.__client = client
         self.__session = requests.Session()
+        if self.__client.auth is not None:
+            self.__session.auth = self.__client.auth
         pass
 
     def __enter__(self):
@@ -69,6 +71,7 @@ class RestClient(object):
     def __init__(self, endpoint=None):
         """Initialize the client with optional endpoint."""
         self.endpoint = get_decor(self, 'endpoint')
+        self.auth = None
         if endpoint is not None:
             self.endpoint = endpoint
 
@@ -82,6 +85,23 @@ class RestClient(object):
         directly via the session object.
         """
         return RestClientSession(self)
+
+    def _set_auth(self, auth):
+        """
+        Set a default authentication method for the client.
+
+        Currently the object must be a proper subclass of
+        `requests.auth.AuthBase` class.
+        """
+        self.auth = auth
+
+    def _auth(self):
+        """
+        Get authentication object.
+
+        Returns the authentication object set for this client.
+        """
+        return self.auth
 
     def build_request(self, path_components=[]):
         """
