@@ -220,23 +220,6 @@ logic. For example:
 The above code will automatically stringify the dictionary provided as
 value of 'pet' argument using :py:`json.dumps()` function.
 
-@auth
-~~~~~
-
-Allows to specify the authentication method to be used for the requests.
-It accepts any valid subclass of :py:`requests.auth.AuthBase`.
-
-.. code-block:: python
-
-        @GET('breed/{breed_name}/list')
-        @header('accept', 'application/json')
-        @auth(HTTPBasicAuth('user', 'password'))
-        def list_subbreeds(self, breed_name):
-            """List all sub-breeds"""
-
-When added to the client class it will be used for every method call,
-unless specific `@auth` decorator is specified for that method.
-
 @on
 ~~~
 
@@ -396,6 +379,26 @@ using :py:`_requests_session` attribute:
             s._requests_session.verify = '/path/to/cert.pem'
             s.list_subbreeds('hound')
             s.list_subbreeds('husky')
+
+Authentication
+--------------
+
+Since authentication is highly specific to actual invocation of the REST API,
+and not to it's specification, there is not decorator for authentication,
+but instead an authentication object (compatible with `requests_`
+authentication mechanism) can be set in the client object using
+:py:`_set_auth()` method, for example:
+
+.. code-block:: python
+
+        client._set_auth(HTTPBasicAuth('user', 'password')
+        with client._session() as s:
+            s._requests_session.verify = '/path/to/cert.pem'
+            s.list_subbreeds('hound')
+            s.list_subbreeds('husky')
+
+The authentication object will be used in both regular API calls, as well
+as when using sessions.
 
 
 Grouping API methods
