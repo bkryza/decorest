@@ -23,9 +23,7 @@ from setuptools import find_packages, setup
 
 
 def get_version():
-    """
-    Return package version as listed in `__version__` in `init.py`.
-    """
+    """Return package version as listed in `__version__` in `init.py`."""
     init_py = open('decorest/__init__.py').read()
     return re.search("__version__ = ['\"]([^'\"]+)['\"]", init_py).group(1)
 

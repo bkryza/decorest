@@ -19,7 +19,7 @@ import time
 import os
 import sys
 import json
-from decorest import decorest_version, HttpStatus
+from decorest import __version__, HttpStatus
 from requests import cookies
 from requests.exceptions import ReadTimeout, HTTPError
 from requests.auth import HTTPBasicAuth, HTTPDigestAuth
@@ -77,7 +77,7 @@ def test_user_agent(client):
     """
     res = client.user_agent()
 
-    assert res['user-agent'] == 'decorest/{v}'.format(v=decorest_version)
+    assert res['user-agent'] == 'decorest/{v}'.format(v=__version__)
 
 
 def test_headers(client):
@@ -86,7 +86,7 @@ def test_headers(client):
     res = client.headers(header={'A': 'AA', 'B': 'CC'})
 
     assert res['headers']['User-Agent'] == 'decorest/{v}'.format(
-        v=decorest_version)
+        v=__version__)
     assert res['headers']['A'] == 'AA'
     assert res['headers']['B'] == 'CC'
 
