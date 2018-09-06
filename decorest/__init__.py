@@ -33,4 +33,3 @@ __all__ = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS',
            'endpoint', 'timeout', 'stream', 'form']
 
 __version__ = "0.0.5"
-

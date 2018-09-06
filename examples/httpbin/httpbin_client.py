@@ -25,7 +25,7 @@ import brotli
 
 from decorest import DELETE, GET, PATCH, POST, PUT
 from decorest import HttpStatus, RestClient
-from decorest import accept, body, content, __version__, endpoint, form
+from decorest import __version__, accept, body, content, endpoint, form
 from decorest import header, on, query, stream, timeout
 
 
