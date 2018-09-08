@@ -25,7 +25,7 @@ import brotli
 
 from decorest import DELETE, GET, PATCH, POST, PUT
 from decorest import HttpStatus, RestClient
-from decorest import accept, body, content, decorest_version, endpoint, form
+from decorest import __version__, accept, body, content, endpoint, form
 from decorest import header, on, query, stream, timeout
 
 
@@ -49,7 +49,7 @@ def parse_image(response):
     return None
 
 
-@header('user-agent', 'decorest/{v}'.format(v=decorest_version))
+@header('user-agent', 'decorest/{v}'.format(v=__version__))
 @accept('application/json')
 @endpoint('http://httpbin.org')
 class HttpBinClient(RestClient):

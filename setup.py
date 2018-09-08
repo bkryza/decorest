@@ -17,10 +17,18 @@
 
 
 import os
-
-from decorest import __version__
+import re
 
 from setuptools import find_packages, setup
+
+
+def get_version():
+    """Return package version as listed in `__version__` in `init.py`."""
+    init_py = open('decorest/__init__.py').read()
+    return re.search("__version__ = ['\"]([^'\"]+)['\"]", init_py).group(1)
+
+
+version = get_version()
 
 
 def read(fname):
@@ -32,7 +40,7 @@ requirements = []
 
 setup(
     name="decorest",
-    version=".".join(map(str, __version__)),
+    version=version,
     description="`decorest` library provides an easy to use declarative "
     "REST API client interface, where definition of the API methods using "
     "decorators automatically gives a working REST client with no "

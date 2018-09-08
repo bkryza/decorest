@@ -32,6 +32,4 @@ __all__ = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS',
            'query', 'body', 'header', 'on', 'accept', 'content',
            'endpoint', 'timeout', 'stream', 'form']
 
-__version__ = (0, 0, 4)
-
-decorest_version = '.'.join(map(str, __version__))
+__version__ = "0.0.5"
