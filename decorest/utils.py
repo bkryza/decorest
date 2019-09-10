@@ -84,6 +84,8 @@ def merge_dicts(*dict_args):
                 result = dictionary
             else:
                 result.update(dictionary)
+    if result is None:
+      result = {}
     return result
 
 
