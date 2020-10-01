@@ -33,18 +33,19 @@ from httpbin.httpbin_client import HttpBinClient, parse_image
 def client():
     # Give Docker and HTTPBin some time to spin up
     time.sleep(5)
-    httpbin_port = os.environ["KENNETHREITZ/HTTPBIN_80_TCP"]
-    return HttpBinClient("http://0.0.0.0:{port}".format(port=httpbin_port))
+    host = os.environ["HTTPBIN_HOST"]
+    port = os.environ["HTTPBIN_80_TCP_PORT"]
+    return HttpBinClient("http://{host}:{port}".format(host=host, port=port))
 
 @pytest.fixture
 def basic_auth_client():
     # Give Docker and HTTPBin some time to spin up
     time.sleep(5)
-    httpbin_port = os.environ["KENNETHREITZ/HTTPBIN_80_TCP"]
-    client = HttpBinClient("http://0.0.0.0:{port}".format(port=httpbin_port))
+    host = os.environ["HTTPBIN_HOST"]
+    port = os.environ["HTTPBIN_80_TCP_PORT"]
+    client=HttpBinClient("http://{host}:{port}".format(host=host, port=port))
     client._set_auth(HTTPBasicAuth('user', 'password'))
     return client
-
 
 
 def test_ip(client):
@@ -406,7 +407,7 @@ def test_stream_n(client):
 def test_delay(client):
     """
     """
-    with pytest.raises(ReadTimeout, message="Operation should have timed out"):
+    with pytest.raises(ReadTimeout):
         client.delay(5)
 
     try:

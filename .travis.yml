@@ -7,5 +7,5 @@ python:
   - "3.6"
   - "3.7"
   - "3.8"
-install: pip install tox-travis tox-docker
+install: pip install tox-travis tox-docker==v2.0.0a3
 script: tox -e flake8,basic,swaggerpetstore,httpbin

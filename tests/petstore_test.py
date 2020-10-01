@@ -30,8 +30,9 @@ from swagger_petstore.petstore_client import PetstoreClient
 def client():
     # Give Docker and Swagger Petstore some time to spin up
     time.sleep(5)
-    petstore_port = os.environ['SWAGGERAPI/PETSTORE_8080_TCP']
-    return PetstoreClient('http://0.0.0.0:{port}/v2'.format(port=petstore_port))
+    host = "localhost"
+    port = os.environ['PETSTORE_8080_TCP_PORT']
+    return PetstoreClient('http://{host}:{port}/api'.format(host=host, port=port))
 
 
 def test_pet_methods(client):
@@ -131,7 +132,7 @@ def test_user_methods(client):
         'username': 'swagger',
         'firstName': 'Swagger',
         'lastName': 'Petstore',
-        'email': 'petstore@example.com',
+        'email': 'swagger@example.com',
         'password': 'guess',
         'phone': '001-111-CALL-ME',
         "userStatus": 0
@@ -139,7 +140,8 @@ def test_user_methods(client):
 
     res = client.get_user('swagger')
 
-    assert res['email'] == 'petstore@example.com'
+    assert res['email'] == 'swagger@example.com'
+    assert res['password'] == 'guess'
 
     client.delete_user('swagger')
 

@@ -21,8 +21,6 @@ import json
 
 from PIL import Image
 
-import brotli
-
 from decorest import DELETE, GET, PATCH, POST, PUT
 from decorest import HttpStatus, RestClient
 from decorest import __version__, accept, body, content, endpoint, form
@@ -140,7 +138,7 @@ class HttpBinClient(RestClient):
 
     @GET('brotli')
     @content('application/octet-stream')
-    @on(200, lambda r: brotli.decompress(r.content))
+    @on(200, lambda r: r.content)
     def brotli(self):
         """Return brotli-encoded data."""
 
