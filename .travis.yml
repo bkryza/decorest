@@ -1,12 +1,10 @@
 sudo: false
+
 language: python
+
 services:
     - docker
-python:
-  - "2.7"
-  - "3.6"
-  - "3.7"
-  - "3.8"
+
 jobs:
   include:
     - python: '3.8'
@@ -27,4 +25,5 @@ jobs:
         - TOX_INI=tox-py2.ini
 
 install: pip install tox-travis tox-docker==$TOX_DOCKER_VERSION
+
 script: tox -c $TOX_INI -e flake8,basic,swaggerpetstore,httpbin
