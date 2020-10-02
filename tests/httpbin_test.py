@@ -17,6 +17,7 @@
 import pytest
 import time
 import os
+import six
 import sys
 import json
 from decorest import __version__, HttpStatus
@@ -33,16 +34,24 @@ from httpbin.httpbin_client import HttpBinClient, parse_image
 def client():
     # Give Docker and HTTPBin some time to spin up
     time.sleep(5)
-    host = os.environ["HTTPBIN_HOST"]
-    port = os.environ["HTTPBIN_80_TCP_PORT"]
+    if six.PY2:
+        host = os.environ["KENNETHREITZ_HTTPBIN_HOST"]
+        port = os.environ["KENNETHREITZ_HTTPBIN_80_TCP_PORT"]
+    else:
+        host = os.environ["HTTPBIN_HOST"]
+        port = os.environ["HTTPBIN_80_TCP_PORT"]
     return HttpBinClient("http://{host}:{port}".format(host=host, port=port))
 
 @pytest.fixture
 def basic_auth_client():
     # Give Docker and HTTPBin some time to spin up
     time.sleep(5)
-    host = os.environ["HTTPBIN_HOST"]
-    port = os.environ["HTTPBIN_80_TCP_PORT"]
+    if six.PY2:
+        host = os.environ["KENNETHREITZ_HTTPBIN_HOST"]
+        port = os.environ["KENNETHREITZ_HTTPBIN_80_TCP_PORT"]
+    else:
+        host = os.environ["HTTPBIN_HOST"]
+        port = os.environ["HTTPBIN_80_TCP_PORT"]
     client=HttpBinClient("http://{host}:{port}".format(host=host, port=port))
     client._set_auth(HTTPBasicAuth('user', 'password'))
     return client

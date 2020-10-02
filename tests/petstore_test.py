@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import os
+import six
 import sys
 import pytest
 import time
@@ -31,7 +32,10 @@ def client():
     # Give Docker and Swagger Petstore some time to spin up
     time.sleep(5)
     host = "localhost"
-    port = os.environ['PETSTORE_8080_TCP_PORT']
+    if six.PY2:
+        port = os.environ["SWAGGERAPI_PETSTORE_8080_TCP_PORT"]
+    else:
+        port = os.environ['PETSTORE_8080_TCP_PORT']
     return PetstoreClient('http://{host}:{port}/api'.format(host=host, port=port))
 
 

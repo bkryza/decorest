@@ -1,5 +1,7 @@
 .. :changelog:
 
+* Ported tests to tox-docker 2.0.0
+
 0.0.3 (2018-04-02)
 ++++++++++++++++++
 
