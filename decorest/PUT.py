@@ -23,7 +23,6 @@ from .types import HttpMethod
 
 class PUT(HttpMethodDecorator):
     """PUT HTTP method decorator."""
-
     def __init__(self, path):
         """Initialize with endpoint relative path."""
         super(PUT, self).__init__(path)

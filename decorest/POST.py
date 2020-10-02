@@ -23,7 +23,6 @@ from .types import HttpMethod
 
 class POST(HttpMethodDecorator):
     """POST HTTP method decorator."""
-
     def __init__(self, path):
         """Initialize with endpoint relative path."""
         super(POST, self).__init__(path)

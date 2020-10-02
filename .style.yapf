@@ -1,2 +1,5 @@
 [style]
 based_on_style = pep8
+blank_line_before_class_docstring = false
+blank_line_before_nested_class_or_def = false
+blank_line_before_module_docstring = false

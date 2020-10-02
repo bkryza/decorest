@@ -30,6 +30,7 @@ import xml.etree.ElementTree as ET
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../examples")
 from httpbin.httpbin_client import HttpBinClient, parse_image
 
+
 @pytest.fixture
 def client():
     # Give Docker and HTTPBin some time to spin up
@@ -42,6 +43,7 @@ def client():
         port = os.environ["HTTPBIN_80_TCP_PORT"]
     return HttpBinClient("http://{host}:{port}".format(host=host, port=port))
 
+
 @pytest.fixture
 def basic_auth_client():
     # Give Docker and HTTPBin some time to spin up
@@ -52,7 +54,7 @@ def basic_auth_client():
     else:
         host = os.environ["HTTPBIN_HOST"]
         port = os.environ["HTTPBIN_80_TCP_PORT"]
-    client=HttpBinClient("http://{host}:{port}".format(host=host, port=port))
+    client = HttpBinClient("http://{host}:{port}".format(host=host, port=port))
     client._set_auth(HTTPBasicAuth('user', 'password'))
     return client
 
@@ -95,8 +97,7 @@ def test_headers(client):
     """
     res = client.headers(header={'A': 'AA', 'B': 'CC'})
 
-    assert res['headers']['User-Agent'] == 'decorest/{v}'.format(
-        v=__version__)
+    assert res['headers']['User-Agent'] == 'decorest/{v}'.format(v=__version__)
     assert res['headers']['A'] == 'AA'
     assert res['headers']['B'] == 'CC'
 
@@ -140,8 +141,7 @@ def test_post_multipart(client):
     # TODO add multipart decorator
     file = 'tests/testdata/multipart.dat'
     m = MultipartEncoder(
-        fields={'test': ('filename', open(file, 'rb'), 'text/plain')}
-    )
+        fields={'test': ('filename', open(file, 'rb'), 'text/plain')})
 
     res = client.post(None, content=m.content_type, data=m)
 
@@ -188,8 +188,10 @@ def test_anything_anything(client):
     """
     """
     data = {"a": "b", "c": "1"}
-    res = client.anything_anything(
-        "something", data, content="application/json", query=data)
+    res = client.anything_anything("something",
+                                   data,
+                                   content="application/json",
+                                   query=data)
 
     assert res["args"] == data
     assert res["json"] == data
@@ -244,8 +246,9 @@ def test_response_headers(client):
 def test_redirect(client):
     """
     """
-    res = client.redirect(
-        2, on={302: lambda r: 'REDIRECTED'}, allow_redirects=False)
+    res = client.redirect(2,
+                          on={302: lambda r: 'REDIRECTED'},
+                          allow_redirects=False)
 
     assert res == 'REDIRECTED'
 
@@ -263,7 +266,8 @@ def test_redirect_to(client):
 def test_redirect_to_foo(client):
     """
     """
-    res = client.redirect_to_foo('http://httpbin.org', 307,
+    res = client.redirect_to_foo('http://httpbin.org',
+                                 307,
                                  on={307: lambda r: 'REDIRECTED'},
                                  allow_redirects=False)
 
@@ -273,8 +277,9 @@ def test_redirect_to_foo(client):
 def test_relative_redirect(client):
     """
     """
-    res = client.relative_redirect(
-        1, on={302: lambda r: r.headers['Location']}, allow_redirects=False)
+    res = client.relative_redirect(1,
+                                   on={302: lambda r: r.headers['Location']},
+                                   allow_redirects=False)
 
     assert res == '/get'
 
@@ -282,8 +287,9 @@ def test_relative_redirect(client):
 def test_absolute_redirect(client):
     """
     """
-    res = client.absolute_redirect(
-        1, on={302: lambda r: r.headers['Location']}, allow_redirects=False)
+    res = client.absolute_redirect(1,
+                                   on={302: lambda r: r.headers['Location']},
+                                   allow_redirects=False)
 
     assert res.endswith('/get')
 
@@ -377,8 +383,9 @@ def test_basic_auth_with_session(basic_auth_client):
 def test_hidden_basic_auth(client):
     """
     """
-    res = client.hidden_basic_auth(
-        'user', 'password', auth=HTTPBasicAuth('user', 'password'))
+    res = client.hidden_basic_auth('user',
+                                   'password',
+                                   auth=HTTPBasicAuth('user', 'password'))
 
     assert res['authenticated'] is True
 
@@ -386,9 +393,11 @@ def test_hidden_basic_auth(client):
 def test_digest_auth_algorithm(client):
     """
     """
-    res = client.digest_auth_algorithm(
-        'auth', 'user', 'password', 'MD5',
-        auth=HTTPDigestAuth('user', 'password'))
+    res = client.digest_auth_algorithm('auth',
+                                       'user',
+                                       'password',
+                                       'MD5',
+                                       auth=HTTPDigestAuth('user', 'password'))
 
     assert res['authenticated'] is True
 
@@ -396,8 +405,10 @@ def test_digest_auth_algorithm(client):
 def test_digest_auth(client):
     """
     """
-    res = client.digest_auth(
-        'auth', 'user', 'password', auth=HTTPDigestAuth('user', 'password'))
+    res = client.digest_auth('auth',
+                             'user',
+                             'password',
+                             auth=HTTPDigestAuth('user', 'password'))
 
     assert res['authenticated'] is True
 
@@ -455,8 +466,8 @@ def test_html(client):
         on={200: lambda r: (r.headers['content-type'], r.content)})
 
     assert res[0] == 'text/html; charset=utf-8'
-    assert res[1].decode(
-        "utf-8").count('<h1>Herman Melville - Moby-Dick</h1>') == 1
+    assert res[1].decode("utf-8").count(
+        '<h1>Herman Melville - Moby-Dick</h1>') == 1
 
 
 def test_robots_txt(client):
@@ -478,8 +489,8 @@ def test_deny(client):
 def test_cache(client):
     """
     """
-    status_code = client.cache(header={
-        'If-Modified-Since': 'Sat, 16 Aug 2015 08:00:00 GMT'},
+    status_code = client.cache(
+        header={'If-Modified-Since': 'Sat, 16 Aug 2015 08:00:00 GMT'},
         on={HttpStatus.ANY: lambda r: r.status_code})
 
     assert status_code == 304

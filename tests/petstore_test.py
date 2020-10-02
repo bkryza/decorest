@@ -36,7 +36,8 @@ def client():
         port = os.environ["SWAGGERAPI_PETSTORE_8080_TCP_PORT"]
     else:
         port = os.environ['PETSTORE_8080_TCP_PORT']
-    return PetstoreClient('http://{host}:{port}/api'.format(host=host, port=port))
+    return PetstoreClient('http://{host}:{port}/api'.format(host=host,
+                                                            port=port))
 
 
 def test_pet_methods(client):
@@ -48,10 +49,13 @@ def test_pet_methods(client):
     assert res.tag == 'pets'
 
     try:
-        res = client.add_pet({
-            'name': 'lucky',
-            'photoUrls': ['http://example.com/lucky.jpg'],
-            'status': 'available'}, timeout=5)
+        res = client.add_pet(
+            {
+                'name': 'lucky',
+                'photoUrls': ['http://example.com/lucky.jpg'],
+                'status': 'available'
+            },
+            timeout=5)
     except HTTPError as e:
         pytest.fail(e.response.text)
 
@@ -61,9 +65,7 @@ def test_pet_methods(client):
     assert res['status'] == 'available'
 
     try:
-        res = client.update_pet(json.dumps({
-            'id': pet_id,
-            'status': 'sold'}))
+        res = client.update_pet(json.dumps({'id': pet_id, 'status': 'sold'}))
     except HTTPError as e:
         pytest.fail(e.response.text)
 
@@ -132,15 +134,16 @@ def test_user_methods(client):
 
     assert res['phone'] == '001-111-CALL-ME'
 
-    client.update_user('swagger', {
-        'username': 'swagger',
-        'firstName': 'Swagger',
-        'lastName': 'Petstore',
-        'email': 'swagger@example.com',
-        'password': 'guess',
-        'phone': '001-111-CALL-ME',
-        "userStatus": 0
-    })
+    client.update_user(
+        'swagger', {
+            'username': 'swagger',
+            'firstName': 'Swagger',
+            'lastName': 'Petstore',
+            'email': 'swagger@example.com',
+            'password': 'guess',
+            'phone': '001-111-CALL-ME',
+            "userStatus": 0
+        })
 
     res = client.get_user('swagger')
 

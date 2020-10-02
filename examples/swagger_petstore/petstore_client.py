@@ -23,7 +23,6 @@ Example decorest based client to Swagger Petstore sample service.
 import json
 import xml.etree.ElementTree as ET
 
-
 from decorest import DELETE, GET, POST, PUT
 from decorest import HttpStatus, RestClient
 from decorest import accept, body, content, endpoint, header, on, query
@@ -35,7 +34,6 @@ from decorest import accept, body, content, endpoint, header, on, query
 @endpoint('http://petstore.example.com')
 class PetAPI(RestClient):
     """Everything about your Pets."""
-
     def __init__(self, endpoint=None):
         """Construct PetAPI."""
         super(PetAPI, self).__init__(endpoint)
@@ -83,7 +81,6 @@ class PetAPI(RestClient):
 
 class StoreAPI(RestClient):
     """Access to Petstore orders."""
-
     def __init__(self, endpoint=None):
         """Construct StoreAPI."""
         super(StoreAPI, self).__init__(endpoint)
@@ -108,7 +105,6 @@ class StoreAPI(RestClient):
 
 class UserAPI(RestClient):
     """Operations about user."""
-
     def __init__(self, endpoint=None):
         """Construct UserAPI."""
         super(UserAPI, self).__init__(endpoint)
@@ -156,7 +152,6 @@ class UserAPI(RestClient):
 
 class PetstoreClient(PetAPI, StoreAPI, UserAPI):
     """Swagger Petstore client."""
-
     def __init__(self, endpoint):
         """Construct PetstoreClient."""
         super(PetstoreClient, self).__init__(endpoint)

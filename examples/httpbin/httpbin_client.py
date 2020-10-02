@@ -35,6 +35,7 @@ def repeatdecorator(f):
         for i in range(5):
             result.append(f(*args, **kwargs))
         return result
+
     return wrapped
 
 
@@ -52,7 +53,6 @@ def parse_image(response):
 @endpoint('http://httpbin.org')
 class HttpBinClient(RestClient):
     """Client to HttpBin service (httpbin.org)."""
-
     def __init__(self, endpoint=None):
         """Construct object."""
         super(HttpBinClient, self).__init__(endpoint)

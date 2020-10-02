@@ -51,8 +51,8 @@ def dict_from_args(func, *args):
 
         # Add any default arguments if were left unbound in method call
         for j in range(len(args), len(args_names)):
-            result[args_names[j]] = args_default_values[
-                len(args_names) - (j + len(args) - 1)]
+            result[args_names[j]] = args_default_values[len(args_names) -
+                                                        (j + len(args) - 1)]
     else:
         parameters = inspect.signature(func).parameters
         idx = 0

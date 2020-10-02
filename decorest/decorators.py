@@ -33,7 +33,6 @@ from six import integer_types, iteritems
 from .types import HttpMethod, HttpStatus
 from .utils import dict_from_args, merge_dicts, render_path
 
-
 DECOR_KEY = '__decorest__'
 
 
@@ -81,8 +80,10 @@ def get_decor(t, name):
     return None
 
 
-DECOR_LIST = ['on', 'query', 'header', 'endpoint', 'content', 'accept', 'body',
-              'timeout', 'form']
+DECOR_LIST = [
+    'on', 'query', 'header', 'endpoint', 'content', 'accept', 'body',
+    'timeout', 'form'
+]
 
 
 def on(status, handler):
@@ -93,13 +94,14 @@ def on(status, handler):
     the sole parameter the requests response object.
     """
     def on_decorator(t):
-        if(status is Ellipsis):
+        if (status is Ellipsis):
             set_decor(t, 'on', {HttpStatus.ANY: handler})
         elif isinstance(status, integer_types):
             set_decor(t, 'on', {status: handler})
         else:
             raise TypeError("Status in @on decorator must be integer or '...'")
         return t
+
     return on_decorator
 
 
@@ -114,6 +116,7 @@ def query(name, value=None):
             value_ = name
         set_decor(t, 'query', {name: value_})
         return t
+
     return query_decorator
 
 
@@ -128,6 +131,7 @@ def form(name, value=None):
             value_ = name
         set_decor(t, 'form', {name: value_})
         return t
+
     return form_decorator
 
 
@@ -136,6 +140,7 @@ def header(name, value):
     def header_decorator(t):
         set_decor(t, 'header', CaseInsensitiveDict({name: value}))
         return t
+
     return header_decorator
 
 
@@ -144,6 +149,7 @@ def endpoint(value):
     def endpoint_decorator(t):
         set_decor(t, 'endpoint', value)
         return t
+
     return endpoint_decorator
 
 
@@ -152,6 +158,7 @@ def content(value):
     def content_decorator(t):
         set_decor(t, 'header', CaseInsensitiveDict({'Content-Type': value}))
         return t
+
     return content_decorator
 
 
@@ -160,6 +167,7 @@ def accept(value):
     def accept_decorator(t):
         set_decor(t, 'header', CaseInsensitiveDict({'Accept': value}))
         return t
+
     return accept_decorator
 
 
@@ -172,6 +180,7 @@ def body(name, serializer=None):
     def body_decorator(t):
         set_decor(t, 'body', (name, serializer))
         return t
+
     return body_decorator
 
 
@@ -184,6 +193,7 @@ def timeout(value):
     def timeout_decorator(t):
         set_decor(t, 'timeout', value)
         return t
+
     return timeout_decorator
 
 
@@ -200,7 +210,6 @@ def stream(t):
 
 class HttpMethodDecorator(object):
     """Abstract decorator for HTTP method decorators."""
-
     def __init__(self, path):
         """Initialize decorator with endpoint relative path."""
         self.path_template = path
@@ -255,8 +264,8 @@ class HttpMethodDecorator(object):
         auth = rest_client._auth()
 
         # Get status handlers
-        on_handlers = merge_dicts(
-            get_decor(rest_client.__class__, 'on'), get_decor(func, 'on'))
+        on_handlers = merge_dicts(get_decor(rest_client.__class__, 'on'),
+                                  get_decor(func, 'on'))
 
         # Get timeout
         timeout = get_decor(rest_client.__class__, 'timeout')
@@ -288,15 +297,15 @@ class HttpMethodDecorator(object):
                         if not isinstance(kwargs['query'], dict):
                             raise TypeError(
                                 "'query' value must be an instance of dict")
-                        query_parameters = merge_dicts(
-                            query_parameters, kwargs['query'])
+                        query_parameters = merge_dicts(query_parameters,
+                                                       kwargs['query'])
                         del kwargs['query']
                     elif decor == 'form':
                         if not isinstance(kwargs['form'], dict):
                             raise TypeError(
                                 "'form' value must be an instance of dict")
-                        form_parameters = merge_dicts(
-                            form_parameters, kwargs['form'])
+                        form_parameters = merge_dicts(form_parameters,
+                                                      kwargs['form'])
                         del kwargs['form']
                     elif decor == 'on':
                         if not isinstance(kwargs['on'], dict):
@@ -318,8 +327,7 @@ class HttpMethodDecorator(object):
                         del kwargs['content']
                     elif decor == 'timeout':
                         if not isinstance(kwargs['timeout'], numbers.Number):
-                            raise TypeError(
-                                "'timeout' value must be a number")
+                            raise TypeError("'timeout' value must be a number")
                         timeout = kwargs['timeout']
                         del kwargs['timeout']
                     elif decor == 'stream':
@@ -344,8 +352,8 @@ class HttpMethodDecorator(object):
         if 'accept' not in header_parameters:
             header_parameters['accept'] = 'application/json'
 
-        LOG.debug('REQUEST: {method} {request}'.format(
-            method=http_method, request=req))
+        LOG.debug('REQUEST: {method} {request}'.format(method=http_method,
+                                                       request=req))
 
         if auth:
             kwargs['auth'] = auth

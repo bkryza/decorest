@@ -29,7 +29,6 @@ from decorest.decorators import get_decor
 @endpoint('https://dog.ceo/')
 class DogClient(RestClient):
     """DogClient client"""
-
     def __init__(self, endpoint=None):
         super(DogClient, self).__init__(endpoint)
 
@@ -125,12 +124,21 @@ def test_set_decor():
     assert get_decor(DogClient.options, 'http_method') == HttpMethod.OPTIONS
     assert get_decor(DogClient.stream_range, 'http_method') == HttpMethod.GET
 
-    assert get_decor(DogClient.post_form, 'form') == {'key1': 'key1', 'key2': 'keyTwo'}
-    assert get_decor(DogClient.queries, 'query') == {'a': 'a', 'b': 'b', 'c': 'd'}
+    assert get_decor(DogClient.post_form, 'form') == {
+        'key1': 'key1',
+        'key2': 'keyTwo'
+    }
+    assert get_decor(DogClient.queries, 'query') == {
+        'a': 'a',
+        'b': 'b',
+        'c': 'd'
+    }
 
     assert get_decor(DogClient.stream_range, 'stream') is True
     assert get_decor(DogClient.stream_range, 'query') == {
-        'offset': 'off', 'size': 'size'}
+        'offset': 'off',
+        'size': 'size'
+    }
 
 
 def test_endpoint_decorator():

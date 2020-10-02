@@ -23,7 +23,6 @@ from .types import HttpMethod
 
 class GET(HttpMethodDecorator):
     """GET HTTP method decorator."""
-
     def __init__(self, path):
         """Initialize with endpoint relative path."""
         super(GET, self).__init__(path)

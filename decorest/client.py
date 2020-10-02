@@ -30,7 +30,6 @@ from .utils import normalize_url
 
 class RestClientSession(object):
     """Wrap a `requests` session for specific API client."""
-
     def __init__(self, client):
         """Initialize the session instance with a specific API client."""
         self.__client = client
@@ -62,12 +61,12 @@ class RestClientSession(object):
         def invoker(*args, **kwargs):
             kwargs['__session'] = self.__session
             return getattr(self.__client, name)(*args, **kwargs)
+
         return invoker
 
 
 class RestClient(object):
     """Base class for decorest REST clients."""
-
     def __init__(self, endpoint=None):
         """Initialize the client with optional endpoint."""
         self.endpoint = get_decor(self, 'endpoint')
