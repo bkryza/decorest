@@ -140,7 +140,7 @@ For example, the following invocation of the above method:
 
 will result in the following query:
 
-.. code-block::
+.. code-block:: bash
 
     https://dog.ceo/api/breed/hound?longNames=1&limit=100
 
@@ -283,7 +283,7 @@ This decorator is a shortcut for :py:`@header('accept', ...)`, e.g:
             """List all sub-breeds"""
 
 @endpoint
-~~~~~~~~
+~~~~~~~~~
 This decorator enables to define a default endpoint for the service,
 which then doesn't have to be provided in the client constructor:
 
@@ -391,7 +391,7 @@ authentication mechanism) can be set in the client object using
 
 .. code-block:: python
 
-        client._set_auth(HTTPBasicAuth('user', 'password')
+        client._set_auth(HTTPBasicAuth('user', 'password'))
         with client._session() as s:
             s._requests_session.verify = '/path/to/cert.pem'
             s.list_subbreeds('hound')
@@ -446,7 +446,7 @@ module namespace:
 Compatibility with other decorators
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In general the decorators should work with other decorators which return
+In general the decorators should work with other decorators, which return
 function objects, but your mileage may vary. In general third-party decorators
 should be added above the HTTP method decorators as only the HTTP decorators
 make the actual HTTP request. Thus, typical decorators, which try to wrap
@@ -461,8 +461,10 @@ Development
 ===========
 
 Create virtual env
-~~~~~~~~~~~~~~~~~~
+------------------
+
 .. code-block:: bash
+
     # For Python 3
     virtualenv -p /usr/bin/python3.8 venv3
     source venv3/bin/activate
@@ -472,21 +474,33 @@ Create virtual env
     source venv2/bin/activate
 
 Formatting
-~~~~~~~~~~
+----------
 .. code-block:: bash
+
     yapf -ir decorest tests examples
 
 
 Running tests
-~~~~~~~~~~~~~
+-------------
+
+All tests are stored in tests_ directory. Running tests is fully automated using
+tox_ and tox-docker_.
 
 .. code-block:: bash
+
     # Python 3
     python -m tox -e flake8,basic,httpbin,swaggerpetstore
 
     # Python 2
     python -m tox -c tox-py2.ini -e flake8,basic,httpbin,swaggerpetstore
 
+
+Checking README syntax
+----------------------
+
+.. code-block:: bash
+
+    rstcheck README.rst
 
 License
 =======
@@ -510,5 +524,6 @@ limitations under the License.
 .. _requests: https://github.com/requests/requests
 .. _`requests session`: http://docs.python-requests.org/en/master/user/advanced/#session-objects
 .. _decorest: https://github.com/bkryza/decorest
-.. _`descriptor objects`: https://docs.python.org/3/c-api/descriptor.html
 .. _`Petstore Swagger client example`: https://github.com/bkryza/decorest/blob/master/examples/swagger_petstore/petstore_client.py
+.. _tox: https://github.com/tox-dev/tox
+.. _tox-docker: https://github.com/tox-dev/tox-docker
