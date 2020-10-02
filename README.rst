@@ -457,10 +457,41 @@ Currently, it is not possible to add decorators such as :py:`@classmethod`
 or :py:`@staticmethod` to API methods, as the invocation requires an instance
 of client class.
 
+Development
+===========
+
+Create virtual env
+~~~~~~~~~~~~~~~~~~
+.. code-block:: bash
+    # For Python 3
+    virtualenv -p /usr/bin/python3.8 venv3
+    source venv3/bin/activate
+
+    # For Python 2
+    virtualenv -p /usr/bin/python2.7 venv2
+    source venv2/bin/activate
+
+Formatting
+~~~~~~~~~~
+.. code-block:: bash
+    yapf -ir decorest tests examples
+
+
+Running tests
+~~~~~~~~~~~~~
+
+.. code-block:: bash
+    # Python 3
+    python -m tox -e flake8,basic,httpbin,swaggerpetstore
+
+    # Python 2
+    python -m tox -c tox-py2.ini -e flake8,basic,httpbin,swaggerpetstore
+
+
 License
 =======
 
-Copyright 2018 Bartosz Kryza <bkryza@gmail.com>
+Copyright 2018-present Bartosz Kryza <bkryza@gmail.com>
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
