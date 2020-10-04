@@ -21,25 +21,36 @@ import pytest
 import time
 import json
 import xml.etree.ElementTree as ET
-from requests.exceptions import HTTPError
+from decorest import HTTPErrorWrapper
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../examples")
 from swagger_petstore.petstore_client import PetstoreClient
 
 
-@pytest.fixture
-def client():
+def client(backend):
     # Give Docker and Swagger Petstore some time to spin up
-    time.sleep(5)
+    time.sleep(2)
     host = "localhost"
     if six.PY2:
         port = os.environ["SWAGGERAPI_PETSTORE_8080_TCP_PORT"]
     else:
         port = os.environ['PETSTORE_8080_TCP_PORT']
     return PetstoreClient('http://{host}:{port}/api'.format(host=host,
-                                                            port=port))
+                                                            port=port),
+                          backend=backend)
 
 
+client_requests = client('requests')
+client_httpx = client('httpx')
+
+
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_pet_methods(client):
 
     res = client.find_pet_by_status()
@@ -56,7 +67,7 @@ def test_pet_methods(client):
                 'status': 'available'
             },
             timeout=5)
-    except HTTPError as e:
+    except HTTPErrorWrapper as e:
         pytest.fail(e.response.text)
 
     pet_id = res['id']
@@ -66,7 +77,7 @@ def test_pet_methods(client):
 
     try:
         res = client.update_pet(json.dumps({'id': pet_id, 'status': 'sold'}))
-    except HTTPError as e:
+    except HTTPErrorWrapper as e:
         pytest.fail(e.response.text)
 
     res = client.find_pet_by_id(pet_id)
@@ -74,17 +85,24 @@ def test_pet_methods(client):
 
     try:
         res = client.delete_pet(pet_id)
-    except HTTPError as e:
+    except HTTPErrorWrapper as e:
         pytest.fail(e.response.text)
 
     try:
         res = client.find_pet_by_id(pet_id)
-    except HTTPError as e:
+    except HTTPErrorWrapper as e:
         assert e.response.status_code == 404
 
     assert res is None
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_store_methods(client):
 
     res = client.place_order({
@@ -108,10 +126,17 @@ def test_store_methods(client):
 
     client.delete_order(order_id)
 
-    with pytest.raises(HTTPError) as e:
+    with pytest.raises(HTTPErrorWrapper) as e:
         client.get_order(order_id)
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_user_methods(client):
 
     res = client.create_user({
@@ -152,5 +177,5 @@ def test_user_methods(client):
 
     client.delete_user('swagger')
 
-    with pytest.raises(HTTPError) as e:
+    with pytest.raises(HTTPErrorWrapper) as e:
         client.get_user('swagger')

@@ -20,9 +20,9 @@ import os
 import six
 import sys
 import json
-from decorest import __version__, HttpStatus
+from decorest import __version__, HttpStatus, HTTPErrorWrapper
 from requests import cookies
-from requests.exceptions import ReadTimeout, HTTPError
+from requests.exceptions import ReadTimeout
 from requests.auth import HTTPBasicAuth, HTTPDigestAuth
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 import xml.etree.ElementTree as ET
@@ -31,34 +31,46 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../examples")
 from httpbin.httpbin_client import HttpBinClient, parse_image
 
 
-@pytest.fixture
-def client():
+def client(backend):
     # Give Docker and HTTPBin some time to spin up
-    time.sleep(5)
+    time.sleep(2)
     if six.PY2:
         host = os.environ["KENNETHREITZ_HTTPBIN_HOST"]
         port = os.environ["KENNETHREITZ_HTTPBIN_80_TCP_PORT"]
     else:
         host = os.environ["HTTPBIN_HOST"]
         port = os.environ["HTTPBIN_80_TCP_PORT"]
-    return HttpBinClient("http://{host}:{port}".format(host=host, port=port))
+    return HttpBinClient("http://{host}:{port}".format(host=host, port=port),
+                         backend=backend)
 
 
-@pytest.fixture
-def basic_auth_client():
+def basic_auth_client(backend):
     # Give Docker and HTTPBin some time to spin up
-    time.sleep(5)
     if six.PY2:
         host = os.environ["KENNETHREITZ_HTTPBIN_HOST"]
         port = os.environ["KENNETHREITZ_HTTPBIN_80_TCP_PORT"]
     else:
         host = os.environ["HTTPBIN_HOST"]
         port = os.environ["HTTPBIN_80_TCP_PORT"]
-    client = HttpBinClient("http://{host}:{port}".format(host=host, port=port))
+    client = HttpBinClient("http://{host}:{port}".format(host=host, port=port),
+                           backend='httpx')
     client._set_auth(HTTPBasicAuth('user', 'password'))
     return client
 
 
+client_requests = client('requests')
+client_httpx = client('httpx')
+basic_auth_client_requests = basic_auth_client('requests')
+basic_auth_client_httpx = basic_auth_client('httpx')
+
+
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_ip(client):
     """
     """
@@ -67,6 +79,13 @@ def test_ip(client):
     assert "origin" in res
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_ip_repeat(client):
     """
     """
@@ -76,6 +95,13 @@ def test_ip_repeat(client):
         assert "origin" in ip
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_uuid(client):
     """
     """
@@ -84,6 +110,13 @@ def test_uuid(client):
     assert "uuid" in res
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_user_agent(client):
     """
     """
@@ -92,6 +125,13 @@ def test_user_agent(client):
     assert res['user-agent'] == 'decorest/{v}'.format(v=__version__)
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_headers(client):
     """
     """
@@ -106,6 +146,13 @@ def test_headers(client):
     assert res['headers']['B'] == 'BB'
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_get(client):
     """
     """
@@ -115,6 +162,13 @@ def test_get(client):
     assert res["args"] == data
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_post(client):
     """
     """
@@ -125,6 +179,13 @@ def test_post(client):
     assert res["json"] == data
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_post_form(client):
     """
     """
@@ -135,19 +196,37 @@ def test_post_form(client):
     assert res["form"]["key3"] == "value3"
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_post_multipart(client):
     """
     """
     # TODO add multipart decorator
-    file = 'tests/testdata/multipart.dat'
-    m = MultipartEncoder(
-        fields={'test': ('filename', open(file, 'rb'), 'text/plain')})
+    f = 'tests/testdata/multipart.dat'
 
-    res = client.post(None, content=m.content_type, data=m)
+    if client._backend() == 'requests':
+        m = MultipartEncoder(
+            fields={'test': ('filename', open(f, 'rb'), 'text/plain')})
+        res = client.post(None, content=m.content_type, data=m)
+    else:
+        res = client.post(
+            None, files={'test': ('filename', open(f, 'rb'), 'text/plain')})
 
-    assert res["files"]["test"] == open(file, 'rb').read().decode("utf-8")
+    assert res["files"]["test"] == open(f, 'rb').read().decode("utf-8")
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_patch(client):
     """
     """
@@ -157,6 +236,13 @@ def test_patch(client):
     assert res["data"] == data
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_put(client):
     """
     """
@@ -167,6 +253,13 @@ def test_put(client):
     assert res["json"] == data
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_delete(client):
     """
     """
@@ -174,6 +267,13 @@ def test_delete(client):
     client.delete(query=data)
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_anything(client):
     """
     """
@@ -184,6 +284,13 @@ def test_anything(client):
     assert res["json"] == data
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_anything_anything(client):
     """
     """
@@ -197,12 +304,26 @@ def test_anything_anything(client):
     assert res["json"] == data
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_encoding_utf(client):
     """
     """
     # TODO - add charset decorator
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_gzip(client):
     """
     """
@@ -211,6 +332,13 @@ def test_gzip(client):
     assert json.loads(res)['gzipped'] is True
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_deflate(client):
     """
     """
@@ -219,6 +347,13 @@ def test_deflate(client):
     assert json.loads(res)['deflated'] is True
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_brotli(client):
     """
     """
@@ -227,12 +362,26 @@ def test_brotli(client):
     assert json.loads(res)['brotli'] is True
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_status(client):
     """
     """
     assert 418 == client.status_code(418)
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_response_headers(client):
     """
     """
@@ -243,6 +392,13 @@ def test_response_headers(client):
     assert res['nickname'] == 'httpbin'
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_redirect(client):
     """
     """
@@ -253,6 +409,13 @@ def test_redirect(client):
     assert res == 'REDIRECTED'
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_redirect_to(client):
     """
     """
@@ -263,6 +426,13 @@ def test_redirect_to(client):
     assert res == 'REDIRECTED'
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_redirect_to_foo(client):
     """
     """
@@ -274,6 +444,13 @@ def test_redirect_to_foo(client):
     assert res == 'REDIRECTED'
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_relative_redirect(client):
     """
     """
@@ -284,6 +461,13 @@ def test_relative_redirect(client):
     assert res == '/get'
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_absolute_redirect(client):
     """
     """
@@ -294,6 +478,13 @@ def test_absolute_redirect(client):
     assert res.endswith('/get')
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_cookies(client):
     """
     """
@@ -306,6 +497,13 @@ def test_cookies(client):
     assert 'cookie2' not in res['cookies']
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_cookies_set(client):
     """
     """
@@ -315,6 +513,13 @@ def test_cookies_set(client):
     assert res["cookies"]["cookie2"] == "B"
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_cookies_session(client):
     """
     """
@@ -332,6 +537,13 @@ def test_cookies_session(client):
     s._close()
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_cookies_session_with_contextmanager(client):
     """
     """
@@ -348,6 +560,13 @@ def test_cookies_session_with_contextmanager(client):
         assert res["cookies"]["cookie2"] == "B"
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_cookies_delete(client):
     """
     """
@@ -358,18 +577,33 @@ def test_cookies_delete(client):
     assert "cookie1" not in res["cookies"]
 
 
+@pytest.mark.parametrize(
+    "client,basic_auth_client",
+    [
+        pytest.param(
+            client_requests, basic_auth_client_requests, id='requests'),
+        pytest.param(client_httpx, basic_auth_client_httpx, id='httpx')
+    ],
+)
 def test_basic_auth(client, basic_auth_client):
     """
     """
-    with pytest.raises(HTTPError) as e:
+    with pytest.raises(HTTPErrorWrapper) as e:
         res = client.basic_auth('user', 'password')
 
-    assert isinstance(e.value, HTTPError)
+    assert isinstance(e.value, HTTPErrorWrapper)
 
     res = basic_auth_client.basic_auth('user', 'password')
     assert res['authenticated'] is True
 
 
+@pytest.mark.parametrize(
+    "basic_auth_client",
+    [
+        pytest.param(basic_auth_client_requests, id='requests'),
+        pytest.param(basic_auth_client_httpx, id='httpx')
+    ],
+)
 def test_basic_auth_with_session(basic_auth_client):
     """
     """
@@ -380,6 +614,13 @@ def test_basic_auth_with_session(basic_auth_client):
     assert res['authenticated'] is True
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_hidden_basic_auth(client):
     """
     """
@@ -390,29 +631,59 @@ def test_hidden_basic_auth(client):
     assert res['authenticated'] is True
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_digest_auth_algorithm(client):
     """
     """
+    if client._backend() == 'requests':
+        auth = HTTPDigestAuth('user', 'password')
+    else:
+        import httpx
+        auth = httpx.DigestAuth('user', 'password')
+
     res = client.digest_auth_algorithm('auth',
                                        'user',
                                        'password',
                                        'MD5',
-                                       auth=HTTPDigestAuth('user', 'password'))
+                                       auth=auth)
 
     assert res['authenticated'] is True
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_digest_auth(client):
     """
     """
-    res = client.digest_auth('auth',
-                             'user',
-                             'password',
-                             auth=HTTPDigestAuth('user', 'password'))
+    if client._backend() == 'requests':
+        auth = HTTPDigestAuth('user', 'password')
+    else:
+        import httpx
+        auth = httpx.DigestAuth('user', 'password')
+
+    res = client.digest_auth('auth', 'user', 'password', auth=auth)
 
     assert res['authenticated'] is True
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_stream_n(client):
     """
     """
@@ -424,41 +695,78 @@ def test_stream_n(client):
     assert count == 5
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_delay(client):
     """
     """
-    with pytest.raises(ReadTimeout):
+    with pytest.raises(HTTPErrorWrapper):
         client.delay(5)
 
     try:
         client.delay(1)
         client.delay(3, timeout=4)
-    except ReadTimeout:
+    except HTTPErrorWrapper:
         pytest.fail("Operation should not have timed out")
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_drip(client):
     """
     """
     content = []
     with client.drip(10, 5, 1, 200) as r:
-        for b in r.iter_content(chunk_size=1):
-            content.append(b)
+        if client._backend() == 'requests':
+            for b in r.iter_content(chunk_size=1):
+                content.append(b)
+        else:
+            for b in r.iter_raw():
+                content.append(b)
 
     assert len(content) == 10
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_range(client):
     """
     """
     content = []
+
     with client.range(128, 1, 2, header={"Range": "bytes=10-19"}) as r:
-        for b in r.iter_content(chunk_size=2):
-            content.append(b)
+        if client._backend() == 'requests':
+            for b in r.iter_content(chunk_size=2):
+                content.append(b)
+        else:
+            for b in r.iter_raw():
+                content.append(b)
 
     assert len(content) == 5
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_html(client):
     """
     """
@@ -470,6 +778,13 @@ def test_html(client):
         '<h1>Herman Melville - Moby-Dick</h1>') == 1
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_robots_txt(client):
     """
     """
@@ -478,6 +793,13 @@ def test_robots_txt(client):
     assert "Disallow: /deny" in res
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_deny(client):
     """
     """
@@ -486,6 +808,13 @@ def test_deny(client):
     assert "YOU SHOULDN'T BE HERE" in res
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_cache(client):
     """
     """
@@ -496,6 +825,13 @@ def test_cache(client):
     assert status_code == 304
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_cache_n(client):
     """
     """
@@ -504,6 +840,13 @@ def test_cache_n(client):
     assert 'Cache-Control' not in res['headers']
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_etag(client):
     """
     """
@@ -520,6 +863,13 @@ def test_etag(client):
     assert status_code == 200
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_bytes(client):
     """
     """
@@ -528,6 +878,13 @@ def test_bytes(client):
     assert len(content) == 128
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_stream_bytes(client):
     """
     """
@@ -536,6 +893,13 @@ def test_stream_bytes(client):
     assert len(content) == 128
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_links(client):
     """
     """
@@ -544,6 +908,13 @@ def test_links(client):
     assert html.count('href') == 10 - 1
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_image(client):
     """
     """
@@ -564,6 +935,13 @@ def test_image(client):
     assert img.format == 'WEBP'
 
 
+@pytest.mark.parametrize(
+    "client",
+    [
+        pytest.param(client_requests, id='requests'),
+        pytest.param(client_httpx, id='httpx')
+    ],
+)
 def test_xml(client):
     """
     """

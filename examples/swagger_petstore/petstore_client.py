@@ -34,9 +34,9 @@ from decorest import accept, body, content, endpoint, header, on, query
 @endpoint('http://petstore.example.com')
 class PetAPI(RestClient):
     """Everything about your Pets."""
-    def __init__(self, endpoint=None):
+    def __init__(self, *args, **kwargs):
         """Construct PetAPI."""
-        super(PetAPI, self).__init__(endpoint)
+        super(PetAPI, self).__init__(*args, **kwargs)
 
     @POST('pet')
     @content('application/json')
@@ -81,9 +81,9 @@ class PetAPI(RestClient):
 
 class StoreAPI(RestClient):
     """Access to Petstore orders."""
-    def __init__(self, endpoint=None):
+    def __init__(self, *args, **kwargs):
         """Construct StoreAPI."""
-        super(StoreAPI, self).__init__(endpoint)
+        super(StoreAPI, self).__init__(*args, **kwargs)
 
     @GET('store/inventory')
     def get_inventory(self):
@@ -105,9 +105,9 @@ class StoreAPI(RestClient):
 
 class UserAPI(RestClient):
     """Operations about user."""
-    def __init__(self, endpoint=None):
+    def __init__(self, *args, **kwargs):
         """Construct UserAPI."""
-        super(UserAPI, self).__init__(endpoint)
+        super(UserAPI, self).__init__(*args, **kwargs)
 
     @POST('user')
     @body('user', lambda o: json.dumps(o))
@@ -152,6 +152,6 @@ class UserAPI(RestClient):
 
 class PetstoreClient(PetAPI, StoreAPI, UserAPI):
     """Swagger Petstore client."""
-    def __init__(self, endpoint):
+    def __init__(self, *args, **kwargs):
         """Construct PetstoreClient."""
-        super(PetstoreClient, self).__init__(endpoint)
+        super(PetstoreClient, self).__init__(*args, **kwargs)

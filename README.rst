@@ -37,8 +37,8 @@ For example:
     from decorest import RestClient, GET
 
     class DogClient(RestClient):
-        def __init__(self, endpoint):
-            super(DogClient, self).__init__(endpoint)
+        def __init__(self, *args, **kwargs):
+            super(DogClient, self).__init__(*args, **kwargs)
 
         @GET('breed/{breed_name}/list')
         def list_subbreeds(self, breed_name):
