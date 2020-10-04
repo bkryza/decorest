@@ -84,8 +84,8 @@ Choosing backend
 ----------------
 
 decorest_ supports currently 2 backends:
-  * requests_
-  * httpx_
+  * requests_ (Python 2 and 3)
+  * httpx_ (only Python 3)
 
 To select a specific backend, simply pass it's name to the constructor of the client:
 

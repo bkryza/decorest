@@ -40,17 +40,15 @@ def client(backend):
                           backend=backend)
 
 
+# Prepare pytest params
 client_requests = client('requests')
-client_httpx = client('httpx')
+pytest_params = [pytest.param(client_requests, id='requests')]
+if six.PY3:
+    client_httpx = client('httpx')
+    pytest_params.append(pytest.param(client_httpx, id='httpx'))
 
 
-@pytest.mark.parametrize(
-    "client",
-    [
-        pytest.param(client_requests, id='requests'),
-        pytest.param(client_httpx, id='httpx')
-    ],
-)
+@pytest.mark.parametrize("client", pytest_params)
 def test_pet_methods(client):
 
     res = client.find_pet_by_status()
@@ -96,13 +94,7 @@ def test_pet_methods(client):
     assert res is None
 
 
-@pytest.mark.parametrize(
-    "client",
-    [
-        pytest.param(client_requests, id='requests'),
-        pytest.param(client_httpx, id='httpx')
-    ],
-)
+@pytest.mark.parametrize("client", pytest_params)
 def test_store_methods(client):
 
     res = client.place_order({
@@ -130,13 +122,7 @@ def test_store_methods(client):
         client.get_order(order_id)
 
 
-@pytest.mark.parametrize(
-    "client",
-    [
-        pytest.param(client_requests, id='requests'),
-        pytest.param(client_httpx, id='httpx')
-    ],
-)
+@pytest.mark.parametrize("client", pytest_params)
 def test_user_methods(client):
 
     res = client.create_user({
