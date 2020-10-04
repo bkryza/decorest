@@ -28,7 +28,8 @@ decorest_ library provides an easy to use declarative REST API client interface,
 where definition of the API methods using decorators automatically produces
 a working REST client with no additional code. In practice the library provides
 only an interface to describe and interact with REST services - the actual work
-is done underneath by the requests_ library.
+is done underneath by either requests_ (default) or httpx_ libraries. Backend
+can be selected dynamically during creation of client instance.
 
 For example:
 
@@ -37,8 +38,8 @@ For example:
     from decorest import RestClient, GET
 
     class DogClient(RestClient):
-        def __init__(self, endpoint):
-            super(DogClient, self).__init__(endpoint)
+        def __init__(self, *args, **kwargs):
+            super(DogClient, self).__init__(*args, **kwargs)
 
         @GET('breed/{breed_name}/list')
         def list_subbreeds(self, breed_name):
@@ -73,11 +74,28 @@ except maybe for a docstring.
 
 After your API client class definition is complete, simply create an instance
 of it and you're good to go. This library relies on the functionality provided
-by the requests_ library, which means that any valid named argument, which
-could be passed to a requests_ HTTP call can be also passed to the calls
+by either requests_ or httpx_ libraries, which means that any valid named argument,
+which could be passed to a requests_ or httpx_ HTTP call can be also passed to the calls
 of the client methods and will be forwarded as is.
 
 For more information checkout sample clients in `examples`.
+
+Choosing backend
+----------------
+
+decorest_ supports currently 2 backends:
+  * requests_ (Python 2 and 3)
+  * httpx_ (only Python 3)
+
+To select a specific backend, simply pass it's name to the constructor of the client:
+
+.. code-block:: python
+
+    client = DogClient('https://dog.ceo/api', backend='httpx')
+
+If no backend is provided, requests_ is used by default. The client usage is largely
+independent of the backend, however there some minor differences in handling streams
+and multipart messages, please consult tests in `httpbin test suite`_.
 
 Decorators
 ----------
@@ -401,6 +419,24 @@ The authentication object will be used in both regular API calls, as well
 as when using sessions.
 
 
+Error handling
+--------------
+
+Due to the fact, that this library supports multiple HTTP backends, exceptions
+should be caught through a wrapper class, :py:`decorest.HTTPErrorWrapper`, which
+contains the original exception raised by the underlying backend.
+
+.. code-block:: python
+
+    try:
+        res = client.update_pet(json.dumps({'id': pet_id, 'status': 'sold'}))
+    except HTTPErrorWrapper as e:
+        # Print original error message
+        print(e.response.text)
+        # Reraise the original exception
+        raise e.wrapped
+
+
 Grouping API methods
 ---------------------------
 
@@ -522,8 +558,10 @@ limitations under the License.
 
 .. _tests: https://github.com/bkryza/decorest/tree/master/tests
 .. _requests: https://github.com/requests/requests
+.. _httpx: https://github.com/encode/httpx
 .. _`requests session`: http://docs.python-requests.org/en/master/user/advanced/#session-objects
 .. _decorest: https://github.com/bkryza/decorest
 .. _`Petstore Swagger client example`: https://github.com/bkryza/decorest/blob/master/examples/swagger_petstore/petstore_client.py
+.. _`httpbin test suite`: https://github.com/bkryza/decorest/blob/master/tests/httpbin_test.py
 .. _tox: https://github.com/tox-dev/tox
 .. _tox-docker: https://github.com/tox-dev/tox-docker

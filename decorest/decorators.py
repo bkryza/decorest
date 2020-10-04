@@ -30,10 +30,16 @@ from requests.structures import CaseInsensitiveDict
 
 from six import integer_types, iteritems
 
+from .errors import HTTPErrorWrapper
 from .types import HttpMethod, HttpStatus
 from .utils import dict_from_args, merge_dicts, render_path
 
 DECOR_KEY = '__decorest__'
+
+DECOR_LIST = [
+    'on', 'query', 'header', 'endpoint', 'content', 'accept', 'body',
+    'timeout', 'form'
+]
 
 
 def set_decor(t, name, value):
@@ -78,12 +84,6 @@ def get_decor(t, name):
         return getattr(t, DECOR_KEY)[name]
 
     return None
-
-
-DECOR_LIST = [
-    'on', 'query', 'header', 'endpoint', 'content', 'accept', 'body',
-    'timeout', 'form'
-]
 
 
 def on(status, handler):
@@ -344,8 +344,16 @@ class HttpMethodDecorator(object):
         # Build request from endpoint and query params
         req = rest_client.build_request(req_path.split('/'))
 
-        # Assume default content type
-        if 'content-type' not in header_parameters:
+        if rest_client._backend() == 'requests':
+            from requests_toolbelt.multipart.encoder import MultipartEncoder
+            is_multipart_request = 'data' in kwargs and not isinstance(
+                kwargs['data'], MultipartEncoder)
+        else:
+            is_multipart_request = 'files' in kwargs
+
+        # Assume default content type if not multipart
+        if ('content-type'
+                not in header_parameters) and not is_multipart_request:
             header_parameters['content-type'] = 'application/json'
 
         # Assume default accept
@@ -368,9 +376,6 @@ class HttpMethodDecorator(object):
             else:
                 kwargs['data'] = body_content
             LOG.debug("BODY TYPE: " + str(type(kwargs['data'])))
-        if header_parameters:
-            kwargs['headers'] = header_parameters
-            LOG.debug("CONTENT_TYPE " + header_parameters['content-type'])
         if query_parameters:
             kwargs['params'] = query_parameters
         if form_parameters:
@@ -380,33 +385,53 @@ class HttpMethodDecorator(object):
             kwargs['data'] = form_parameters
         if stream:
             kwargs['stream'] = stream
+        if header_parameters:
+            kwargs['headers'] = dict(header_parameters.items())
 
         result = None
 
         # If '__session' was passed in the kwargs, execute this request
         # using the session context, otherwise execute directly via the
         # requests module
-        execution_context = requests
         if session:
             execution_context = session
-
-        if http_method == HttpMethod.GET:
-            result = execution_context.get(req, **kwargs)
-        elif http_method == HttpMethod.POST:
-            result = execution_context.post(req, **kwargs)
-        elif http_method == HttpMethod.PUT:
-            result = execution_context.put(req, **kwargs)
-        elif http_method == HttpMethod.PATCH:
-            result = execution_context.patch(req, **kwargs)
-        elif http_method == HttpMethod.DELETE:
-            result = execution_context.delete(req, **kwargs)
-        elif http_method == HttpMethod.HEAD:
-            result = execution_context.head(req, **kwargs)
-        elif http_method == HttpMethod.OPTIONS:
-            result = execution_context.options(req, **kwargs)
         else:
+            if rest_client._backend() == 'requests':
+                execution_context = requests
+            else:
+                import httpx
+                execution_context = httpx
+
+        if http_method not in (HttpMethod.GET, HttpMethod.POST, HttpMethod.PUT,
+                               HttpMethod.PATCH, HttpMethod.DELETE,
+                               HttpMethod.HEAD, HttpMethod.OPTIONS):
             raise 'Unsupported HTTP method: {method}'.format(
                 method=http_method)
+
+        try:
+            if http_method == HttpMethod.GET:
+                if rest_client._backend() == 'httpx' and stream:
+                    del kwargs['stream']
+                    result = execution_context.stream("GET", req, **kwargs)
+                else:
+                    result = execution_context.get(req, **kwargs)
+            elif http_method == HttpMethod.POST:
+                if rest_client._backend() == 'httpx':
+                    if 'headers' in kwargs:
+                        kwargs['headers'].pop('content-type', None)
+                result = execution_context.post(req, **kwargs)
+            elif http_method == HttpMethod.PUT:
+                result = execution_context.put(req, **kwargs)
+            elif http_method == HttpMethod.PATCH:
+                result = execution_context.patch(req, **kwargs)
+            elif http_method == HttpMethod.DELETE:
+                result = execution_context.delete(req, **kwargs)
+            elif http_method == HttpMethod.HEAD:
+                result = execution_context.head(req, **kwargs)
+            elif http_method == HttpMethod.OPTIONS:
+                result = execution_context.options(req, **kwargs)
+        except Exception as e:
+            raise HTTPErrorWrapper(e)
 
         if on_handlers and result.status_code in on_handlers:
             # Use a registered handler for the returned status code
@@ -421,7 +446,10 @@ class HttpMethodDecorator(object):
                 return result
 
             # Default response handler
-            result.raise_for_status()
+            try:
+                result.raise_for_status()
+            except Exception as e:
+                raise HTTPErrorWrapper(e)
 
             if result.text:
                 content_type = result.headers.get('content-type')

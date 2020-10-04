@@ -53,9 +53,9 @@ def parse_image(response):
 @endpoint('http://httpbin.org')
 class HttpBinClient(RestClient):
     """Client to HttpBin service (httpbin.org)."""
-    def __init__(self, endpoint=None):
+    def __init__(self, *args, **kwargs):
         """Construct object."""
-        super(HttpBinClient, self).__init__(endpoint)
+        super(HttpBinClient, self).__init__(*args, **kwargs)
 
     @GET('ip')
     def ip(self):
@@ -109,12 +109,12 @@ class HttpBinClient(RestClient):
     def delete(self):
         """Return DELETE data."""
 
-    @GET('anything')
+    @POST('anything')
     @body('content')
     def anything(self, content):
         """Return request data, including method used."""
 
-    @GET('anything/{anything}')
+    @POST('anything/{anything}')
     @body('content')
     def anything_anything(self, anything, content):
         """Return request data, including the URL."""

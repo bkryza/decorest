@@ -20,8 +20,7 @@ This module contains also some enums for HTTP protocol.
 """
 import logging as LOG
 
-import requests
-
+import six
 from six.moves.urllib.parse import urljoin
 
 from .decorators import get_decor
@@ -33,10 +32,17 @@ class RestClientSession(object):
     def __init__(self, client):
         """Initialize the session instance with a specific API client."""
         self.__client = client
-        self.__session = requests.Session()
+
+        # Create a session of type specific for given backend
+        if client._backend() == 'requests':
+            import requests
+            self.__session = requests.Session()
+        else:
+            import httpx
+            self.__session = httpx.Client()
+
         if self.__client.auth is not None:
             self.__session.auth = self.__client.auth
-        pass
 
     def __enter__(self):
         """Context manager initialization."""
@@ -67,10 +73,11 @@ class RestClientSession(object):
 
 class RestClient(object):
     """Base class for decorest REST clients."""
-    def __init__(self, endpoint=None):
+    def __init__(self, endpoint=None, auth=None, backend='requests'):
         """Initialize the client with optional endpoint."""
         self.endpoint = get_decor(self, 'endpoint')
-        self.auth = None
+        self.auth = auth
+        self._set_backend(backend)
         if endpoint is not None:
             self.endpoint = endpoint
 
@@ -101,6 +108,33 @@ class RestClient(object):
         Returns the authentication object set for this client.
         """
         return self.auth
+
+    def _set_backend(self, backend):
+        """
+        Set preferred backend.
+
+        This method allows to select which backend should be used for
+        making actual HTTP[S] requests, currently supported are:
+            * requests (default)
+            * httpx
+
+        The options should be passed as string.
+        """
+        if backend not in ('requests', 'httpx'):
+            raise ValueError('{} backend not supported...'.format(backend))
+
+        if backend == 'httpx' and six.PY2:
+            raise ValueError('httpx backend is not supported on Python 2')
+
+        self.backend = backend
+
+    def _backend(self):
+        """
+        Get active backend.
+
+        Returns the name of the active backend.
+        """
+        return self.backend
 
     def build_request(self, path_components=[]):
         """
