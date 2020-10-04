@@ -419,6 +419,24 @@ The authentication object will be used in both regular API calls, as well
 as when using sessions.
 
 
+Error handling
+--------------
+
+Due to the fact, that this library supports multiple HTTP backends, exceptions
+should be caught through a wrapper class, :py:`decorest.HTTPErrorWrapper`, which
+contains the original exception raised by the underlying backend.
+
+.. code-block:: python
+
+    try:
+        res = client.update_pet(json.dumps({'id': pet_id, 'status': 'sold'}))
+    except HTTPErrorWrapper as e:
+        # Print original error message
+        print(e.response.text)
+        # Reraise the original exception
+        raise e.wrapped
+
+
 Grouping API methods
 ---------------------------
 
