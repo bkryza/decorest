@@ -110,8 +110,8 @@ def query(name, value=None):
     def query_decorator(t):
         value_ = value
         if inspect.isclass(t):
-            raise "@query decorator can only be "\
-                  "applied to methods."
+            raise TypeError("@query decorator can only be "
+                            "applied to methods.")
         if not value_:
             value_ = name
         set_decor(t, 'query', {name: value_})
@@ -125,8 +125,8 @@ def form(name, value=None):
     def form_decorator(t):
         value_ = value
         if inspect.isclass(t):
-            raise "@form decorator can only be "\
-                  "applied to methods."
+            raise TypeError("@form decorator can only be "
+                            "applied to methods.")
         if not value_:
             value_ = name
         set_decor(t, 'form', {name: value_})
@@ -405,8 +405,8 @@ class HttpMethodDecorator(object):
         if http_method not in (HttpMethod.GET, HttpMethod.POST, HttpMethod.PUT,
                                HttpMethod.PATCH, HttpMethod.DELETE,
                                HttpMethod.HEAD, HttpMethod.OPTIONS):
-            raise 'Unsupported HTTP method: {method}'.format(
-                method=http_method)
+            raise ValueError(
+                'Unsupported HTTP method: {method}'.format(method=http_method))
 
         try:
             if http_method == HttpMethod.GET:
