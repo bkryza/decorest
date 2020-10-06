@@ -24,7 +24,7 @@ from PIL import Image
 from decorest import DELETE, GET, PATCH, POST, PUT
 from decorest import HttpStatus, RestClient
 from decorest import __version__, accept, body, content, endpoint, form
-from decorest import header, on, query, stream, timeout
+from decorest import header, multipart, on, query, stream, timeout
 
 
 def repeatdecorator(f):
@@ -94,6 +94,13 @@ class HttpBinClient(RestClient):
     @body('post_data')
     def post(self, post_data):
         """Return POST data."""
+
+    @POST('post')
+    @multipart('part1')
+    @multipart('part_2', 'part2')
+    @multipart('test')
+    def post_multipart(self, part1, part_2, test):
+        """Return multipart POST data."""
 
     @PATCH('patch')
     @body('patch_data')

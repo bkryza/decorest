@@ -161,7 +161,6 @@ def test_post_form(client):
 def test_post_multipart(client):
     """
     """
-    # TODO add multipart decorator
     f = 'tests/testdata/multipart.dat'
 
     if client._backend() == 'requests':
@@ -172,6 +171,19 @@ def test_post_multipart(client):
         res = client.post(
             None, files={'test': ('filename', open(f, 'rb'), 'text/plain')})
 
+    assert res["files"]["test"] == open(f, 'rb').read().decode("utf-8")
+
+
+@pytest.mark.parametrize("client", pytest_params)
+def test_post_multipart_decorators(client):
+    """
+    """
+    f = 'tests/testdata/multipart.dat'
+    res = client.post_multipart('TEST1', 'TEST2',
+                                ('filename', open(f, 'rb'), 'text/plain'))
+
+    assert res["files"]["part1"] == 'TEST1'
+    assert res["files"]["part2"] == 'TEST2'
     assert res["files"]["test"] == open(f, 'rb').read().decode("utf-8")
 
 

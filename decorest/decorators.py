@@ -110,8 +110,8 @@ def query(name, value=None):
     def query_decorator(t):
         value_ = value
         if inspect.isclass(t):
-            raise "@query decorator can only be "\
-                  "applied to methods."
+            raise TypeError("@query decorator can only be "
+                            "applied to methods.")
         if not value_:
             value_ = name
         set_decor(t, 'query', {name: value_})
@@ -125,14 +125,29 @@ def form(name, value=None):
     def form_decorator(t):
         value_ = value
         if inspect.isclass(t):
-            raise "@form decorator can only be "\
-                  "applied to methods."
+            raise TypeError("@form decorator can only be "
+                            "applied to methods.")
         if not value_:
             value_ = name
         set_decor(t, 'form', {name: value_})
         return t
 
     return form_decorator
+
+
+def multipart(name, value=None):
+    """Multipart parameter decorator."""
+    def multipart_decorator(t):
+        value_ = value
+        if inspect.isclass(t):
+            raise TypeError("@multipart decorator can only be "
+                            "applied to methods.")
+        if not value_:
+            value_ = name
+        set_decor(t, 'multipart', {name: value_})
+        return t
+
+    return multipart_decorator
 
 
 def header(name, value):
@@ -245,6 +260,15 @@ class HttpMethodDecorator(object):
                     form_value = args_dict[form_arg]
                     form_parameters[form_param] = form_value
 
+        multipart_parameters_decor = get_decor(func, 'multipart')
+        multipart_parameters = {}
+        if multipart_parameters_decor:
+            for multipart_arg, multipart_param in iteritems(
+                    multipart_parameters_decor):
+                if args_dict.get(multipart_arg):
+                    multipart_value = args_dict[multipart_arg]
+                    multipart_parameters[multipart_param] = multipart_value
+
         header_parameters = merge_dicts(
             get_decor(rest_client.__class__, 'header'),
             get_decor(func, 'header'))
@@ -307,6 +331,14 @@ class HttpMethodDecorator(object):
                         form_parameters = merge_dicts(form_parameters,
                                                       kwargs['form'])
                         del kwargs['form']
+                    elif decor == 'multipart':
+                        if not isinstance(kwargs['multipart'], dict):
+                            raise TypeError(
+                                "'multipart' value must be an instance of dict"
+                            )
+                        multipart_parameters = merge_dicts(
+                            multipart_parameters, kwargs['multipart'])
+                        del kwargs['multipart']
                     elif decor == 'on':
                         if not isinstance(kwargs['on'], dict):
                             raise TypeError(
@@ -344,7 +376,12 @@ class HttpMethodDecorator(object):
         # Build request from endpoint and query params
         req = rest_client.build_request(req_path.split('/'))
 
-        if rest_client._backend() == 'requests':
+        # Handle multipart parameters, either from decorators
+        # or ones passed directly through kwargs
+        if multipart_parameters:
+            is_multipart_request = True
+            kwargs['files'] = multipart_parameters
+        elif rest_client._backend() == 'requests':
             from requests_toolbelt.multipart.encoder import MultipartEncoder
             is_multipart_request = 'data' in kwargs and not isinstance(
                 kwargs['data'], MultipartEncoder)
@@ -405,8 +442,8 @@ class HttpMethodDecorator(object):
         if http_method not in (HttpMethod.GET, HttpMethod.POST, HttpMethod.PUT,
                                HttpMethod.PATCH, HttpMethod.DELETE,
                                HttpMethod.HEAD, HttpMethod.OPTIONS):
-            raise 'Unsupported HTTP method: {method}'.format(
-                method=http_method)
+            raise ValueError(
+                'Unsupported HTTP method: {method}'.format(method=http_method))
 
         try:
             if http_method == HttpMethod.GET:
@@ -416,7 +453,7 @@ class HttpMethodDecorator(object):
                 else:
                     result = execution_context.get(req, **kwargs)
             elif http_method == HttpMethod.POST:
-                if rest_client._backend() == 'httpx':
+                if is_multipart_request:  # TODO: Why do I have to do this?
                     if 'headers' in kwargs:
                         kwargs['headers'].pop('content-type', None)
                 result = execution_context.post(req, **kwargs)
