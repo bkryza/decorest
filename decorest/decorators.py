@@ -453,7 +453,7 @@ class HttpMethodDecorator(object):
                 else:
                     result = execution_context.get(req, **kwargs)
             elif http_method == HttpMethod.POST:
-                if rest_client._backend() == 'httpx':
+                if is_multipart_request:  # TODO: Why do I have to do this?
                     if 'headers' in kwargs:
                         kwargs['headers'].pop('content-type', None)
                 result = execution_context.post(req, **kwargs)
