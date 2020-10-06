@@ -190,6 +190,43 @@ header value will be always set to `application/x-www-form-urlencoded`.
 
 This decorator can be added only to methods.
 
+@multipart
+~~~~~~~~~~
+
+Adds a multipart parameter to the request. For example:
+
+.. code-block:: python
+
+     @POST('post')
+     @multipart('part1')
+     @multipart('part_2', 'part2')
+     @multipart('test')
+     def post_multipart(self, part1, part_2, test):
+         """Return multipart POST data."""
+
+The first parameter to the decorator is the name of the variable in the decorated
+method and at the same time the name of the part in HTTP request (which will be
+set in the :py:`Content-Disposition` header. In case the method argument name
+should be different than the part name in the request, a second parameter to the 
+decorator will determine the actual name for the part in the HTTP request.
+
+The values for the arguments can be either strings, which will be added directly
+as content in the appropriate part, or tuples. In case a tuple is passed, it will
+be treated as a file, the same way as is treated by both backend libraries. 
+
+The above method can be thus called as follows:
+
+.. code-block:: python
+
+    f = '/tmp/test.dat'
+    res = client.post_multipart('TEST1', 'TEST2',
+                                ('filename', open(f, 'rb'), 'text/plain'))
+
+which will generate the following parts:
+  * part `part1` with content `TEST1`
+  * part `part2` with content `TEST2`
+  * part `test` with content read from file `/tmp/test.dat`
+
 @header
 ~~~~~~~
 
