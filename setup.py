@@ -64,6 +64,6 @@ setup(
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8'
     ],
-    install_requires=['requests', 'six'],
+    install_requires=['requests', 'requests-toolbelt', 'six'],
     tests_require=['pytest', 'tox', 'tox-docker']
 )
