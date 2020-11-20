@@ -28,7 +28,7 @@ from .utils import normalize_url
 
 
 class RestClientSession(object):
-    """Wrap a `requests` session for specific API client."""
+    """Wrap a `requests` or `httpx` session for specific API client."""
     def __init__(self, client):
         """Initialize the session instance with a specific API client."""
         self.__client = client
@@ -71,6 +71,44 @@ class RestClientSession(object):
         return invoker
 
 
+class RestClientAsyncSession(object):
+    def __init__(self, client):
+        self.__client = client
+
+        # Create a session of type specific for given backend
+        import httpx
+        self.__session = httpx.AsyncClient()
+
+        if self.__client.auth is not None:
+            self.__session.auth = self.__client.auth
+
+    async def __aenter__(self):
+        """Context manager initialization."""
+        return self
+
+    async def __aexit__(self, *args):
+        """Context manager destruction."""
+        await self.__session.aclose()
+        return False
+
+    def __getattr__(self, name):
+        """Forward any method invocation to actual client with session."""
+        if name == '_requests_session':
+            return self.__session
+
+        if name == '_client':
+            return self.__client
+
+        if name == '_close':
+            return self.__session.aclose
+
+        def invoker(*args, **kwargs):
+            kwargs['__session'] = self.__session
+            return getattr(self.__client, name)(*args, **kwargs)
+
+        return invoker
+
+
 class RestClient(object):
     """Base class for decorest REST clients."""
     def __init__(self, endpoint=None, auth=None, backend='requests'):
@@ -91,6 +129,9 @@ class RestClient(object):
         directly via the session object.
         """
         return RestClientSession(self)
+
+    def _async_session(self):
+        return RestClientAsyncSession(self)
 
     def _set_auth(self, auth):
         """

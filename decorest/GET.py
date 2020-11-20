@@ -15,6 +15,9 @@
 # limitations under the License.
 """GET Http method decorator."""
 
+import six
+import sys
+
 from functools import wraps
 
 from .decorators import HttpMethodDecorator, set_decor
@@ -33,6 +36,12 @@ class GET(HttpMethodDecorator):
 
         @wraps(func)
         def get_decorator(*args, **kwargs):
+            if six.PY3:
+                in_async_context = sys._getframe(1).f_code.co_flags & 0x80
+                if in_async_context:
+                    print("CALLING GET IN ASYNC CONTEXT")
+                    return super(GET, self).call_async(func, *args, **kwargs)
+
             return super(GET, self).call(func, *args, **kwargs)
 
         return get_decorator

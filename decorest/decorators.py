@@ -28,6 +28,7 @@ import numbers
 import requests
 from requests.structures import CaseInsensitiveDict
 
+import six
 from six import integer_types, iteritems
 
 from .errors import HTTPErrorWrapper
@@ -474,7 +475,7 @@ class HttpMethodDecorator(object):
             # Use a registered handler for the returned status code
             return on_handlers[result.status_code](result)
         elif on_handlers and HttpStatus.ANY in on_handlers:
-            # If a catch all status handler is provided - use it
+            # If a catch-all status handler is provided - use it
             return on_handlers[HttpStatus.ANY](result)
         else:
             # If stream option was passed and no content handler

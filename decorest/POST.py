@@ -33,6 +33,12 @@ class POST(HttpMethodDecorator):
 
         @wraps(func)
         def post_decorator(*args, **kwargs):
+            if six.PY3:
+                in_async_context = sys._getframe(1).f_code.co_flags & 0x80
+                if in_async_context:
+                    print("CALLING POST IN ASYNC CONTEXT")
+                    return super(POST, self).call_async(func, *args, **kwargs)
+
             return super(POST, self).call(func, *args, **kwargs)
 
         return post_decorator
