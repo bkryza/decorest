@@ -446,30 +446,9 @@ class HttpMethodDecorator(object):
             raise ValueError(
                 'Unsupported HTTP method: {method}'.format(method=http_method))
 
-        try:
-            if http_method == HttpMethod.GET:
-                if rest_client._backend() == 'httpx' and stream:
-                    del kwargs['stream']
-                    result = execution_context.stream("GET", req, **kwargs)
-                else:
-                    result = execution_context.get(req, **kwargs)
-            elif http_method == HttpMethod.POST:
-                if is_multipart_request:  # TODO: Why do I have to do this?
-                    if 'headers' in kwargs:
-                        kwargs['headers'].pop('content-type', None)
-                result = execution_context.post(req, **kwargs)
-            elif http_method == HttpMethod.PUT:
-                result = execution_context.put(req, **kwargs)
-            elif http_method == HttpMethod.PATCH:
-                result = execution_context.patch(req, **kwargs)
-            elif http_method == HttpMethod.DELETE:
-                result = execution_context.delete(req, **kwargs)
-            elif http_method == HttpMethod.HEAD:
-                result = execution_context.head(req, **kwargs)
-            elif http_method == HttpMethod.OPTIONS:
-                result = execution_context.options(req, **kwargs)
-        except Exception as e:
-            raise HTTPErrorWrapper(e)
+        result = self.dispatch_request(http_method, rest_client, stream,
+                                       kwargs, execution_context, req,
+                                       is_multipart_request)
 
         if on_handlers and result.status_code in on_handlers:
             # Use a registered handler for the returned status code
@@ -499,3 +478,31 @@ class HttpMethodDecorator(object):
                     return result.text
 
             return None
+
+    def dispatch_request(self, http_method, rest_client, stream, kwargs,
+                         execution_context, req, is_multipart_request):
+        try:
+            if http_method == HttpMethod.GET:
+                if rest_client._backend() == 'httpx' and stream:
+                    del kwargs['stream']
+                    result = execution_context.stream("GET", req, **kwargs)
+                else:
+                    result = execution_context.get(req, **kwargs)
+            elif http_method == HttpMethod.POST:
+                if is_multipart_request:  # TODO: Why do I have to do this?
+                    if 'headers' in kwargs:
+                        kwargs['headers'].pop('content-type', None)
+                result = execution_context.post(req, **kwargs)
+            elif http_method == HttpMethod.PUT:
+                result = execution_context.put(req, **kwargs)
+            elif http_method == HttpMethod.PATCH:
+                result = execution_context.patch(req, **kwargs)
+            elif http_method == HttpMethod.DELETE:
+                result = execution_context.delete(req, **kwargs)
+            elif http_method == HttpMethod.HEAD:
+                result = execution_context.head(req, **kwargs)
+            elif http_method == HttpMethod.OPTIONS:
+                result = execution_context.options(req, **kwargs)
+        except Exception as e:
+            raise HTTPErrorWrapper(e)
+        return result
