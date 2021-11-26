@@ -1,5 +1,9 @@
 .. :changelog:
 
+0.0.6 (2020-10-06)
+++++++++++++++++++
+
+* Added multipart decorator support
 * Ported tests to tox-docker 2.0.0
 
 0.0.3 (2018-04-02)
