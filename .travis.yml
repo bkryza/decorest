@@ -7,17 +7,29 @@ services:
 
 jobs:
   include:
+    - python: '3.10'
+      env:
+        - TOX_DOCKER_VERSION=v3.1.0
+        - TOX_INI=tox.ini
+    - python: '3.9'
+      env:
+        - TOX_DOCKER_VERSION=v3.1.0
+        - TOX_INI=tox.ini
     - python: '3.8'
       env:
-        - TOX_DOCKER_VERSION=v2.0.0a3
+        - TOX_DOCKER_VERSION=v3.1.0
+        - TOX_INI=tox.ini
+    - python: '3.8'
+      env:
+        - TOX_DOCKER_VERSION=v3.1.0
         - TOX_INI=tox.ini
     - python: '3.7'
       env:
-        - TOX_DOCKER_VERSION=v2.0.0a3
+        - TOX_DOCKER_VERSION=v3.1.0
         - TOX_INI=tox.ini
     - python: '3.6'
       env:
-        - TOX_DOCKER_VERSION=v2.0.0a3
+        - TOX_DOCKER_VERSION=v3.1.0
         - TOX_INI=tox.ini
     - python: '2.7' # tox_docker v2.0.0+ does not support Python2
       env:
