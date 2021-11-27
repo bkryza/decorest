@@ -1,5 +1,11 @@
 .. :changelog:
 
+0.0.7 (2021-11-27)
+++++++++++++++++++
+
+* Updated Python versions
+* Switched to GitHub Actions
+
 0.0.6 (2020-10-06)
 ++++++++++++++++++
 
