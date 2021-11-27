@@ -1,0 +1,51 @@
+name: Main workflow
+on:
+  push:
+    branches:
+      - "**"
+    paths-ignore:
+      - '**.rst'
+  pull_request:
+    paths-ignore:
+      - '**.rst'
+jobs:
+  python2:
+    name: Test on Python 2
+    runs-on: ${{ matrix.operating-system }}
+    env:
+      TOX_DOCKER_VERSION: 1.7.0
+    strategy:
+      matrix:
+        operating-system: [ ubuntu-latest ]
+        python-version: [ 2.7 ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - run: pip install tox tox-gh-actions tox-docker==$TOX_DOCKER_VERSION
+      - run: tox -c tox-py2.ini -e flake8,basic,swaggerpetstore,httpbin
+  python3:
+    name: Test on Python 3
+    runs-on: ${{ matrix.operating-system }}
+    env:
+      TOX_DOCKER_VERSION: 3.1.0
+    strategy:
+      matrix:
+        operating-system: [ ubuntu-latest ]
+        python-version: [ 3.6, 3.7, 3.8, 3.9, 3.10 ]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Install Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - run: pip install tox tox-gh-actions tox-docker==$TOX_DOCKER_VERSION
+    - run: tox -c tox.ini -e flake8,basic,swaggerpetstore,httpbin
