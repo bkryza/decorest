@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Utility functions."""
-
+import copy
 import inspect
 import logging as LOG
 import re
@@ -39,8 +39,6 @@ def render_path(path, args):
 def dict_from_args(func, *args):
     """Convert function arguments to a dictionary."""
     result = {}
-    args_names = []
-    args_default_values = ()
 
     if six.PY2:
         args_names = inspect.getargspec(func)[0]
@@ -81,7 +79,7 @@ def merge_dicts(*dict_args):
     for dictionary in dict_args:
         if dictionary is not None:
             if result is None:
-                result = dictionary
+                result = copy.deepcopy(dictionary)
             else:
                 result.update(dictionary)
     if result is None:

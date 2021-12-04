@@ -79,6 +79,11 @@ class HttpBinClient(RestClient):
     def headers(self):
         """Return header dict."""
 
+    @GET('headers')
+    @header('arg_header', 'ArgHeader')
+    def headers_in_args(self, arg_header):
+        """Return header dict."""
+
     @GET('get')
     def get(self):
         """Return GET data."""

@@ -37,8 +37,8 @@ from .utils import dict_from_args, merge_dicts, render_path
 DECOR_KEY = '__decorest__'
 
 DECOR_LIST = [
-    'on', 'query', 'header', 'endpoint', 'content', 'accept', 'body',
-    'timeout', 'form'
+    'header', 'query', 'form', 'multipart', 'on', 'accept', 'content',
+    'timeout', 'stream', 'body'
 ]
 
 
@@ -93,8 +93,9 @@ def on(status, handler):
     The handler is a function or lambda which will receive as
     the sole parameter the requests response object.
     """
+
     def on_decorator(t):
-        if (status is Ellipsis):
+        if status is Ellipsis:
             set_decor(t, 'on', {HttpStatus.ANY: handler})
         elif isinstance(status, integer_types):
             set_decor(t, 'on', {status: handler})
@@ -107,6 +108,7 @@ def on(status, handler):
 
 def query(name, value=None):
     """Query parameter decorator."""
+
     def query_decorator(t):
         value_ = value
         if inspect.isclass(t):
@@ -122,6 +124,7 @@ def query(name, value=None):
 
 def form(name, value=None):
     """Form parameter decorator."""
+
     def form_decorator(t):
         value_ = value
         if inspect.isclass(t):
@@ -137,6 +140,7 @@ def form(name, value=None):
 
 def multipart(name, value=None):
     """Multipart parameter decorator."""
+
     def multipart_decorator(t):
         value_ = value
         if inspect.isclass(t):
@@ -150,10 +154,14 @@ def multipart(name, value=None):
     return multipart_decorator
 
 
-def header(name, value):
+def header(name, value=None):
     """Header class and method decorator."""
+
     def header_decorator(t):
-        set_decor(t, 'header', CaseInsensitiveDict({name: value}))
+        value_ = value
+        if not value_:
+            value_ = name
+        set_decor(t, 'header', CaseInsensitiveDict({name: value_}))
         return t
 
     return header_decorator
@@ -161,6 +169,7 @@ def header(name, value):
 
 def endpoint(value):
     """Endpoint class and method decorator."""
+
     def endpoint_decorator(t):
         set_decor(t, 'endpoint', value)
         return t
@@ -170,6 +179,7 @@ def endpoint(value):
 
 def content(value):
     """Content-type header class and method decorator."""
+
     def content_decorator(t):
         set_decor(t, 'header', CaseInsensitiveDict({'Content-Type': value}))
         return t
@@ -179,6 +189,7 @@ def content(value):
 
 def accept(value):
     """Accept header class and method decorator."""
+
     def accept_decorator(t):
         set_decor(t, 'header', CaseInsensitiveDict({'Accept': value}))
         return t
@@ -192,6 +203,7 @@ def body(name, serializer=None):
 
     Determines which method argument provides the body.
     """
+
     def body_decorator(t):
         set_decor(t, 'body', (name, serializer))
         return t
@@ -205,6 +217,7 @@ def timeout(value):
 
     Specifies a default timeout value for method or entire API.
     """
+
     def timeout_decorator(t):
         set_decor(t, 'timeout', value)
         return t
@@ -225,6 +238,7 @@ def stream(t):
 
 class HttpMethodDecorator(object):
     """Abstract decorator for HTTP method decorators."""
+
     def __init__(self, path):
         """Initialize decorator with endpoint relative path."""
         self.path_template = path
@@ -235,43 +249,29 @@ class HttpMethodDecorator(object):
         rest_client = args[0]
         args_dict = dict_from_args(func, *args)
         req_path = render_path(self.path_template, args_dict)
-        stream = False
         session = None
         if '__session' in kwargs:
             session = kwargs['__session']
             del kwargs['__session']
 
         # Merge query parameters from common values for all method
-        # invocations with query arguments provided in the method
+        # invocations with arguments provided in the method
         # arguments
-        query_parameters_decor = get_decor(func, 'query')
-        query_parameters = {}
-        if query_parameters_decor:
-            for query_arg, query_param in iteritems(query_parameters_decor):
-                if args_dict.get(query_arg):
-                    query_value = args_dict[query_arg]
-                    query_parameters[query_param] = query_value
-
-        form_parameters_decor = get_decor(func, 'form')
-        form_parameters = {}
-        if form_parameters_decor:
-            for form_arg, form_param in iteritems(form_parameters_decor):
-                if args_dict.get(form_arg):
-                    form_value = args_dict[form_arg]
-                    form_parameters[form_param] = form_value
-
-        multipart_parameters_decor = get_decor(func, 'multipart')
-        multipart_parameters = {}
-        if multipart_parameters_decor:
-            for multipart_arg, multipart_param in iteritems(
-                    multipart_parameters_decor):
-                if args_dict.get(multipart_arg):
-                    multipart_value = args_dict[multipart_arg]
-                    multipart_parameters[multipart_param] = multipart_value
-
+        query_parameters = self.__merge_args(args_dict, func, 'query')
+        form_parameters = self.__merge_args(args_dict, func, 'form')
+        multipart_parameters = self.__merge_args(args_dict, func, 'multipart')
         header_parameters = merge_dicts(
             get_decor(rest_client.__class__, 'header'),
-            get_decor(func, 'header'))
+            self.__merge_args(args_dict, func, 'header'))
+
+        # Merge header parameters with default values, treat header
+        # decorators with 2 params as default values only if they
+        # don't match the function argument names
+        func_header_decors = get_decor(func, 'header')
+        if func_header_decors:
+            for key in func_header_decors.keys():
+                if not func_header_decors[key] in args_dict:
+                    header_parameters[key] = func_header_decors[key]
 
         # Get body content from positional arguments if one is specified
         # using @body decorator
@@ -297,9 +297,9 @@ class HttpMethodDecorator(object):
             timeout = get_decor(func, 'timeout')
 
         # Check if stream is requested for this call
-        stream = get_decor(func, 'stream')
-        if stream is None:
-            stream = get_decor(rest_client.__class__, 'stream')
+        is_stream = get_decor(func, 'stream')
+        if is_stream is None:
+            is_stream = get_decor(rest_client.__class__, 'stream')
 
         #
         # If the kwargs contains any decorest decorators that should
@@ -365,7 +365,7 @@ class HttpMethodDecorator(object):
                     elif decor == 'stream':
                         if not isinstance(kwargs['stream'], bool):
                             raise TypeError("'stream' value must be a bool")
-                        stream = kwargs['stream']
+                        is_stream = kwargs['stream']
                         del kwargs['stream']
                     elif decor == 'body':
                         body_content = kwargs['body']
@@ -389,8 +389,8 @@ class HttpMethodDecorator(object):
             is_multipart_request = 'files' in kwargs
 
         # Assume default content type if not multipart
-        if ('content-type'
-                not in header_parameters) and not is_multipart_request:
+        if ('content-type' not in header_parameters) \
+                and not is_multipart_request:
             header_parameters['content-type'] = 'application/json'
 
         # Assume default accept
@@ -420,8 +420,8 @@ class HttpMethodDecorator(object):
             header_parameters['content-type'] \
                 = 'application/x-www-form-urlencoded'
             kwargs['data'] = form_parameters
-        if stream:
-            kwargs['stream'] = stream
+        if is_stream:
+            kwargs['stream'] = is_stream
         if header_parameters:
             kwargs['headers'] = dict(header_parameters.items())
 
@@ -447,7 +447,7 @@ class HttpMethodDecorator(object):
 
         try:
             if http_method == HttpMethod.GET:
-                if rest_client._backend() == 'httpx' and stream:
+                if rest_client._backend() == 'httpx' and is_stream:
                     del kwargs['stream']
                     result = execution_context.stream("GET", req, **kwargs)
                 else:
@@ -479,7 +479,7 @@ class HttpMethodDecorator(object):
         else:
             # If stream option was passed and no content handler
             # was defined, return requests response
-            if stream:
+            if is_stream:
                 return result
 
             # Default response handler
@@ -498,3 +498,24 @@ class HttpMethodDecorator(object):
                     return result.text
 
             return None
+
+    def __merge_args(self, args_dict, func, decor):
+        """
+        Match named arguments from method call.
+
+        Args:
+            args_dict (dict): Function arguments dictionary
+            func (type): Decorated function
+            decor (str): Name of specific decorator (e.g. 'query')
+
+        Returns:
+            object: any value assigned to the name key
+
+        """
+        args_decor = get_decor(func, decor)
+        parameters = {}
+        if args_decor:
+            for arg, param in iteritems(args_decor):
+                if args_dict.get(arg):
+                    parameters[param] = args_dict[arg]
+        return parameters

@@ -13,6 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import pprint
 
 import pytest
 import time
@@ -20,6 +21,9 @@ import os
 import six
 import sys
 import json
+
+from requests.structures import CaseInsensitiveDict
+
 from decorest import __version__, HttpStatus, HTTPErrorWrapper
 from requests import cookies
 from requests.exceptions import ReadTimeout
@@ -114,15 +118,32 @@ def test_user_agent(client):
 def test_headers(client):
     """
     """
+
+    def ci(d):
+        return CaseInsensitiveDict(d)
+
+    # Check
     res = client.headers(header={'A': 'AA', 'B': 'CC'})
 
-    assert res['headers']['User-Agent'] == 'decorest/{v}'.format(v=__version__)
-    assert res['headers']['A'] == 'AA'
-    assert res['headers']['B'] == 'CC'
+    assert ci(res['headers'])['User-Agent'] == 'decorest/{v}'.format(v=__version__)
+    assert ci(res['headers'])['A'] == 'AA'
+    assert ci(res['headers'])['B'] == 'CC'
 
+    # Check with other values
+    res = client.headers(header={'A': 'DD', 'B': 'EE'})
+
+    assert ci(res['headers'])['A'] == 'DD'
+    assert ci(res['headers'])['B'] == 'EE'
+
+    # Check method default header value
     res = client.headers()
 
-    assert res['headers']['B'] == 'BB'
+    assert ci(res['headers'])['B'] == 'BB'
+
+    # Check passing header value in arguments
+    res = client.headers_in_args('ABCD')
+
+    assert ci(res['headers'])['ArgHeader'] == 'ABCD'
 
 
 @pytest.mark.parametrize("client", pytest_params)

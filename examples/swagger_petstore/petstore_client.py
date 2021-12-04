@@ -23,12 +23,14 @@ Example decorest based client to Swagger Petstore sample service.
 import json
 import xml.etree.ElementTree as ET
 
+
 from decorest import DELETE, GET, POST, PUT
 from decorest import HttpStatus, RestClient
+from decorest import __version__
 from decorest import accept, body, content, endpoint, header, on, query
 
 
-@header('user-agent', 'decorest/0.0.2')
+@header('user-agent', 'decorest/{v}'.format(v=__version__))
 @content('application/json')
 @accept('application/json')
 @endpoint('http://petstore.example.com')
