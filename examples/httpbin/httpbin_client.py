@@ -53,9 +53,6 @@ def parse_image(response):
 @endpoint('http://httpbin.org')
 class HttpBinClient(RestClient):
     """Client to HttpBin service (httpbin.org)."""
-    def __init__(self, *args, **kwargs):
-        """Construct object."""
-        super(HttpBinClient, self).__init__(*args, **kwargs)
 
     @GET('ip')
     def ip(self):

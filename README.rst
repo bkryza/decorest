@@ -38,9 +38,6 @@ For example:
     from decorest import RestClient, GET
 
     class DogClient(RestClient):
-        def __init__(self, *args, **kwargs):
-            super(DogClient, self).__init__(*args, **kwargs)
-
         @GET('breed/{breed_name}/list')
         def list_subbreeds(self, breed_name):
             """List all sub-breeds"""
@@ -357,8 +354,7 @@ which then doesn't have to be provided in the client constructor:
         @endpoint('https://dog.ceo/api')
         class DogClient(RestClient):
             """List all sub-breeds"""
-            def __init__(self, endpoint=None):
-                super(DogClient, self).__init__(endpoint)
+            ...
 
 The endpoint provided in the client constructor will take precedence
 however.
@@ -374,8 +370,7 @@ Specifies a default timeout value (in seconds) for method or entire API.
         @timeout(5)
         class DogClient(RestClient):
             """List all sub-breeds"""
-            def __init__(self, endpoint=None):
-                super(DogClient, self).__init__(endpoint)
+            ...
 
 @stream
 ~~~~~~~

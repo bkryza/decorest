@@ -29,8 +29,6 @@ from decorest.decorators import get_decor
 @endpoint('https://dog.ceo/')
 class DogClient(RestClient):
     """DogClient client"""
-    def __init__(self, endpoint=None):
-        super(DogClient, self).__init__(endpoint)
 
     @GET('breed/{breed_name}/list')
     def list_subbreeds(self, breed_name):
