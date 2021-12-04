@@ -141,9 +141,10 @@ def test_headers(client):
     assert ci(res['headers'])['B'] == 'BB'
 
     # Check passing header value in arguments
-    res = client.headers_in_args('ABCD')
+    res = client.headers_in_args('1234', 'ABCD')
 
-    assert ci(res['headers'])['ArgHeader'] == 'ABCD'
+    assert ci(res['headers'])['First'] == '1234'
+    assert ci(res['headers'])['SecondHeader'] == 'ABCD'
 
 
 @pytest.mark.parametrize("client", pytest_params)
