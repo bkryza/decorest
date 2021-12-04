@@ -243,6 +243,16 @@ This decorator can be added to both methods and client class. The class level
 decorators will be added to every method and can be overridden using method
 level decorators.
 
+Decorated methods can use their arguments to pass header values, if the headers
+name matches one of the arguments, e.g.:
+
+.. code-block:: python
+
+        @GET('breed/{breed_name}/list')
+        @header('accept')
+        def list_subbreeds(self, breed_name, accept):
+            """List all sub-breeds"""
+
 @body
 ~~~~~
 
