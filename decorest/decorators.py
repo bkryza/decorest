@@ -294,9 +294,9 @@ class HttpMethodDecorator(object):
                                   get_decor(func, 'on'))
 
         # Get timeout
-        timeout = get_decor(rest_client.__class__, 'timeout')
+        request_timeout = get_decor(rest_client.__class__, 'timeout')
         if get_decor(func, 'timeout'):
-            timeout = get_decor(func, 'timeout')
+            request_timeout = get_decor(func, 'timeout')
 
         # Check if stream is requested for this call
         is_stream = get_decor(func, 'stream')
@@ -313,60 +313,43 @@ class HttpMethodDecorator(object):
             for decor in DECOR_LIST:
                 if decor in kwargs:
                     if decor == 'header':
-                        if not isinstance(kwargs['header'], dict):
-                            raise TypeError(
-                                "'header' value must be an instance of dict")
+                        self.__validate_decor(decor, kwargs, dict)
                         header_parameters = merge_dicts(
                             header_parameters, kwargs['header'])
                         del kwargs['header']
                     elif decor == 'query':
-                        if not isinstance(kwargs['query'], dict):
-                            raise TypeError(
-                                "'query' value must be an instance of dict")
+                        self.__validate_decor(decor, kwargs, dict)
                         query_parameters = merge_dicts(query_parameters,
                                                        kwargs['query'])
                         del kwargs['query']
                     elif decor == 'form':
-                        if not isinstance(kwargs['form'], dict):
-                            raise TypeError(
-                                "'form' value must be an instance of dict")
+                        self.__validate_decor(decor, kwargs, dict)
                         form_parameters = merge_dicts(form_parameters,
                                                       kwargs['form'])
                         del kwargs['form']
                     elif decor == 'multipart':
-                        if not isinstance(kwargs['multipart'], dict):
-                            raise TypeError(
-                                "'multipart' value must be an instance of dict"
-                            )
+                        self.__validate_decor(decor, kwargs, dict)
                         multipart_parameters = merge_dicts(
                             multipart_parameters, kwargs['multipart'])
                         del kwargs['multipart']
                     elif decor == 'on':
-                        if not isinstance(kwargs['on'], dict):
-                            raise TypeError(
-                                "'on' value must be an instance of dict")
+                        self.__validate_decor(decor, kwargs, dict)
                         on_handlers = merge_dicts(on_handlers, kwargs['on'])
                         del kwargs['on']
                     elif decor == 'accept':
-                        if not isinstance(kwargs['accept'], str):
-                            raise TypeError(
-                                "'accept' value must be an instance of str")
+                        self.__validate_decor(decor, kwargs, str)
                         header_parameters['accept'] = kwargs['accept']
                         del kwargs['accept']
                     elif decor == 'content':
-                        if not isinstance(kwargs['content'], str):
-                            raise TypeError(
-                                "'content' value must be an instance of str")
+                        self.__validate_decor(decor, kwargs, str)
                         header_parameters['content-type'] = kwargs['content']
                         del kwargs['content']
                     elif decor == 'timeout':
-                        if not isinstance(kwargs['timeout'], numbers.Number):
-                            raise TypeError("'timeout' value must be a number")
-                        timeout = kwargs['timeout']
+                        self.__validate_decor(decor, kwargs, numbers.Number)
+                        request_timeout = kwargs['timeout']
                         del kwargs['timeout']
                     elif decor == 'stream':
-                        if not isinstance(kwargs['stream'], bool):
-                            raise TypeError("'stream' value must be a bool")
+                        self.__validate_decor(decor, kwargs, bool)
                         is_stream = kwargs['stream']
                         del kwargs['stream']
                     elif decor == 'body':
@@ -399,14 +382,14 @@ class HttpMethodDecorator(object):
         if 'accept' not in header_parameters:
             header_parameters['accept'] = 'application/json'
 
-        LOG.debug('REQUEST: {method} {request}'.format(method=http_method,
+        LOG.debug('Request: {method} {request}'.format(method=http_method,
                                                        request=req))
 
         if auth:
             kwargs['auth'] = auth
 
-        if timeout:
-            kwargs['timeout'] = timeout
+        if request_timeout:
+            kwargs['timeout'] = request_timeout
 
         if body_content:
             if header_parameters.get('content-type') == 'application/json':
@@ -521,6 +504,20 @@ class HttpMethodDecorator(object):
 
         return methodcaller(method, req, **kwargs)(execution_context)
 
+    def __validate_decor(self, decor, kwargs, cls):
+        """
+        Ensure kwargs contain decor with specific type.
+
+        Args:
+            decor(str): Name of the decorator
+            kwargs(dict): Named arguments passed to API call
+            cls(class): Expected type of decorator parameter
+        """
+        if not isinstance(kwargs[decor], cls):
+            raise TypeError(
+                "{} value must be an instance of {}".format(
+                    decor, cls.__name__))
+
     def __merge_args(self, args_dict, func, decor):
         """
         Match named arguments from method call.
@@ -532,7 +529,6 @@ class HttpMethodDecorator(object):
 
         Returns:
             object: any value assigned to the name key
-
         """
         args_decor = get_decor(func, decor)
         parameters = {}
