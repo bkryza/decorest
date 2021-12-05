@@ -24,10 +24,12 @@ import inspect
 import json
 import logging as LOG
 import numbers
+from operator import methodcaller
 
 import requests
 from requests.structures import CaseInsensitiveDict
 
+import six
 from six import integer_types, iteritems
 
 from .errors import HTTPErrorWrapper
@@ -402,26 +404,35 @@ class HttpMethodDecorator(object):
 
         if auth:
             kwargs['auth'] = auth
+
         if timeout:
             kwargs['timeout'] = timeout
+
         if body_content:
             if header_parameters.get('content-type') == 'application/json':
                 if isinstance(body_content, dict):
-                    kwargs['data'] = json.dumps(body_content)
-                else:
+                    body_content = json.dumps(body_content)
+
+            if rest_client._backend() == 'httpx':
+                if isinstance(body_content, dict):
                     kwargs['data'] = body_content
+                else:
+                    kwargs['content'] = body_content
             else:
                 kwargs['data'] = body_content
-            LOG.debug("BODY TYPE: " + str(type(kwargs['data'])))
+
         if query_parameters:
             kwargs['params'] = query_parameters
+
         if form_parameters:
             # If form parameters were passed, override the content-type
             header_parameters['content-type'] \
                 = 'application/x-www-form-urlencoded'
             kwargs['data'] = form_parameters
+
         if is_stream:
             kwargs['stream'] = is_stream
+
         if header_parameters:
             kwargs['headers'] = dict(header_parameters.items())
 
@@ -446,27 +457,18 @@ class HttpMethodDecorator(object):
                 'Unsupported HTTP method: {method}'.format(method=http_method))
 
         try:
-            if http_method == HttpMethod.GET:
-                if rest_client._backend() == 'httpx' and is_stream:
-                    del kwargs['stream']
-                    result = execution_context.stream("GET", req, **kwargs)
-                else:
-                    result = execution_context.get(req, **kwargs)
-            elif http_method == HttpMethod.POST:
-                if is_multipart_request:  # TODO: Why do I have to do this?
+            if rest_client._backend() == 'httpx' \
+                    and http_method == HttpMethod.GET and is_stream:
+                del kwargs['stream']
+                result = execution_context.stream("GET", req, **kwargs)
+            else:
+                if http_method == HttpMethod.POST and is_multipart_request:
+                    # TODO: Why do I have to do this?
                     if 'headers' in kwargs:
                         kwargs['headers'].pop('content-type', None)
-                result = execution_context.post(req, **kwargs)
-            elif http_method == HttpMethod.PUT:
-                result = execution_context.put(req, **kwargs)
-            elif http_method == HttpMethod.PATCH:
-                result = execution_context.patch(req, **kwargs)
-            elif http_method == HttpMethod.DELETE:
-                result = execution_context.delete(req, **kwargs)
-            elif http_method == HttpMethod.HEAD:
-                result = execution_context.head(req, **kwargs)
-            elif http_method == HttpMethod.OPTIONS:
-                result = execution_context.options(req, **kwargs)
+
+                result = self.__dispatch(
+                    execution_context, http_method, kwargs, req)
         except Exception as e:
             raise HTTPErrorWrapper(e)
 
@@ -498,6 +500,26 @@ class HttpMethodDecorator(object):
                     return result.text
 
             return None
+
+    def __dispatch(self, execution_context, http_method, kwargs, req):
+        """
+        Dispatch HTTP method based on HTTPMethod enum type.
+
+        Args:
+            execution_context: requests or httpx object
+            http_method(HttpMethod): HTTP method
+            kwargs(dict): named arguments passed to the API method
+            req(): request object
+        """
+        if isinstance(http_method, str):
+            method = http_method
+        else:
+            if six.PY2:
+                method = http_method[0].lower()
+            else:
+                method = http_method.value[0].lower()
+
+        return methodcaller(method, req, **kwargs)(execution_context)
 
     def __merge_args(self, args_dict, func, decor):
         """

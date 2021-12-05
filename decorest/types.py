@@ -29,21 +29,21 @@ if PY3:
 class HttpMethod(DEnum):
     """Enum with HTTP methods."""
 
-    GET = 'GET'
-    POST = 'POST'
-    PUT = 'PUT'
-    PATCH = 'PATCH'
-    DELETE = 'DELETE'
-    HEAD = 'HEAD'
+    GET = 'GET',
+    POST = 'POST',
+    PUT = 'PUT',
+    PATCH = 'PATCH',
+    DELETE = 'DELETE',
+    HEAD = 'HEAD',
     OPTIONS = 'OPTIONS'
 
 
 class HttpStatus(DIntEnum):
     """Enum with HTTP error code classes."""
 
-    INFORMATIONAL_RESPONSE = 1
-    SUCCESS = 2
-    REDIRECTION = 3
-    CLIENT_ERROR = 4
-    SERVER_ERROR = 5
+    INFORMATIONAL_RESPONSE = 1,
+    SUCCESS = 2,
+    REDIRECTION = 3,
+    CLIENT_ERROR = 4,
+    SERVER_ERROR = 5,
     ANY = 999  # Same as Ellipsis '...'
