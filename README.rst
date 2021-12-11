@@ -50,7 +50,7 @@ For example:
 Installation
 ============
 
-**Note:** *As of version `0.1.0`, decorest_ supports only Python 3.5+.*
+**Note:** *As of version `0.1.0`, decorest_ supports only Python 3.6+.*
 
 Using pip:
 
