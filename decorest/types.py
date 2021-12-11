@@ -15,15 +15,9 @@
 # limitations under the License.
 """Various types related to HTTP and REST."""
 
-from six import PY3
-
-DEnum = object
-DIntEnum = object
-
-if PY3:
-    import enum
-    DEnum = enum.Enum
-    DIntEnum = enum.IntEnum
+import enum
+DEnum = enum.Enum
+DIntEnum = enum.IntEnum
 
 
 class HttpMethod(DEnum):

@@ -53,19 +53,19 @@ setup(
     packages=find_packages(exclude=['tests']),
     include_package_data=True,
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'Natural Language :: English',
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10'
     ],
-    install_requires=['requests', 'requests-toolbelt', 'six'],
+    install_requires=['requests', 'requests-toolbelt'],
     tests_require=['pytest', 'tox', 'tox-docker']
 )

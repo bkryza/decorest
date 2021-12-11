@@ -18,7 +18,6 @@ import pprint
 import pytest
 import time
 import os
-import six
 import sys
 import json
 
@@ -38,27 +37,23 @@ from httpbin.httpbin_client import HttpBinClient, parse_image
 def client(backend):
     # Give Docker and HTTPBin some time to spin up
     time.sleep(2)
-    if six.PY2:
-        host = os.environ["KENNETHREITZ_HTTPBIN_HOST"]
-        port = os.environ["KENNETHREITZ_HTTPBIN_80_TCP_PORT"]
-    else:
-        host = os.environ["HTTPBIN_HOST"]
-        port = os.environ["HTTPBIN_80_TCP_PORT"]
+
+    host = os.environ["HTTPBIN_HOST"]
+    port = os.environ["HTTPBIN_80_TCP_PORT"]
+
     return HttpBinClient("http://{host}:{port}".format(host=host, port=port),
                          backend=backend)
 
 
 def basic_auth_client(backend):
     # Give Docker and HTTPBin some time to spin up
-    if six.PY2:
-        host = os.environ["KENNETHREITZ_HTTPBIN_HOST"]
-        port = os.environ["KENNETHREITZ_HTTPBIN_80_TCP_PORT"]
-    else:
-        host = os.environ["HTTPBIN_HOST"]
-        port = os.environ["HTTPBIN_80_TCP_PORT"]
+    host = os.environ["HTTPBIN_HOST"]
+    port = os.environ["HTTPBIN_80_TCP_PORT"]
+
     client = HttpBinClient("http://{host}:{port}".format(host=host, port=port),
                            backend=backend)
     client._set_auth(HTTPBasicAuth('user', 'password'))
+
     return client
 
 
@@ -69,12 +64,12 @@ pytest_params = [pytest.param(client_requests, id='requests')]
 pytest_basic_auth_params = [
     pytest.param(client_requests, basic_auth_client_requests, id='requests')
 ]
-if six.PY3:
-    client_httpx = client('httpx')
-    pytest_params.append(pytest.param(client_requests, id='httpx'))
-    basic_auth_client_httpx = basic_auth_client('httpx')
-    pytest_basic_auth_params.append(
-        pytest.param(client_httpx, basic_auth_client_httpx, id='httpx'))
+
+client_httpx = client('httpx')
+pytest_params.append(pytest.param(client_requests, id='httpx'))
+basic_auth_client_httpx = basic_auth_client('httpx')
+pytest_basic_auth_params.append(
+    pytest.param(client_httpx, basic_auth_client_httpx, id='httpx'))
 
 
 @pytest.mark.parametrize("client", pytest_params)

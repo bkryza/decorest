@@ -19,9 +19,7 @@ Base Http client implementation.
 This module contains also some enums for HTTP protocol.
 """
 import logging as LOG
-
-import six
-from six.moves.urllib.parse import urljoin
+import urllib.parse
 
 from .decorators import get_decor
 from .utils import normalize_url
@@ -123,9 +121,6 @@ class RestClient(object):
         if backend not in ('requests', 'httpx'):
             raise ValueError('{} backend not supported...'.format(backend))
 
-        if backend == 'httpx' and six.PY2:
-            raise ValueError('httpx backend is not supported on Python 2')
-
         self.backend = backend
 
     def _backend(self):
@@ -145,6 +140,7 @@ class RestClient(object):
         """
         LOG.debug("Building request from path tokens: %s", path_components)
 
-        req = urljoin(normalize_url(self.endpoint), "/".join(path_components))
+        req = urllib.parse.urljoin(
+            normalize_url(self.endpoint), "/".join(path_components))
 
         return req

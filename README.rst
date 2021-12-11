@@ -50,6 +50,8 @@ For example:
 Installation
 ============
 
+**Note:** *As of version `0.1.0`, decorest_ supports only Python 3.5+.*
+
 Using pip:
 
 .. code-block:: bash
@@ -81,8 +83,8 @@ Choosing backend
 ----------------
 
 decorest_ supports currently 2 backends:
-  * requests_ (Python 2 and 3)
-  * httpx_ (only Python 3)
+  * requests_ (default)
+  * httpx_
 
 To select a specific backend, simply pass it's name to the constructor of the client:
 
@@ -543,13 +545,9 @@ Create virtual env
 
 .. code-block:: bash
 
-    # For Python 3
-    virtualenv -p /usr/bin/python3.8 venv3
-    source venv3/bin/activate
+    virtualenv -p /usr/bin/python3 venv
+    source venv/bin/activate
 
-    # For Python 2
-    virtualenv -p /usr/bin/python2.7 venv2
-    source venv2/bin/activate
 
 Formatting
 ----------
@@ -566,11 +564,7 @@ tox_ and tox-docker_.
 
 .. code-block:: bash
 
-    # Python 3
     python -m tox -e flake8,basic,httpbin,swaggerpetstore
-
-    # Python 2
-    python -m tox -c tox-py2.ini -e flake8,basic,httpbin,swaggerpetstore
 
 
 Checking README syntax

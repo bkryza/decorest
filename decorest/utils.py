@@ -19,8 +19,6 @@ import inspect
 import logging as LOG
 import re
 
-import six
-
 
 def render_path(path, args):
     """Render REST path from *args."""
@@ -40,31 +38,19 @@ def dict_from_args(func, *args):
     """Convert function arguments to a dictionary."""
     result = {}
 
-    if six.PY2:
-        args_names = inspect.getargspec(func)[0]
-        args_default_values = inspect.getargspec(func)[3]
-        # Add bound arguments to the dictionary
-        for i in range(len(args)):
-            result[args_names[i]] = args[i]
-
-        # Add any default arguments if were left unbound in method call
-        for j in range(len(args), len(args_names)):
-            result[args_names[j]] = args_default_values[len(args_names) -
-                                                        (j + len(args) - 1)]
-    else:
-        parameters = inspect.signature(func).parameters
-        idx = 0
-        for name, parameter in parameters.items():
-            if idx < len(args):
-                # Add bound arguments to the dictionary
-                result[name] = args[idx]
-                idx += 1
-            elif parameter.default is not inspect.Parameter.empty:
-                # Add any default arguments if were left unbound in method call
-                result[name] = parameter.default
-                idx += 1
-            else:
-                pass
+    parameters = inspect.signature(func).parameters
+    idx = 0
+    for name, parameter in parameters.items():
+        if idx < len(args):
+            # Add bound arguments to the dictionary
+            result[name] = args[idx]
+            idx += 1
+        elif parameter.default is not inspect.Parameter.empty:
+            # Add any default arguments if were left unbound in method call
+            result[name] = parameter.default
+            idx += 1
+        else:
+            pass
 
     return result
 

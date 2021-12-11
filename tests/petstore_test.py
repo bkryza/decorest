@@ -15,7 +15,6 @@
 # limitations under the License.
 
 import os
-import six
 import sys
 import pytest
 import time
@@ -31,21 +30,18 @@ def client(backend):
     # Give Docker and Swagger Petstore some time to spin up
     time.sleep(2)
     host = "localhost"
-    if six.PY2:
-        port = os.environ["SWAGGERAPI_PETSTORE_8080_TCP_PORT"]
-    else:
-        port = os.environ['PETSTORE_8080_TCP_PORT']
-    return PetstoreClient('http://{host}:{port}/api'.format(host=host,
-                                                            port=port),
-                          backend=backend)
+    port = os.environ['PETSTORE_8080_TCP_PORT']
+
+    return PetstoreClient(
+        'http://{host}:{port}/api'.format(host=host, port=port),
+        backend=backend)
 
 
 # Prepare pytest params
 client_requests = client('requests')
 pytest_params = [pytest.param(client_requests, id='requests')]
-if six.PY3:
-    client_httpx = client('httpx')
-    pytest_params.append(pytest.param(client_httpx, id='httpx'))
+client_httpx = client('httpx')
+pytest_params.append(pytest.param(client_httpx, id='httpx'))
 
 
 @pytest.mark.parametrize("client", pytest_params)

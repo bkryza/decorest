@@ -29,9 +29,6 @@ from operator import methodcaller
 import requests
 from requests.structures import CaseInsensitiveDict
 
-import six
-from six import integer_types, iteritems
-
 from .errors import HTTPErrorWrapper
 from .types import HttpMethod, HttpStatus
 from .utils import dict_from_args, merge_dicts, render_path
@@ -99,7 +96,7 @@ def on(status, handler):
     def on_decorator(t):
         if status is Ellipsis:
             set_decor(t, 'on', {HttpStatus.ANY: handler})
-        elif isinstance(status, integer_types):
+        elif isinstance(status, numbers.Integral):
             set_decor(t, 'on', {status: handler})
         else:
             raise TypeError("Status in @on decorator must be integer or '...'")
@@ -497,10 +494,7 @@ class HttpMethodDecorator(object):
         if isinstance(http_method, str):
             method = http_method
         else:
-            if six.PY2:
-                method = http_method[0].lower()
-            else:
-                method = http_method.value[0].lower()
+            method = http_method.value[0].lower()
 
         return methodcaller(method, req, **kwargs)(execution_context)
 
@@ -533,7 +527,7 @@ class HttpMethodDecorator(object):
         args_decor = get_decor(func, decor)
         parameters = {}
         if args_decor:
-            for arg, param in iteritems(args_decor):
+            for arg, param in args_decor.items():
                 if args_dict.get(arg):
                     parameters[param] = args_dict[arg]
         return parameters
