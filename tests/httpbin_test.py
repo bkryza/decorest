@@ -34,7 +34,7 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../examples")
 from httpbin.httpbin_client import HttpBinClient, parse_image
 
 
-def client(backend):
+def client(backend: str) -> HttpBinClient:
     # Give Docker and HTTPBin some time to spin up
     time.sleep(2)
 

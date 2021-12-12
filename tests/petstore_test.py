@@ -26,7 +26,7 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../examples")
 from swagger_petstore.petstore_client import PetstoreClient
 
 
-def client(backend):
+def client(backend: str) -> PetstoreClient:
     # Give Docker and Swagger Petstore some time to spin up
     time.sleep(2)
     host = "localhost"

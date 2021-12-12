@@ -18,9 +18,12 @@ import copy
 import inspect
 import logging as LOG
 import re
+import typing
+
+from decorest.types import ArgsDict
 
 
-def render_path(path, args):
+def render_path(path: str, args: ArgsDict) -> str:
     """Render REST path from *args."""
     LOG.debug('RENDERING PATH FROM: %s,  %s', path, args)
     result = path
@@ -34,7 +37,8 @@ def render_path(path, args):
     return result
 
 
-def dict_from_args(func, *args):
+def dict_from_args(func: typing.Callable[..., typing.Any],
+                   *args: typing.Any) -> ArgsDict:
     """Convert function arguments to a dictionary."""
     result = {}
 
@@ -55,7 +59,8 @@ def dict_from_args(func, *args):
     return result
 
 
-def merge_dicts(*dict_args):
+def merge_dicts(*dict_args: typing.Any) \
+        -> typing.Dict[typing.Any, typing.Any]:
     """
     Merge all dicts passed as arguments, skips None objects.
 
@@ -73,7 +78,7 @@ def merge_dicts(*dict_args):
     return result
 
 
-def normalize_url(url):
+def normalize_url(url: str) -> str:
     """Make sure the url is in correct form."""
     result = url
 

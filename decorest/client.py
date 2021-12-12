@@ -19,22 +19,24 @@ Base Http client implementation.
 This module contains also some enums for HTTP protocol.
 """
 import logging as LOG
+import typing
 import urllib.parse
 
 from .decorators import get_decor
+from .types import AuthTypes, Backends, SessionTypes
 from .utils import normalize_url
 
 
-class RestClientSession(object):
+class RestClientSession:
     """Wrap a `requests` session for specific API client."""
-    def __init__(self, client):
+    def __init__(self, client: "RestClient") -> None:
         """Initialize the session instance with a specific API client."""
-        self.__client = client
+        self.__client: 'RestClient' = client
 
         # Create a session of type specific for given backend
         if client._backend() == 'requests':
             import requests
-            self.__session = requests.Session()
+            self.__session: SessionTypes = requests.Session()
         else:
             import httpx
             self.__session = httpx.Client()
@@ -42,16 +44,15 @@ class RestClientSession(object):
         if self.__client.auth is not None:
             self.__session.auth = self.__client.auth
 
-    def __enter__(self):
+    def __enter__(self) -> 'RestClientSession':
         """Context manager initialization."""
         return self
 
-    def __exit__(self, *args):
+    def __exit__(self, *args: typing.Any) -> None:
         """Context manager destruction."""
         self.__session.close()
-        return False
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> typing.Any:
         """Forward any method invocation to actual client with session."""
         if name == '_requests_session':
             return self.__session
@@ -62,24 +63,27 @@ class RestClientSession(object):
         if name == '_close':
             return self.__session.close
 
-        def invoker(*args, **kwargs):
+        def invoker(*args: typing.Any, **kwargs: typing.Any) -> typing.Any:
             kwargs['__session'] = self.__session
             return getattr(self.__client, name)(*args, **kwargs)
 
         return invoker
 
 
-class RestClient(object):
+class RestClient:
     """Base class for decorest REST clients."""
-    def __init__(self, endpoint=None, auth=None, backend='requests'):
+    def __init__(self,
+                 endpoint: typing.Optional[str] = None,
+                 auth: typing.Optional[AuthTypes] = None,
+                 backend: Backends = 'requests'):
         """Initialize the client with optional endpoint."""
-        self.endpoint = get_decor(self, 'endpoint')
+        self.endpoint = str(get_decor(self, 'endpoint'))
         self.auth = auth
         self._set_backend(backend)
         if endpoint is not None:
             self.endpoint = endpoint
 
-    def _session(self):
+    def _session(self) -> RestClientSession:
         """
         Initialize RestClientSession session object.
 
@@ -90,7 +94,7 @@ class RestClient(object):
         """
         return RestClientSession(self)
 
-    def _set_auth(self, auth):
+    def _set_auth(self, auth: AuthTypes) -> None:
         """
         Set a default authentication method for the client.
 
@@ -99,7 +103,7 @@ class RestClient(object):
         """
         self.auth = auth
 
-    def _auth(self):
+    def _auth(self) -> typing.Optional[AuthTypes]:
         """
         Get authentication object.
 
@@ -107,7 +111,7 @@ class RestClient(object):
         """
         return self.auth
 
-    def _set_backend(self, backend):
+    def _set_backend(self, backend: Backends) -> None:
         """
         Set preferred backend.
 
@@ -123,7 +127,7 @@ class RestClient(object):
 
         self.backend = backend
 
-    def _backend(self):
+    def _backend(self) -> str:
         """
         Get active backend.
 
@@ -131,7 +135,7 @@ class RestClient(object):
         """
         return self.backend
 
-    def build_request(self, path_components=[]):
+    def build_request(self, path_components: typing.List[str]) -> str:
         """
         Build request.
 

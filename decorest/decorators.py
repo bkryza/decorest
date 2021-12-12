@@ -24,13 +24,15 @@ import inspect
 import json
 import logging as LOG
 import numbers
+import typing
 from operator import methodcaller
 
 import requests
 from requests.structures import CaseInsensitiveDict
 
+from . import types
 from .errors import HTTPErrorWrapper
-from .types import HttpMethod, HttpStatus
+from .types import ArgsDict, HttpMethod, HttpStatus
 from .utils import dict_from_args, merge_dicts, render_path
 
 DECOR_KEY = '__decorest__'
@@ -41,7 +43,7 @@ DECOR_LIST = [
 ]
 
 
-def set_decor(t, name, value):
+def set_decor(t: typing.Any, name: str, value: typing.Any) -> None:
     """Decorate a function or class by storing the value under specific key."""
     if hasattr(t, '__wrapped__') and hasattr(t.__wrapped__, DECOR_KEY):
         setattr(t, DECOR_KEY, t.__wrapped__.__decorest__)
@@ -67,7 +69,7 @@ def set_decor(t, name, value):
         d[name] = value
 
 
-def get_decor(t, name):
+def get_decor(t: typing.Any, name: str) -> typing.Optional[typing.Any]:
     """
     Retrieve a named decorator value from class or function.
 
@@ -85,7 +87,9 @@ def get_decor(t, name):
     return None
 
 
-def on(status, handler):
+def on(status: typing.Union[types.ellipsis, int],
+       handler: typing.Callable[..., typing.Any]) \
+        -> typing.Callable[..., typing.Any]:
     """
     On status result handlers decorator.
 
@@ -93,8 +97,9 @@ def on(status, handler):
     the sole parameter the requests response object.
     """
 
-    def on_decorator(t):
-        if status is Ellipsis:
+    def on_decorator(t: typing.Callable[..., typing.Any]) \
+            -> typing.Callable[..., typing.Any]:
+        if status is Ellipsis:  # type: ignore
             set_decor(t, 'on', {HttpStatus.ANY: handler})
         elif isinstance(status, numbers.Integral):
             set_decor(t, 'on', {status: handler})
@@ -105,10 +110,12 @@ def on(status, handler):
     return on_decorator
 
 
-def query(name, value=None):
+def query(name: str, value: typing.Optional[str] = None) \
+        -> typing.Callable[..., typing.Any]:
     """Query parameter decorator."""
 
-    def query_decorator(t):
+    def query_decorator(t: typing.Callable[..., typing.Any]) \
+            -> typing.Callable[..., typing.Any]:
         value_ = value
         if inspect.isclass(t):
             raise TypeError("@query decorator can only be "
@@ -121,10 +128,12 @@ def query(name, value=None):
     return query_decorator
 
 
-def form(name, value=None):
+def form(name: str, value: typing.Optional[str] = None) \
+        -> typing.Callable[..., typing.Any]:
     """Form parameter decorator."""
 
-    def form_decorator(t):
+    def form_decorator(t: typing.Callable[..., typing.Any]) \
+            -> typing.Callable[..., typing.Any]:
         value_ = value
         if inspect.isclass(t):
             raise TypeError("@form decorator can only be "
@@ -137,10 +146,12 @@ def form(name, value=None):
     return form_decorator
 
 
-def multipart(name, value=None):
+def multipart(name: str, value: typing.Optional[str] = None) \
+        -> typing.Callable[..., typing.Any]:
     """Multipart parameter decorator."""
 
-    def multipart_decorator(t):
+    def multipart_decorator(t: typing.Callable[..., typing.Any]) \
+            -> typing.Callable[..., typing.Any]:
         value_ = value
         if inspect.isclass(t):
             raise TypeError("@multipart decorator can only be "
@@ -153,10 +164,12 @@ def multipart(name, value=None):
     return multipart_decorator
 
 
-def header(name, value=None):
+def header(name: str, value: typing.Optional[str] = None) \
+        -> typing.Callable[..., typing.Any]:
     """Header class and method decorator."""
 
-    def header_decorator(t):
+    def header_decorator(t: typing.Callable[..., typing.Any]) \
+            -> typing.Callable[..., typing.Any]:
         value_ = value
         if not value_:
             value_ = name
@@ -166,65 +179,75 @@ def header(name, value=None):
     return header_decorator
 
 
-def endpoint(value):
+def endpoint(value: str) -> typing.Callable[..., typing.Any]:
     """Endpoint class and method decorator."""
 
-    def endpoint_decorator(t):
+    def endpoint_decorator(t: typing.Callable[..., typing.Any]) \
+            -> typing.Callable[..., typing.Any]:
         set_decor(t, 'endpoint', value)
         return t
 
     return endpoint_decorator
 
 
-def content(value):
+def content(value: str) -> typing.Callable[..., typing.Any]:
     """Content-type header class and method decorator."""
 
-    def content_decorator(t):
-        set_decor(t, 'header', CaseInsensitiveDict({'Content-Type': value}))
+    def content_decorator(t: typing.Callable[..., typing.Any]) \
+            -> typing.Callable[..., typing.Any]:
+        set_decor(t, 'header',
+                  CaseInsensitiveDict({'Content-Type': value}))
         return t
 
     return content_decorator
 
 
-def accept(value):
+def accept(value: str) -> typing.Callable[..., typing.Any]:
     """Accept header class and method decorator."""
 
-    def accept_decorator(t):
-        set_decor(t, 'header', CaseInsensitiveDict({'Accept': value}))
+    def accept_decorator(t: typing.Callable[..., typing.Any]) \
+            -> typing.Callable[..., typing.Any]:
+        set_decor(t, 'header',
+                  CaseInsensitiveDict({'Accept': value}))
         return t
 
     return accept_decorator
 
 
-def body(name, serializer=None):
+def body(name: str,
+         serializer: typing.Optional[typing.Callable[..., typing.Any]] = None) \
+        -> typing.Callable[..., typing.Any]:
     """
     Body parameter decorator.
 
     Determines which method argument provides the body.
     """
 
-    def body_decorator(t):
+    def body_decorator(t: typing.Callable[..., typing.Any]) \
+            -> typing.Callable[..., typing.Any]:
         set_decor(t, 'body', (name, serializer))
         return t
 
     return body_decorator
 
 
-def timeout(value):
+def timeout(value: float) -> typing.Callable[..., typing.Any]:
     """
     Timeout parameter decorator.
 
     Specifies a default timeout value for method or entire API.
     """
 
-    def timeout_decorator(t):
+    def timeout_decorator(t: typing.Callable[..., typing.Any]) \
+            -> typing.Callable[..., typing.Any]:
         set_decor(t, 'timeout', value)
         return t
 
     return timeout_decorator
 
 
-def stream(t):
+def stream(t: typing.Callable[..., typing.Any]) \
+        -> typing.Callable[..., typing.Any]:
     """
     Stream parameter decorator, takes boolean True or False.
 
@@ -235,14 +258,15 @@ def stream(t):
     return t
 
 
-class HttpMethodDecorator(object):
+class HttpMethodDecorator:
     """Abstract decorator for HTTP method decorators."""
 
-    def __init__(self, path):
+    def __init__(self, path: str):
         """Initialize decorator with endpoint relative path."""
         self.path_template = path
 
-    def call(self, func, *args, **kwargs):
+    def call(self, func: typing.Callable[..., typing.Any],
+             *args: typing.Any, **kwargs: typing.Any) -> typing.Any:
         """Execute the API HTTP request."""
         http_method = get_decor(func, 'http_method')
         rest_client = args[0]
@@ -450,7 +474,7 @@ class HttpMethodDecorator(object):
                 result = self.__dispatch(
                     execution_context, http_method, kwargs, req)
         except Exception as e:
-            raise HTTPErrorWrapper(e)
+            raise HTTPErrorWrapper(typing.cast(types.HTTPErrors, e))
 
         if on_handlers and result.status_code in on_handlers:
             # Use a registered handler for the returned status code
@@ -468,7 +492,7 @@ class HttpMethodDecorator(object):
             try:
                 result.raise_for_status()
             except Exception as e:
-                raise HTTPErrorWrapper(e)
+                raise HTTPErrorWrapper(typing.cast(types.HTTPErrors, e))
 
             if result.text:
                 content_type = result.headers.get('content-type')
@@ -481,7 +505,9 @@ class HttpMethodDecorator(object):
 
             return None
 
-    def __dispatch(self, execution_context, http_method, kwargs, req):
+    def __dispatch(self, execution_context: typing.Callable[..., typing.Any],
+                   http_method: typing.Union[str, HttpMethod],
+                   kwargs: ArgsDict, req: str) -> typing.Any:
         """
         Dispatch HTTP method based on HTTPMethod enum type.
 
@@ -498,7 +524,8 @@ class HttpMethodDecorator(object):
 
         return methodcaller(method, req, **kwargs)(execution_context)
 
-    def __validate_decor(self, decor, kwargs, cls):
+    def __validate_decor(self, decor: str, kwargs: ArgsDict,
+                         cls: typing.Type[typing.Any]) -> None:
         """
         Ensure kwargs contain decor with specific type.
 
@@ -512,7 +539,9 @@ class HttpMethodDecorator(object):
                 "{} value must be an instance of {}".format(
                     decor, cls.__name__))
 
-    def __merge_args(self, args_dict, func, decor):
+    def __merge_args(self, args_dict: ArgsDict,
+                     func: typing.Callable[..., typing.Any], decor: str) \
+            -> ArgsDict:
         """
         Match named arguments from method call.
 

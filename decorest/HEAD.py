@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """HEAD Http method decorator."""
-
+import typing
 from functools import wraps
 
 from .decorators import HttpMethodDecorator, set_decor
@@ -23,16 +23,18 @@ from .types import HttpMethod
 
 class HEAD(HttpMethodDecorator):
     """HEAD HTTP method decorator."""
-    def __init__(self, path):
+    def __init__(self, path: str):
         """Initialize with endpoint relative path."""
         super(HEAD, self).__init__(path)
 
-    def __call__(self, func):
+    def __call__(self, func: typing.Callable[..., None]) \
+            -> typing.Callable[..., None]:
         """Callable operator."""
         set_decor(func, 'http_method', HttpMethod.HEAD)
 
         @wraps(func)
-        def options_decorator(*args, **kwargs):
+        def options_decorator(*args: typing.Any, **kwargs: typing.Any) \
+                -> typing.Any:
             return super(HEAD, self).call(func, *args, **kwargs)
 
         return options_decorator

@@ -14,6 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Defines various error classes."""
+import typing
+
+from decorest.types import HTTPErrors
 
 
 class HTTPErrorWrapper(Exception):
@@ -23,7 +26,7 @@ class HTTPErrorWrapper(Exception):
     This error class wraps HTTP errors from different supported
     backends, i.e. requests and httpx.
     """
-    def __init__(self, e):
+    def __init__(self, e: HTTPErrors):
         """Construct HTTPErrorWrapper.
 
         Accepts a wrapped error.
@@ -32,14 +35,14 @@ class HTTPErrorWrapper(Exception):
         super(Exception, self).__init__(self)
 
     @property
-    def response(self):
+    def response(self) -> typing.Any:
         """Return wrapped response."""
         return self.wrapped.response
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Return wrapped representation."""
         return self.wrapped.__repr__()
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return wrapped str representation."""
         return self.wrapped.__str__()

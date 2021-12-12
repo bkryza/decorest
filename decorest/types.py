@@ -16,6 +16,8 @@
 """Various types related to HTTP and REST."""
 
 import enum
+import typing
+
 DEnum = enum.Enum
 DIntEnum = enum.IntEnum
 
@@ -41,3 +43,30 @@ class HttpStatus(DIntEnum):
     CLIENT_ERROR = 4,
     SERVER_ERROR = 5,
     ANY = 999  # Same as Ellipsis '...'
+
+
+if typing.TYPE_CHECKING:
+    # If not available, these imports will be ignored through settings
+    # in mypy.ini
+    import requests
+    import httpx
+
+ArgsDict = typing.Dict[str, typing.Any]
+Backends = typing.Literal['requests', 'httpx']
+AuthTypes = typing.Union['requests.auth.AuthBase', 'httpx.Auth']
+SessionTypes = typing.Union['requests.Session', 'httpx.Client']
+HTTPErrors = typing.Union['requests.HTTPError', 'httpx.HTTPStatusError']
+
+
+if typing.TYPE_CHECKING:
+    class ellipsis(enum.Enum): # noqa N801
+        """
+        Ellipsis type for typechecking.
+
+        A workaround to enable specifying ellipsis as possible type
+        for the 'on' decorator.
+        """
+        Ellipsis = "..."
+    Ellipsis = ellipsis.Ellipsis
+else:
+    ellipsis = type(Ellipsis)
