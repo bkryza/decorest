@@ -29,7 +29,7 @@ from .utils import normalize_url
 
 class RestClientSession:
     """Wrap a `requests` session for specific API client."""
-    def __init__(self, client: "RestClient") -> None:
+    def __init__(self, client: 'RestClient') -> None:
         """Initialize the session instance with a specific API client."""
         self.__client: 'RestClient' = client
 

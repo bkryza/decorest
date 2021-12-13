@@ -18,7 +18,7 @@ import typing
 from functools import wraps
 
 from .decorators import HttpMethodDecorator, set_decor
-from .types import HttpMethod
+from .types import HttpMethod, TDecor
 
 
 class PUT(HttpMethodDecorator):
@@ -27,8 +27,7 @@ class PUT(HttpMethodDecorator):
         """Initialize with endpoint relative path."""
         super(PUT, self).__init__(path)
 
-    def __call__(self, func: typing.Callable[..., None]) \
-            -> typing.Callable[..., None]:
+    def __call__(self, func: TDecor) -> TDecor:
         """Callable operator."""
         set_decor(func, 'http_method', HttpMethod.PUT)
 
@@ -37,4 +36,4 @@ class PUT(HttpMethodDecorator):
                 -> typing.Any:
             return super(PUT, self).call(func, *args, **kwargs)
 
-        return put_decorator
+        return typing.cast(TDecor, put_decorator)

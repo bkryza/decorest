@@ -18,7 +18,7 @@ import typing
 from functools import wraps
 
 from .decorators import HttpMethodDecorator, set_decor
-from .types import HttpMethod
+from .types import HttpMethod, TDecor
 
 
 class POST(HttpMethodDecorator):
@@ -27,8 +27,7 @@ class POST(HttpMethodDecorator):
         """Initialize with endpoint relative path."""
         super(POST, self).__init__(path)
 
-    def __call__(self, func: typing.Callable[..., None]) \
-            -> typing.Callable[..., None]:
+    def __call__(self, func: TDecor) -> TDecor:
         """Callable operator."""
         set_decor(func, 'http_method', HttpMethod.POST)
 
@@ -37,4 +36,4 @@ class POST(HttpMethodDecorator):
                 -> typing.Any:
             return super(POST, self).call(func, *args, **kwargs)
 
-        return post_decorator
+        return typing.cast(TDecor, post_decorator)

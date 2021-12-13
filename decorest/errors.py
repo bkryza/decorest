@@ -31,7 +31,7 @@ class HTTPErrorWrapper(Exception):
 
         Accepts a wrapped error.
         """
-        self.wrapped = e
+        self.wrapped: HTTPErrors = e
         super(Exception, self).__init__(self)
 
     @property

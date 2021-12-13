@@ -18,7 +18,7 @@ import typing
 from functools import wraps
 
 from .decorators import HttpMethodDecorator, set_decor
-from .types import HttpMethod
+from .types import HttpMethod, TDecor
 
 
 class PATCH(HttpMethodDecorator):
@@ -27,8 +27,7 @@ class PATCH(HttpMethodDecorator):
         """Initialize with endpoint relative path."""
         super(PATCH, self).__init__(path)
 
-    def __call__(self, func: typing.Callable[..., None]) \
-            -> typing.Callable[..., None]:
+    def __call__(self, func: TDecor) -> TDecor:
         """Callable operator."""
         set_decor(func, 'http_method', HttpMethod.PATCH)
 
@@ -37,4 +36,4 @@ class PATCH(HttpMethodDecorator):
                 -> typing.Any:
             return super(PATCH, self).call(func, *args, **kwargs)
 
-        return patch_decorator
+        return typing.cast(TDecor, patch_decorator)

@@ -57,6 +57,9 @@ AuthTypes = typing.Union['requests.auth.AuthBase', 'httpx.Auth']
 SessionTypes = typing.Union['requests.Session', 'httpx.Client']
 HTTPErrors = typing.Union['requests.HTTPError', 'httpx.HTTPStatusError']
 
+# _TDecor = typing.Callable[..., typing.Any]
+TDecor = typing.TypeVar('TDecor', bound=typing.Callable[..., typing.Any])
+
 
 if typing.TYPE_CHECKING:
     class ellipsis(enum.Enum): # noqa N801
