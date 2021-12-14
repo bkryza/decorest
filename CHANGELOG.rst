@@ -4,6 +4,7 @@
 ++++++++++++++++++
 
 * Deprecated Python 2 support
+* Added typing support and mypy tests
 
 0.0.7 (2021-11-27)
 ++++++++++++++++++
