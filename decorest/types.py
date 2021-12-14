@@ -18,6 +18,8 @@
 import enum
 import typing
 
+import typing_extensions
+
 DEnum = enum.Enum
 DIntEnum = enum.IntEnum
 
@@ -52,7 +54,7 @@ if typing.TYPE_CHECKING:
     import httpx
 
 ArgsDict = typing.Dict[str, typing.Any]
-Backends = typing.Literal['requests', 'httpx']
+Backends = typing_extensions.Literal['requests', 'httpx']
 AuthTypes = typing.Union['requests.auth.AuthBase', 'httpx.Auth']
 SessionTypes = typing.Union['requests.Session', 'httpx.Client']
 HTTPErrors = typing.Union['requests.HTTPError', 'httpx.HTTPStatusError']

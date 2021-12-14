@@ -14,8 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-Example decorest based client to Swagger Petstore sample service,
-including typing hints.
+Example decorest based client to Swagger Petstore sample service.
 
     http://petstore.swagger.io/
 
@@ -24,6 +23,8 @@ including typing hints.
 import json
 import typing
 import xml.etree.ElementTree as ET
+
+from PIL.Image import Image
 
 from decorest import DELETE, GET, POST, PUT
 from decorest import HttpStatus, RestClient
@@ -79,7 +80,7 @@ class PetAPI(RestClient):
 
     @POST('pet/{pet_id}/uploadImage')
     @body('pet', lambda p: json.dumps(p))
-    def upload_pet_image(self, pet_id: str, image: typing.Any) -> None:
+    def upload_pet_image(self, pet_id: str, image: Image) -> None:
         """Upload an image."""
 
 
@@ -110,17 +111,19 @@ class UserAPI(RestClient):
     @POST('user')
     @body('user', lambda o: json.dumps(o))
     @on(200, lambda r: True)
-    def create_user(self, user: JsonDictType) -> None:
+    def create_user(self, user: JsonDictType) -> bool:
         """Create user."""
 
     @POST('user/createWithArray')
     @body('user', lambda o: json.dumps(o))
-    def create_users_from_array(self, user: JsonDictType) -> None:
+    def create_users_from_array(self, user: typing.List[JsonDictType]) \
+            -> None:
         """Create list of users with given input array."""
 
     @POST('user/createWithList')
     @body('user', lambda o: json.dumps(o))
-    def create_users_from_list(self, user: JsonDictType) -> None:
+    def create_users_from_list(self, user: typing.List[JsonDictType]) \
+            -> None:
         """Create list of users with given input array."""
 
     @GET('user/login')
@@ -165,4 +168,16 @@ assert client.find_pet_by_status_xml() == ET.Element('pet')
 assert client.find_pet_by_id('123') == {'a': {'b': 'c'}}
 assert client.update_pet_by_id('123', {'a': {'b': 'c'}}) is None
 assert client.delete_pet('123') is None
-assert client.upload_pet_image('123', ) is None
+assert client.upload_pet_image('123', Image()) is None
+assert client.get_inventory() == {'a': {'b': 'c'}}
+assert client.place_order({'a': {'b': 'c'}}) is None
+assert client.get_order('a') == {'a': {'b': 'c'}}
+assert client.delete_order('a') is None
+assert client.create_user({'a': {'b': 'c'}}) is True
+assert client.create_users_from_array([{'a': {'b': 'c'}}]) is None
+assert client.create_users_from_list([{'a': {'b': 'c'}}]) is None
+assert client.login('a', 'b') == {'a': {'b': 'c'}}
+assert client.logout() == {'a': {'b': 'c'}}
+assert client.get_user('a') == {'a': {'b': 'c'}}
+assert client.update_user('a', {'a': {'b': 'c'}}) == {'a': {'b': 'c'}}
+assert client.delete_user('a') is None

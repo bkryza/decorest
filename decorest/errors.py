@@ -41,8 +41,8 @@ class HTTPErrorWrapper(Exception):
 
     def __repr__(self) -> str:
         """Return wrapped representation."""
-        return self.wrapped.__repr__()
+        return typing.cast(str, self.wrapped.__repr__())
 
     def __str__(self) -> str:
         """Return wrapped str representation."""
-        return self.wrapped.__str__()
+        return typing.cast(str, self.wrapped.__str__())
