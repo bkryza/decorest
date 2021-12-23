@@ -104,7 +104,8 @@ class RestClientAsyncSession:
         if name == '_close':
             return self.__session.aclose
 
-        async def invoker(*args: typing.Any, **kwargs: typing.Any) -> typing.Any:
+        async def invoker(*args: typing.Any,
+                          **kwargs: typing.Any) -> typing.Any:
             kwargs['__session'] = self.__session
             assert asyncio.iscoroutinefunction(getattr(self.__client, name))
             return await getattr(self.__client, name)(*args, **kwargs)

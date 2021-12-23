@@ -321,7 +321,9 @@ def stream(t: TDecor) -> TDecor:
 # return execution_context, on_handlers, rest_client
 class HttpRequest:
     """
-    Class representing an HTTP request created based on the decorators and arguments.
+    HTTP request wrapper.
+
+    Class representing an HTTP request created from decorators and arguments.
     """
     http_method: str
     is_multipart_request: bool
@@ -331,18 +333,29 @@ class HttpRequest:
     on_handlers: typing.Mapping[int, typing.Callable[..., typing.Any]]
     session: str
     execution_context: typing.Any
-    rest_client: 'RestClient'
+    rest_client: 'RestClient' # noqa
 
     def __init__(self, func, path_template, args, kwargs):
+        """
+        Construct HttpRequest instance.
+
+        Args:
+            func - decorated function
+            path_template - template for creating the request path
+            args - arguments
+            kwargs - named arguments
+        """
         self.http_method = get_method_decor(func)
         self.path_template = path_template
         self.kwargs = kwargs
 
-        if self.http_method not in (HttpMethod.GET, HttpMethod.POST, HttpMethod.PUT,
-                               HttpMethod.PATCH, HttpMethod.DELETE,
-                               HttpMethod.HEAD, HttpMethod.OPTIONS):
+        if self.http_method not in (HttpMethod.GET, HttpMethod.POST,
+                                    HttpMethod.PUT, HttpMethod.PATCH,
+                                    HttpMethod.DELETE, HttpMethod.HEAD,
+                                    HttpMethod.OPTIONS):
             raise ValueError(
-                'Unsupported HTTP method: {method}'.format(method=self.http_method))
+                'Unsupported HTTP method: {method}'.format(
+                    method=self.http_method))
 
         self.rest_client = args[0]
         args_dict = dict_from_args(func, *args)
@@ -382,7 +395,7 @@ class HttpRequest:
         auth = self.rest_client._auth()
         # Get status handlers
         self.on_handlers = merge_dicts(get_on_decor(self.rest_client.__class__),
-                                  get_on_decor(func))
+                                       get_on_decor(func))
         # Get timeout
         request_timeout = get_timeout_decor(self.rest_client.__class__)
         if get_timeout_decor(func):
@@ -422,7 +435,8 @@ class HttpRequest:
                         del self.kwargs['multipart']
                     elif decor == 'on':
                         self.__validate_decor(decor, self.kwargs, dict)
-                        self.on_handlers = merge_dicts(self.on_handlers, self.kwargs['on'])
+                        self.on_handlers = merge_dicts(self.on_handlers,
+                                                       self.kwargs['on'])
                         del self.kwargs['on']
                     elif decor == 'accept':
                         self.__validate_decor(decor, self.kwargs, str)
@@ -430,10 +444,12 @@ class HttpRequest:
                         del self.kwargs['accept']
                     elif decor == 'content':
                         self.__validate_decor(decor, self.kwargs, str)
-                        header_parameters['content-type'] = self.kwargs['content']
+                        header_parameters['content-type'] \
+                            = self.kwargs['content']
                         del self.kwargs['content']
                     elif decor == 'timeout':
-                        self.__validate_decor(decor, self.kwargs, numbers.Number)
+                        self.__validate_decor(decor, self.kwargs,
+                                              numbers.Number)
                         request_timeout = self.kwargs['timeout']
                         del self.kwargs['timeout']
                     elif decor == 'stream':
@@ -455,8 +471,9 @@ class HttpRequest:
             self.kwargs['files'] = multipart_parameters
         elif self.rest_client._backend() == 'requests':
             from requests_toolbelt.multipart.encoder import MultipartEncoder
-            self.is_multipart_request = 'data' in self.kwargs and not isinstance(
-                self.kwargs['data'], MultipartEncoder)
+            self.is_multipart_request = \
+                'data' in self.kwargs and \
+                not isinstance(self.kwargs['data'], MultipartEncoder)
         else:
             self.is_multipart_request = 'files' in self.kwargs
 
@@ -549,6 +566,7 @@ class HttpRequest:
         return parameters
 
     def handle(self, result):
+        """Handle result response."""
         if self.on_handlers and result.status_code in self.on_handlers:
             # Use a registered handler for the returned status code
             return self.on_handlers[result.status_code](result)
@@ -587,8 +605,9 @@ class HttpMethodDecorator:
         self.path_template = path
 
     async def call_async(self, func: typing.Callable[..., typing.Any],
-             *args: typing.Any, **kwargs: typing.Any) -> typing.Any:
-
+                         *args: typing.Any,
+                         **kwargs: typing.Any) -> typing.Any:
+        """Execute async HTTP request."""
         http_request = HttpRequest(func, self.path_template, args, kwargs)
 
         try:
@@ -617,7 +636,6 @@ class HttpMethodDecorator:
     def call(self, func: typing.Callable[..., typing.Any],
              *args: typing.Any, **kwargs: typing.Any) -> typing.Any:
         """Execute the API HTTP request."""
-
         http_request = HttpRequest(func, self.path_template, args, kwargs)
 
         try:

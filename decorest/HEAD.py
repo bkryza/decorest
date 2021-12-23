@@ -36,9 +36,11 @@ class HEAD(HttpMethodDecorator):
             @wraps(func)
             async def get_decorator(*args: typing.Any, **kwargs: typing.Any) \
                     -> typing.Any:
-                return await super(HEAD, self).call_async(func, *args, **kwargs)
+                return await super(HEAD, self).call_async(
+                    func, *args, **kwargs)
 
             return typing.cast(TDecor, get_decorator)
+
         @wraps(func)
         def head_decorator(*args: typing.Any, **kwargs: typing.Any) \
                 -> typing.Any:
