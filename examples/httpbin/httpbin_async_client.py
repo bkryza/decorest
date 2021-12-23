@@ -200,7 +200,7 @@ class HttpBinAsyncClient(RestClient):
         """Delete one or more simple cookies."""
 
     @GET('basic-auth/{user}/{passwd}')
-    def basic_auth(self, user, passwd):
+    async def basic_auth(self, user, passwd):
         """Challenge HTTPBasic Auth."""
 
     @GET('hidden-basic-auth/{user}/{passwd}')

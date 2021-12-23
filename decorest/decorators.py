@@ -501,7 +501,7 @@ class HttpRequest:
 
         # If '__session' was passed in the kwargs, execute this request
         # using the session context, otherwise execute directly via the
-        # requests module
+        # requests or httpx module
         if self.session:
             self.execution_context = self.session
         else:
@@ -592,11 +592,15 @@ class HttpMethodDecorator:
         http_request = HttpRequest(func, self.path_template, args, kwargs)
 
         try:
+            pprint.pprint(http_request)
             if http_request.http_method == HttpMethod.GET \
                     and http_request.is_stream:
                 del kwargs['stream']
-                result \
-                    = await http_request.execution_context.stream("GET", http_request.req, **http_request.kwargs)
+                req = http_request.execution_context.build_request(
+                    'GET', http_request.req, **http_request.kwargs)
+
+                result = await http_request.execution_context.send(req,
+                                                                   stream=True)
             else:
                 if http_request.http_method == HttpMethod.POST \
                         and http_request.is_multipart_request:
@@ -621,8 +625,9 @@ class HttpMethodDecorator:
                     and http_request.http_method == HttpMethod.GET \
                     and http_request.is_stream:
                 del kwargs['stream']
-                result \
-                    = http_request.execution_context.stream("GET", http_request.req, **http_request.kwargs)
+
+                result = http_request.execution_context.stream(
+                    "GET", http_request.req, **http_request.kwargs)
             else:
                 if http_request.http_method == HttpMethod.POST \
                         and http_request.is_multipart_request:
@@ -673,18 +678,11 @@ class HttpMethodDecorator:
 
         import httpx
 
-        async with httpx.AsyncClient() as client:
-            if method == 'get':
-                response = await client.get(http_request.req, **http_request.kwargs)
-            elif method == 'post':
-                response = await client.post(http_request.req, **http_request.kwargs)
-            elif method == 'put':
-                response = await client.put(http_request.req, **http_request.kwargs)
-            elif method == 'patch':
-                response = await client.patch(http_request.req, **http_request.kwargs)
-            elif method == 'head':
-                response = await client.head(http_request.req, **http_request.kwargs)
-            elif method == 'delete':
-                response = await client.delete(http_request.req, **http_request.kwargs)
-
-        return response
+        if not isinstance(http_request.execution_context, httpx.AsyncClient):
+            async with httpx.AsyncClient() as client:
+                return await client.request(method.upper(),
+                                            http_request.req,
+                                            **http_request.kwargs)
+        else:
+            return await http_request.execution_context.request(
+                method.upper(), http_request.req, **http_request.kwargs)

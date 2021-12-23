@@ -395,7 +395,7 @@ async def test_cookies_session(client):
     assert res["cookies"]["cookie1"] == "A"
     assert res["cookies"]["cookie2"] == "B"
 
-    s._close()
+    await s._close()
 
 
 @pytest.mark.asyncio
@@ -408,14 +408,10 @@ async def test_cookies_session_with_contextmanager(client):
             query={"cookie1": "A", "cookie2": "B"},
             follow_redirects=True)
 
-        pprint.pprint(res)
-
         assert res["cookies"]["cookie1"] == "A"
         assert res["cookies"]["cookie2"] == "B"
 
         res = await s.cookies(follow_redirects=False)
-
-        pprint.pprint(res)
 
         assert res["cookies"]["cookie1"] == "A"
         assert res["cookies"]["cookie2"] == "B"
@@ -425,8 +421,10 @@ async def test_cookies_session_with_contextmanager(client):
 async def test_cookies_delete(client):
     """
     """
-    client.cookies_set(query={"cookie1": "A", "cookie2": "B"})
-    client.cookies_delete(query={"cookie1": None})
+    await client.cookies_set(query={"cookie1": "A", "cookie2": "B"},
+                             follow_redirects=True)
+    await client.cookies_delete(query={"cookie1": None},
+                                follow_redirects=True)
     res = await client.cookies()
 
     assert "cookie1" not in res["cookies"]
@@ -499,8 +497,9 @@ async def test_stream_n(client):
     """
     """
     count = 0
-    with client.stream_n(5) as r:
-        for line in r.iter_lines():
+    async with client._async_session() as s:
+        r = await s.stream_n(5)
+        async for _ in r.aiter_lines():
             count += 1
 
     assert count == 5
@@ -525,13 +524,10 @@ async def test_drip(client):
     """
     """
     content = []
-    with client.drip(10, 5, 1, 200) as r:
-        if client._backend() == 'requests':
-            for b in r.iter_content(chunk_size=1):
-                await content.append(b)
-        else:
-            for b in r.iter_raw():
-                await content.append(b)
+    async with client._async_session() as s:
+        r = await s.drip(10, 5, 1, 200)
+        async for b in r.aiter_raw():
+            content.append(b)
 
     assert len(content) == 10
 
@@ -542,13 +538,10 @@ async def test_range(client):
     """
     content = []
 
-    with client.range(128, 1, 2, header={"Range": "bytes=10-19"}) as r:
-        if client._backend() == 'requests':
-            for b in r.iter_content(chunk_size=2):
-                await content.append(b)
-        else:
-            for b in r.iter_raw():
-                await content.append(b)
+    async with client._async_session() as s:
+        r = await s.range(128, 1, 2, header={"Range": "bytes=10-19"})
+        async for b in r.aiter_raw():
+            content.append(b)
 
     assert len(content) == 5
 
@@ -642,7 +635,7 @@ async def test_stream_bytes(client):
 async def test_links(client):
     """
     """
-    html = await client.links(10)
+    html = await client.links(10, follow_redirects=True)
 
     assert html.count('href') == 10 - 1
 
