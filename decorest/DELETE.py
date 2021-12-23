@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """DELETE Http method decorator."""
+import asyncio
 import typing
 from functools import wraps
 
@@ -30,6 +31,16 @@ class DELETE(HttpMethodDecorator):
     def __call__(self, func: TDecor) -> TDecor:
         """Callable operator."""
         set_decor(func, 'http_method', HttpMethod.DELETE)
+
+        if asyncio.iscoroutinefunction(func):
+            @wraps(func)
+            async def delete_decorator(*args: typing.Any,
+                                       **kwargs: typing.Any) \
+                    -> typing.Any:
+                return await super(DELETE, self).call_async(func,
+                                                            *args, **kwargs)
+
+            return typing.cast(TDecor, delete_decorator)
 
         @wraps(func)
         def delete_decorator(*args: typing.Any, **kwargs: typing.Any) \

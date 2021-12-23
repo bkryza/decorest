@@ -18,6 +18,7 @@ Base Http client implementation.
 
 This module contains also some enums for HTTP protocol.
 """
+import asyncio
 import logging as LOG
 import typing
 import urllib.parse
@@ -70,6 +71,47 @@ class RestClientSession:
         return invoker
 
 
+class RestClientAsyncSession:
+    """Wrap a `requests` session for specific API client."""
+    def __init__(self, client: 'RestClient') -> None:
+        """Initialize the session instance with a specific API client."""
+        self.__client: 'RestClient' = client
+
+        # Create a session of type specific for given backend
+        import httpx
+        self.__session = httpx.AsyncClient()
+
+        if self.__client.auth is not None:
+            self.__session.auth = self.__client.auth
+
+    async def __aenter__(self) -> 'RestClientAsyncSession':
+        """Context manager initialization."""
+        await self.__session.__aenter__()
+        return self
+
+    async def __aexit__(self, *args: typing.Any) -> None:
+        """Context manager destruction."""
+        await self.__session.__aexit__(*args)
+
+    def __getattr__(self, name: str) -> typing.Any:
+        """Forward any method invocation to actual client with session."""
+        if name == '_requests_session':
+            return self.__session
+
+        if name == '_client':
+            return self.__client
+
+        if name == '_close':
+            return self.__session.aclose
+
+        async def invoker(*args: typing.Any, **kwargs: typing.Any) -> typing.Any:
+            kwargs['__session'] = self.__session
+            assert asyncio.iscoroutinefunction(getattr(self.__client, name))
+            return await getattr(self.__client, name)(*args, **kwargs)
+
+        return invoker
+
+
 class RestClient:
     """Base class for decorest REST clients."""
     def __init__(self,
@@ -87,12 +129,25 @@ class RestClient:
         """
         Initialize RestClientSession session object.
 
-        The `decorest` session object wraps a `requests` session object.
+        The `decorest` session object wraps a `requests` or `httpx`
+         session object.
 
         Each valid API method defined in the API client can be called
         directly via the session object.
         """
         return RestClientSession(self)
+
+    def _async_session(self) -> RestClientAsyncSession:
+        """
+        Initialize RestClientAsyncSession session object.
+
+        The `decorest` session object wraps a `requests` or `httpx`
+        session object.
+
+        Each valid API method defined in the API client can be called
+        directly via the session object.
+        """
+        return RestClientAsyncSession(self)
 
     def _set_auth(self, auth: AuthTypes) -> None:
         """

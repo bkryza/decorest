@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """PATCH Http method decorator."""
+import asyncio
 import typing
 from functools import wraps
 
@@ -30,6 +31,14 @@ class PATCH(HttpMethodDecorator):
     def __call__(self, func: TDecor) -> TDecor:
         """Callable operator."""
         set_decor(func, 'http_method', HttpMethod.PATCH)
+
+        if asyncio.iscoroutinefunction(func):
+            @wraps(func)
+            async def get_decorator(*args: typing.Any, **kwargs: typing.Any) \
+                    -> typing.Any:
+                return await super(PATCH, self).call_async(func, *args, **kwargs)
+
+            return typing.cast(TDecor, get_decorator)
 
         @wraps(func)
         def patch_decorator(*args: typing.Any, **kwargs: typing.Any) \

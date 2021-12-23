@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """POST Http method decorator."""
+import asyncio
 import typing
 from functools import wraps
 
@@ -30,6 +31,14 @@ class POST(HttpMethodDecorator):
     def __call__(self, func: TDecor) -> TDecor:
         """Callable operator."""
         set_decor(func, 'http_method', HttpMethod.POST)
+
+        if asyncio.iscoroutinefunction(func):
+            @wraps(func)
+            async def post_decorator(*args: typing.Any, **kwargs: typing.Any) \
+                    -> typing.Any:
+                return await super(POST, self).call_async(func, *args, **kwargs)
+
+            return typing.cast(TDecor, post_decorator)
 
         @wraps(func)
         def post_decorator(*args: typing.Any, **kwargs: typing.Any) \

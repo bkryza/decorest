@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """HEAD Http method decorator."""
+import asyncio
 import typing
 from functools import wraps
 
@@ -31,6 +32,13 @@ class HEAD(HttpMethodDecorator):
         """Callable operator."""
         set_decor(func, 'http_method', HttpMethod.HEAD)
 
+        if asyncio.iscoroutinefunction(func):
+            @wraps(func)
+            async def get_decorator(*args: typing.Any, **kwargs: typing.Any) \
+                    -> typing.Any:
+                return await super(HEAD, self).call_async(func, *args, **kwargs)
+
+            return typing.cast(TDecor, get_decorator)
         @wraps(func)
         def head_decorator(*args: typing.Any, **kwargs: typing.Any) \
                 -> typing.Any:

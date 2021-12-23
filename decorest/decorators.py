@@ -24,6 +24,7 @@ import inspect
 import json
 import logging as LOG
 import numbers
+import pprint
 import typing
 from operator import methodcaller
 
@@ -317,25 +318,39 @@ def stream(t: TDecor) -> TDecor:
     return t
 
 
-class HttpMethodDecorator:
-    """Abstract decorator for HTTP method decorators."""
+# return execution_context, on_handlers, rest_client
+class HttpRequest:
+    """
+    Class representing an HTTP request created based on the decorators and arguments.
+    """
+    http_method: str
+    is_multipart_request: bool
+    is_stream: bool
+    req: str
+    kwargs: ArgsDict
+    on_handlers: typing.Mapping[int, typing.Callable[..., typing.Any]]
+    session: str
+    execution_context: typing.Any
+    rest_client: 'RestClient'
 
-    def __init__(self, path: str):
-        """Initialize decorator with endpoint relative path."""
-        self.path_template = path
+    def __init__(self, func, path_template, args, kwargs):
+        self.http_method = get_method_decor(func)
+        self.path_template = path_template
+        self.kwargs = kwargs
 
-    def call(self, func: typing.Callable[..., typing.Any],
-             *args: typing.Any, **kwargs: typing.Any) -> typing.Any:
-        """Execute the API HTTP request."""
-        http_method = get_method_decor(func)
-        rest_client = args[0]
+        if self.http_method not in (HttpMethod.GET, HttpMethod.POST, HttpMethod.PUT,
+                               HttpMethod.PATCH, HttpMethod.DELETE,
+                               HttpMethod.HEAD, HttpMethod.OPTIONS):
+            raise ValueError(
+                'Unsupported HTTP method: {method}'.format(method=self.http_method))
+
+        self.rest_client = args[0]
         args_dict = dict_from_args(func, *args)
         req_path = render_path(self.path_template, args_dict)
-        session = None
-        if '__session' in kwargs:
-            session = kwargs['__session']
-            del kwargs['__session']
-
+        self.session = None
+        if '__session' in self.kwargs:
+            self.session = self.kwargs['__session']
+            del self.kwargs['__session']
         # Merge query parameters from common values for all method
         # invocations with arguments provided in the method
         # arguments
@@ -343,9 +358,8 @@ class HttpMethodDecorator:
         form_parameters = self.__merge_args(args_dict, func, 'form')
         multipart_parameters = self.__merge_args(args_dict, func, 'multipart')
         header_parameters = merge_dicts(
-            get_header_decor(rest_client.__class__),
+            get_header_decor(self.rest_client.__class__),
             self.__merge_args(args_dict, func, 'header'))
-
         # Merge header parameters with default values, treat header
         # decorators with 2 params as default values only if they
         # don't match the function argument names
@@ -354,7 +368,6 @@ class HttpMethodDecorator:
             for key in func_header_decors.keys():
                 if not func_header_decors[key] in args_dict:
                     header_parameters[key] = func_header_decors[key]
-
         # Get body content from positional arguments if one is specified
         # using @body decorator
         body_parameter = get_body_decor(func)
@@ -365,223 +378,138 @@ class HttpMethodDecorator:
             # was provided
             if body_content and body_parameter[1]:
                 body_content = body_parameter[1](body_content)
-
         # Get authentication method for this call
-        auth = rest_client._auth()
-
+        auth = self.rest_client._auth()
         # Get status handlers
-        on_handlers = merge_dicts(get_on_decor(rest_client.__class__),
+        self.on_handlers = merge_dicts(get_on_decor(self.rest_client.__class__),
                                   get_on_decor(func))
-
         # Get timeout
-        request_timeout = get_timeout_decor(rest_client.__class__)
+        request_timeout = get_timeout_decor(self.rest_client.__class__)
         if get_timeout_decor(func):
             request_timeout = get_timeout_decor(func)
-
         # Check if stream is requested for this call
-        is_stream = get_stream_decor(func)
-        if is_stream is None:
-            is_stream = get_stream_decor(rest_client.__class__)
-
+        self.is_stream = get_stream_decor(func)
+        if self.is_stream is None:
+            self.is_stream = get_stream_decor(self.rest_client.__class__)
         #
         # If the kwargs contains any decorest decorators that should
         # be overloaded for this call, extract them.
         #
         # Pass the rest of kwargs to requests calls
         #
-        if kwargs:
+        if self.kwargs:
             for decor in DECOR_LIST:
-                if decor in kwargs:
+                if decor in self.kwargs:
                     if decor == 'header':
-                        self.__validate_decor(decor, kwargs, dict)
+                        self.__validate_decor(decor, self.kwargs, dict)
                         header_parameters = merge_dicts(
-                            header_parameters, kwargs['header'])
-                        del kwargs['header']
+                            header_parameters, self.kwargs['header'])
+                        del self.kwargs['header']
                     elif decor == 'query':
-                        self.__validate_decor(decor, kwargs, dict)
+                        self.__validate_decor(decor, self.kwargs, dict)
                         query_parameters = merge_dicts(query_parameters,
-                                                       kwargs['query'])
-                        del kwargs['query']
+                                                       self.kwargs['query'])
+                        del self.kwargs['query']
                     elif decor == 'form':
-                        self.__validate_decor(decor, kwargs, dict)
+                        self.__validate_decor(decor, self.kwargs, dict)
                         form_parameters = merge_dicts(form_parameters,
-                                                      kwargs['form'])
-                        del kwargs['form']
+                                                      self.kwargs['form'])
+                        del self.kwargs['form']
                     elif decor == 'multipart':
-                        self.__validate_decor(decor, kwargs, dict)
+                        self.__validate_decor(decor, self.kwargs, dict)
                         multipart_parameters = merge_dicts(
-                            multipart_parameters, kwargs['multipart'])
-                        del kwargs['multipart']
+                            multipart_parameters, self.kwargs['multipart'])
+                        del self.kwargs['multipart']
                     elif decor == 'on':
-                        self.__validate_decor(decor, kwargs, dict)
-                        on_handlers = merge_dicts(on_handlers, kwargs['on'])
-                        del kwargs['on']
+                        self.__validate_decor(decor, self.kwargs, dict)
+                        self.on_handlers = merge_dicts(self.on_handlers, self.kwargs['on'])
+                        del self.kwargs['on']
                     elif decor == 'accept':
-                        self.__validate_decor(decor, kwargs, str)
-                        header_parameters['accept'] = kwargs['accept']
-                        del kwargs['accept']
+                        self.__validate_decor(decor, self.kwargs, str)
+                        header_parameters['accept'] = self.kwargs['accept']
+                        del self.kwargs['accept']
                     elif decor == 'content':
-                        self.__validate_decor(decor, kwargs, str)
-                        header_parameters['content-type'] = kwargs['content']
-                        del kwargs['content']
+                        self.__validate_decor(decor, self.kwargs, str)
+                        header_parameters['content-type'] = self.kwargs['content']
+                        del self.kwargs['content']
                     elif decor == 'timeout':
-                        self.__validate_decor(decor, kwargs, numbers.Number)
-                        request_timeout = kwargs['timeout']
-                        del kwargs['timeout']
+                        self.__validate_decor(decor, self.kwargs, numbers.Number)
+                        request_timeout = self.kwargs['timeout']
+                        del self.kwargs['timeout']
                     elif decor == 'stream':
-                        self.__validate_decor(decor, kwargs, bool)
-                        is_stream = kwargs['stream']
-                        del kwargs['stream']
+                        self.__validate_decor(decor, self.kwargs, bool)
+                        self.is_stream = self.kwargs['stream']
+                        del self.kwargs['stream']
                     elif decor == 'body':
-                        body_content = kwargs['body']
-                        del kwargs['body']
+                        body_content = self.kwargs['body']
+                        del self.kwargs['body']
                     else:
                         pass
-
         # Build request from endpoint and query params
-        req = rest_client.build_request(req_path.split('/'))
+        self.req = self.rest_client.build_request(req_path.split('/'))
 
         # Handle multipart parameters, either from decorators
         # or ones passed directly through kwargs
         if multipart_parameters:
-            is_multipart_request = True
-            kwargs['files'] = multipart_parameters
-        elif rest_client._backend() == 'requests':
+            self.is_multipart_request = True
+            self.kwargs['files'] = multipart_parameters
+        elif self.rest_client._backend() == 'requests':
             from requests_toolbelt.multipart.encoder import MultipartEncoder
-            is_multipart_request = 'data' in kwargs and not isinstance(
-                kwargs['data'], MultipartEncoder)
+            self.is_multipart_request = 'data' in self.kwargs and not isinstance(
+                self.kwargs['data'], MultipartEncoder)
         else:
-            is_multipart_request = 'files' in kwargs
+            self.is_multipart_request = 'files' in self.kwargs
 
         # Assume default content type if not multipart
         if ('content-type' not in header_parameters) \
-                and not is_multipart_request:
+                and not self.is_multipart_request:
             header_parameters['content-type'] = 'application/json'
 
         # Assume default accept
         if 'accept' not in header_parameters:
             header_parameters['accept'] = 'application/json'
 
-        LOG.debug('Request: {method} {request}'.format(method=http_method,
-                                                       request=req))
-
+        LOG.debug('Request: {method} {request}'.format(method=self.http_method,
+                                                       request=self.req))
         if auth:
-            kwargs['auth'] = auth
-
+            self.kwargs['auth'] = auth
         if request_timeout:
-            kwargs['timeout'] = request_timeout
-
+            self.kwargs['timeout'] = request_timeout
         if body_content:
             if header_parameters.get('content-type') == 'application/json':
                 if isinstance(body_content, dict):
                     body_content = json.dumps(body_content)
 
-            if rest_client._backend() == 'httpx':
+            if self.rest_client._backend() == 'httpx':
                 if isinstance(body_content, dict):
-                    kwargs['data'] = body_content
+                    self.kwargs['data'] = body_content
                 else:
-                    kwargs['content'] = body_content
+                    self.kwargs['content'] = body_content
             else:
                 kwargs['data'] = body_content
-
         if query_parameters:
-            kwargs['params'] = query_parameters
-
+            self.kwargs['params'] = query_parameters
         if form_parameters:
             # If form parameters were passed, override the content-type
             header_parameters['content-type'] \
                 = 'application/x-www-form-urlencoded'
-            kwargs['data'] = form_parameters
-
-        if is_stream:
-            kwargs['stream'] = is_stream
-
+            self.kwargs['data'] = form_parameters
+        if self.is_stream:
+            self.kwargs['stream'] = self.is_stream
         if header_parameters:
-            kwargs['headers'] = dict(header_parameters.items())
-
-        result = None
+            self.kwargs['headers'] = dict(header_parameters.items())
 
         # If '__session' was passed in the kwargs, execute this request
         # using the session context, otherwise execute directly via the
         # requests module
-        if session:
-            execution_context = session
+        if self.session:
+            self.execution_context = self.session
         else:
-            if rest_client._backend() == 'requests':
-                execution_context = requests
+            if self.rest_client._backend() == 'requests':
+                self.execution_context = requests
             else:
                 import httpx
-                execution_context = httpx
-
-        if http_method not in (HttpMethod.GET, HttpMethod.POST, HttpMethod.PUT,
-                               HttpMethod.PATCH, HttpMethod.DELETE,
-                               HttpMethod.HEAD, HttpMethod.OPTIONS):
-            raise ValueError(
-                'Unsupported HTTP method: {method}'.format(method=http_method))
-
-        try:
-            if rest_client._backend() == 'httpx' \
-                    and http_method == HttpMethod.GET and is_stream:
-                del kwargs['stream']
-                result = execution_context.stream("GET", req, **kwargs)
-            else:
-                if http_method == HttpMethod.POST and is_multipart_request:
-                    # TODO: Why do I have to do this?
-                    if 'headers' in kwargs:
-                        kwargs['headers'].pop('content-type', None)
-
-                result = self.__dispatch(
-                    execution_context, http_method, kwargs, req)
-        except Exception as e:
-            raise HTTPErrorWrapper(typing.cast(types.HTTPErrors, e))
-
-        if on_handlers and result.status_code in on_handlers:
-            # Use a registered handler for the returned status code
-            return on_handlers[result.status_code](result)
-        elif on_handlers and HttpStatus.ANY in on_handlers:
-            # If a catch all status handler is provided - use it
-            return on_handlers[HttpStatus.ANY](result)
-        else:
-            # If stream option was passed and no content handler
-            # was defined, return requests response
-            if is_stream:
-                return result
-
-            # Default response handler
-            try:
-                result.raise_for_status()
-            except Exception as e:
-                raise HTTPErrorWrapper(typing.cast(types.HTTPErrors, e))
-
-            if result.text:
-                content_type = result.headers.get('content-type')
-                if content_type == 'application/json':
-                    return result.json()
-                elif content_type == 'application/octet-stream':
-                    return result.content
-                else:
-                    return result.text
-
-            return None
-
-    def __dispatch(self, execution_context: typing.Callable[..., typing.Any],
-                   http_method: typing.Union[str, HttpMethod],
-                   kwargs: ArgsDict, req: str) -> typing.Any:
-        """
-        Dispatch HTTP method based on HTTPMethod enum type.
-
-        Args:
-            execution_context: requests or httpx object
-            http_method(HttpMethod): HTTP method
-            kwargs(dict): named arguments passed to the API method
-            req(): request object
-        """
-        if isinstance(http_method, str):
-            method = http_method
-        else:
-            method = http_method.value[0].lower()
-
-        return methodcaller(method, req, **kwargs)(execution_context)
+                self.execution_context = httpx
 
     def __validate_decor(self, decor: str, kwargs: ArgsDict,
                          cls: typing.Type[typing.Any]) -> None:
@@ -619,3 +547,144 @@ class HttpMethodDecorator:
                 if args_dict.get(arg):
                     parameters[param] = args_dict[arg]
         return parameters
+
+    def handle(self, result):
+        if self.on_handlers and result.status_code in self.on_handlers:
+            # Use a registered handler for the returned status code
+            return self.on_handlers[result.status_code](result)
+        elif self.on_handlers and HttpStatus.ANY in self.on_handlers:
+            # If a catch all status handler is provided - use it
+            return self.on_handlers[HttpStatus.ANY](result)
+        else:
+            # If stream option was passed and no content handler
+            # was defined, return response
+            if self.is_stream:
+                return result
+
+            # Default response handler
+            try:
+                result.raise_for_status()
+            except Exception as e:
+                raise HTTPErrorWrapper(typing.cast(types.HTTPErrors, e))
+
+            if result.text:
+                content_type = result.headers.get('content-type')
+                if content_type == 'application/json':
+                    return result.json()
+                elif content_type == 'application/octet-stream':
+                    return result.content
+                else:
+                    return result.text
+
+            return None
+
+
+class HttpMethodDecorator:
+    """Abstract decorator for HTTP method decorators."""
+
+    def __init__(self, path: str):
+        """Initialize decorator with endpoint relative path."""
+        self.path_template = path
+
+    async def call_async(self, func: typing.Callable[..., typing.Any],
+             *args: typing.Any, **kwargs: typing.Any) -> typing.Any:
+
+        http_request = HttpRequest(func, self.path_template, args, kwargs)
+
+        try:
+            if http_request.http_method == HttpMethod.GET \
+                    and http_request.is_stream:
+                del kwargs['stream']
+                result \
+                    = await http_request.execution_context.stream("GET", http_request.req, **http_request.kwargs)
+            else:
+                if http_request.http_method == HttpMethod.POST \
+                        and http_request.is_multipart_request:
+                    # TODO: Why do I have to do this?
+                    if 'headers' in http_request.kwargs:
+                        http_request.kwargs['headers'].pop('content-type', None)
+
+                result = await self.__dispatch_async(http_request)
+        except Exception as e:
+            raise HTTPErrorWrapper(typing.cast(types.HTTPErrors, e))
+
+        return http_request.handle(result)
+
+    def call(self, func: typing.Callable[..., typing.Any],
+             *args: typing.Any, **kwargs: typing.Any) -> typing.Any:
+        """Execute the API HTTP request."""
+
+        http_request = HttpRequest(func, self.path_template, args, kwargs)
+
+        try:
+            if http_request.rest_client._backend() == 'httpx' \
+                    and http_request.http_method == HttpMethod.GET \
+                    and http_request.is_stream:
+                del kwargs['stream']
+                result \
+                    = http_request.execution_context.stream("GET", http_request.req, **http_request.kwargs)
+            else:
+                if http_request.http_method == HttpMethod.POST \
+                        and http_request.is_multipart_request:
+                    # TODO: Why do I have to do this?
+                    if 'headers' in http_request.kwargs:
+                        http_request.kwargs['headers'].pop('content-type', None)
+
+                result = self.__dispatch(http_request)
+        except Exception as e:
+            raise HTTPErrorWrapper(typing.cast(types.HTTPErrors, e))
+
+        return http_request.handle(result)
+
+    def __dispatch(self, http_request: HttpRequest) -> typing.Any:
+        """
+        Dispatch HTTP method based on HTTPMethod enum type.
+
+        Args:
+            execution_context: requests or httpx object
+            http_method(HttpMethod): HTTP method
+            kwargs(dict): named arguments passed to the API method
+            req(): request object
+        """
+        if isinstance(http_request.http_method, str):
+            method = http_request.http_method
+        else:
+            method = http_request.http_method.value[0].lower()
+
+        ctx = http_request.execution_context
+        return methodcaller(method,
+                            http_request.req,
+                            **http_request.kwargs)(ctx)
+
+    async def __dispatch_async(self, http_request: HttpRequest) -> typing.Any:
+        """
+        Dispatch HTTP method based on HTTPMethod enum type.
+
+        Args:
+            execution_context: requests or httpx object
+            http_method(HttpMethod): HTTP method
+            kwargs(dict): named arguments passed to the API method
+            req(): request object
+        """
+        if isinstance(http_request.http_method, str):
+            method = http_request.http_method
+        else:
+            method = http_request.http_method.value[0].lower()
+
+        import httpx
+
+        async with httpx.AsyncClient() as client:
+            if method == 'get':
+                response = await client.get(http_request.req, **http_request.kwargs)
+            elif method == 'post':
+                response = await client.post(http_request.req, **http_request.kwargs)
+            elif method == 'put':
+                response = await client.put(http_request.req, **http_request.kwargs)
+            elif method == 'patch':
+                response = await client.patch(http_request.req, **http_request.kwargs)
+            elif method == 'head':
+                response = await client.head(http_request.req, **http_request.kwargs)
+            elif method == 'delete':
+                response = await client.delete(http_request.req, **http_request.kwargs)
+
+        return response
