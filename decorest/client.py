@@ -18,99 +18,14 @@ Base Http client implementation.
 
 This module contains also some enums for HTTP protocol.
 """
-import asyncio
 import logging as LOG
 import typing
 import urllib.parse
 
 from .decorator_utils import get_decor
-from .types import AuthTypes, Backends, SessionTypes
+from .session import RestClientAsyncSession, RestClientSession
+from .types import AuthTypes, Backends
 from .utils import normalize_url
-
-
-class RestClientSession:
-    """Wrap a `requests` session for specific API client."""
-    def __init__(self, client: 'RestClient') -> None:
-        """Initialize the session instance with a specific API client."""
-        self.__client: 'RestClient' = client
-
-        # Create a session of type specific for given backend
-        if client._backend() == 'requests':
-            import requests
-            self.__session: SessionTypes = requests.Session()
-        else:
-            import httpx
-            self.__session = httpx.Client()
-
-        if self.__client.auth is not None:
-            self.__session.auth = self.__client.auth
-
-    def __enter__(self) -> 'RestClientSession':
-        """Context manager initialization."""
-        return self
-
-    def __exit__(self, *args: typing.Any) -> None:
-        """Context manager destruction."""
-        self.__session.close()
-
-    def __getattr__(self, name: str) -> typing.Any:
-        """Forward any method invocation to actual client with session."""
-        if name == '_requests_session':
-            return self.__session
-
-        if name == '_client':
-            return self.__client
-
-        if name == '_close':
-            return self.__session.close
-
-        def invoker(*args: typing.Any, **kwargs: typing.Any) -> typing.Any:
-            kwargs['__session'] = self.__session
-            return getattr(self.__client, name)(*args, **kwargs)
-
-        return invoker
-
-
-class RestClientAsyncSession:
-    """Wrap a `requests` session for specific API client."""
-    def __init__(self, client: 'RestClient') -> None:
-        """Initialize the session instance with a specific API client."""
-        self.__client: 'RestClient' = client
-
-        # Create a session of type specific for given backend
-        import httpx
-        self.__session = httpx.AsyncClient()
-
-        if self.__client.auth is not None:
-            self.__session.auth = self.__client.auth
-
-    async def __aenter__(self) -> 'RestClientAsyncSession':
-        """Context manager initialization."""
-        await self.__session.__aenter__()
-        return self
-
-    async def __aexit__(self, *args: typing.Any) -> None:
-        """Context manager destruction."""
-        await self.__session.__aexit__(*args)
-
-    def __getattr__(self, name: str) -> typing.Any:
-        """Forward any method invocation to actual client with session."""
-        if name == '_requests_session':
-            return self.__session
-
-        if name == '_client':
-            return self.__client
-
-        if name == '_close':
-            return self.__session.aclose
-
-        async def invoker(*args: typing.Any,
-                          **kwargs: typing.Any) -> typing.Any:
-            kwargs['__session'] = self.__session
-            assert asyncio.iscoroutinefunction(getattr(self.__client, name))
-            return await getattr(self.__client, name)(*args, **kwargs)
-
-        return invoker
 
 
 class RestClient:
