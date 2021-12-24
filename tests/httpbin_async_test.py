@@ -13,7 +13,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import asyncio
 import pprint
+from operator import methodcaller
 
 import pytest
 import time
@@ -209,6 +211,25 @@ async def test_put(client):
 
     assert res["args"] == data
     assert res["json"] == data
+
+
+@pytest.mark.asyncio
+async def test_multi_put(client):
+    """
+    """
+    request_count = 100
+    async with client._async_session() as s:
+        reqs = [asyncio.ensure_future(s.put({i: str(i)},
+                                            content="application/json"))
+                for i in range(0, request_count)]
+
+        reqs_result = await asyncio.gather(*reqs)
+
+        keys = []
+        for res in reqs_result:
+            keys.append(int(list(res["json"].keys())[0]))
+
+        assert keys == list(range(0, request_count))
 
 
 @pytest.mark.asyncio
