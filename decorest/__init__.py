@@ -26,13 +26,14 @@ from .client import RestClient
 from .decorators import accept, body, content, endpoint, form, header
 from .decorators import multipart, on, query, stream, timeout
 from .errors import HTTPErrorWrapper
+from .request import HttpRequest
 from .types import HttpMethod, HttpStatus
 
 __all__ = [
     'GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS', 'RestClient',
-    'HTTPErrorWrapper', 'HttpMethod', 'HttpStatus', 'query', 'body', 'header',
-    'on', 'accept', 'content', 'endpoint', 'timeout', 'stream', 'form',
-    'multipart'
+    'HTTPErrorWrapper', 'HttpMethod', 'HttpStatus', 'HttpRequest',
+    'query', 'body', 'header', 'on', 'accept', 'content', 'endpoint',
+    'timeout', 'stream', 'form', 'multipart'
 ]
 
 __version__ = "0.1.0"

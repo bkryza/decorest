@@ -23,7 +23,7 @@ import logging as LOG
 import typing
 import urllib.parse
 
-from .decorators import get_decor
+from .decorator_utils import get_decor
 from .types import AuthTypes, Backends, SessionTypes
 from .utils import normalize_url
 

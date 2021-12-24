@@ -21,7 +21,8 @@ import functools
 from decorest import RestClient, HttpMethod
 from decorest import GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS
 from decorest import accept, content, endpoint, form, header, query, stream
-from decorest.decorators import get_decor, get_header_decor, get_endpoint_decor, get_form_decor, get_query_decor, \
+from decorest.decorator_utils import get_decor, get_header_decor, \
+    get_endpoint_decor, get_form_decor, get_query_decor, \
     get_stream_decor, get_on_decor, get_method_decor
 
 

@@ -18,7 +18,8 @@ import asyncio
 import typing
 from functools import wraps
 
-from .decorators import HttpMethodDecorator, set_decor
+from .decorator_utils import set_decor
+from .decorators import HttpMethodDecorator
 from .types import HttpMethod, TDecor
 
 
@@ -34,13 +35,13 @@ class DELETE(HttpMethodDecorator):
 
         if asyncio.iscoroutinefunction(func):
             @wraps(func)
-            async def delete_decorator(*args: typing.Any,
-                                       **kwargs: typing.Any) \
+            async def async_delete_decorator(*args: typing.Any,
+                                             **kwargs: typing.Any) \
                     -> typing.Any:
                 return await super(DELETE, self).call_async(func,
                                                             *args, **kwargs)
 
-            return typing.cast(TDecor, delete_decorator)
+            return typing.cast(TDecor, async_delete_decorator)
 
         @wraps(func)
         def delete_decorator(*args: typing.Any, **kwargs: typing.Any) \

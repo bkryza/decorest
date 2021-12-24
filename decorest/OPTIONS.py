@@ -18,7 +18,8 @@ import asyncio
 import typing
 from functools import wraps
 
-from .decorators import HttpMethodDecorator, set_decor
+from .decorator_utils import set_decor
+from .decorators import HttpMethodDecorator
 from .types import HttpMethod, TDecor
 
 
@@ -34,12 +35,13 @@ class OPTIONS(HttpMethodDecorator):
 
         if asyncio.iscoroutinefunction(func):
             @wraps(func)
-            async def get_decorator(*args: typing.Any, **kwargs: typing.Any) \
+            async def async_options_decorator(*args: typing.Any,
+                                              **kwargs: typing.Any) \
                     -> typing.Any:
                 return await super(OPTIONS, self).call_async(
                     func, *args, **kwargs)
 
-            return typing.cast(TDecor, get_decorator)
+            return typing.cast(TDecor, async_options_decorator)
 
         @wraps(func)
         def options_decorator(*args: typing.Any, **kwargs: typing.Any) \

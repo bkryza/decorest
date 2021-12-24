@@ -28,4 +28,4 @@ jobs:
         python-version: ${{ matrix.python-version }}
 
     - run: pip install tox tox-gh-actions tox-docker==$TOX_DOCKER_VERSION
-    - run: tox -c tox.ini -e flake8,mypy,basic,swaggerpetstore,httpbin
+    - run: tox -c tox.ini -e flake8,mypy,basic,swaggerpetstore,httpbin,asynchttpbin
