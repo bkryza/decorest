@@ -78,6 +78,37 @@ def merge_dicts(*dict_args: typing.Any) \
     return result
 
 
+def merge_header_dicts(*dict_args: typing.Any) \
+        -> typing.Dict[typing.Any, typing.Any]:
+    """
+    Merge all dicts passed as arguments, skips None objects.
+
+    Repeating key values will be appended to the existing keys.
+    """
+    result = None
+    for dictionary in dict_args:
+        if dictionary is not None:
+            if result is None:
+                result = copy.deepcopy(dictionary)
+            else:
+                for k, v in dictionary.items():
+                    if k in result:
+                        if isinstance(result[k], list):
+                            if isinstance(v, list):
+                                result[k].extend(v)
+                            else:
+                                result[k].append(v)
+                        else:
+                            result[k] = [result[k], v]
+                    else:
+                        result[k] = v
+
+    if result is None:
+        result = {}
+
+    return result
+
+
 def normalize_url(url: str) -> str:
     """Make sure the url is in correct form."""
     result = url

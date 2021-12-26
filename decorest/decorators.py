@@ -22,14 +22,13 @@ added to the client class or method.
 
 import inspect
 import numbers
-import pprint
 import typing
 from operator import methodcaller
 
 from requests.structures import CaseInsensitiveDict
 
 from . import types
-from .decorator_utils import set_decor
+from .decorator_utils import set_decor, set_header_decor
 from .errors import HTTPErrorWrapper
 from .request import HttpRequest
 from .types import HttpMethod, HttpStatus, TDecor
@@ -66,9 +65,8 @@ def query(name: str, value: typing.Optional[str] = None) \
         if inspect.isclass(t):
             raise TypeError("@query decorator can only be "
                             "applied to methods.")
-        if not value_:
-            value_ = name
-        set_decor(t, 'query', {name: value_})
+
+        set_decor(t, 'query', {name: value_ or name})
         return t
 
     return query_decorator
@@ -83,9 +81,8 @@ def form(name: str, value: typing.Optional[str] = None) \
         if inspect.isclass(t):
             raise TypeError("@form decorator can only be "
                             "applied to methods.")
-        if not value_:
-            value_ = name
-        set_decor(t, 'form', {name: value_})
+
+        set_decor(t, 'form', {name: value_ or name})
         return t
 
     return form_decorator
@@ -100,9 +97,8 @@ def multipart(name: str, value: typing.Optional[str] = None) \
         if inspect.isclass(t):
             raise TypeError("@multipart decorator can only be "
                             "applied to methods.")
-        if not value_:
-            value_ = name
-        set_decor(t, 'multipart', {name: value_})
+
+        set_decor(t, 'multipart', {name: value_ or name})
         return t
 
     return multipart_decorator
@@ -113,10 +109,7 @@ def header(name: str, value: typing.Optional[str] = None) \
     """Header class and method decorator."""
 
     def header_decorator(t: TDecor) -> TDecor:
-        value_ = value
-        if not value_:
-            value_ = name
-        set_decor(t, 'header', CaseInsensitiveDict({name: value_}))
+        set_header_decor(t, CaseInsensitiveDict({name: value or name}))
         return t
 
     return header_decorator
@@ -136,8 +129,7 @@ def content(value: str) -> typing.Callable[[TDecor], TDecor]:
     """Content-type header class and method decorator."""
 
     def content_decorator(t: TDecor) -> TDecor:
-        set_decor(t, 'header',
-                  CaseInsensitiveDict({'Content-Type': value}))
+        set_header_decor(t, CaseInsensitiveDict({'Content-Type': value}))
         return t
 
     return content_decorator
@@ -147,8 +139,7 @@ def accept(value: str) -> typing.Callable[[TDecor], TDecor]:
     """Accept header class and method decorator."""
 
     def accept_decorator(t: TDecor) -> TDecor:
-        set_decor(t, 'header',
-                  CaseInsensitiveDict({'Accept': value}))
+        set_header_decor(t, CaseInsensitiveDict({'Accept': value}))
         return t
 
     return accept_decorator
@@ -209,7 +200,6 @@ class HttpMethodDecorator:
         http_request = HttpRequest(func, self.path_template, args, kwargs)
 
         try:
-            pprint.pprint(http_request)
             if http_request.http_method == HttpMethod.GET \
                     and http_request.is_stream:
                 del kwargs['stream']

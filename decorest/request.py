@@ -21,6 +21,7 @@ import numbers
 import typing
 
 import requests
+from requests.structures import CaseInsensitiveDict
 
 from .client import RestClient
 from .decorator_utils import DECOR_LIST, get_body_decor, get_decor, \
@@ -86,17 +87,24 @@ class HttpRequest:
         query_parameters = self.__merge_args(args_dict, func, 'query')
         form_parameters = self.__merge_args(args_dict, func, 'form')
         multipart_parameters = self.__merge_args(args_dict, func, 'multipart')
-        header_parameters = merge_dicts(
+        header_parameters = CaseInsensitiveDict(merge_dicts(
             get_header_decor(self.rest_client.__class__),
-            self.__merge_args(args_dict, func, 'header'))
+            self.__merge_args(args_dict, func, 'header')))
+
         # Merge header parameters with default values, treat header
         # decorators with 2 params as default values only if they
         # don't match the function argument names
         func_header_decors = get_header_decor(func)
+
         if func_header_decors:
-            for key in func_header_decors.keys():
-                if not func_header_decors[key] in args_dict:
-                    header_parameters[key] = func_header_decors[key]
+            for key, value in func_header_decors.items():
+                if key not in args_dict:
+                    header_parameters[key] = value
+
+        for key, value in header_parameters.items():
+            if isinstance(value, list):
+                header_parameters[key] = ", ".join(value)
+
         # Get body content from positional arguments if one is specified
         # using @body decorator
         body_parameter = get_body_decor(func)
@@ -107,19 +115,24 @@ class HttpRequest:
             # was provided
             if body_content and body_parameter[1]:
                 body_content = body_parameter[1](body_content)
+
         # Get authentication method for this call
         auth = self.rest_client._auth()
+
         # Get status handlers
         self.on_handlers = merge_dicts(get_on_decor(self.rest_client.__class__),
                                        get_on_decor(func))
+
         # Get timeout
         request_timeout = get_timeout_decor(self.rest_client.__class__)
         if get_timeout_decor(func):
             request_timeout = get_timeout_decor(func)
+
         # Check if stream is requested for this call
         self.is_stream = get_stream_decor(func)
         if self.is_stream is None:
             self.is_stream = get_stream_decor(self.rest_client.__class__)
+
         #
         # If the kwargs contains any decorest decorators that should
         # be overloaded for this call, extract them.
@@ -276,9 +289,12 @@ class HttpRequest:
         args_decor = get_decor(func, decor)
         parameters = {}
         if args_decor:
-            for arg, param in args_decor.items():
-                if args_dict.get(arg):
-                    parameters[param] = args_dict[arg]
+            for arg, value in args_decor.items():
+                if (isinstance(value, str)) \
+                        and arg in args_dict.keys():
+                    parameters[value] = args_dict[arg]
+                else:
+                    parameters[arg] = value
         return parameters
 
     def handle(self, result: typing.Any) -> typing.Any:

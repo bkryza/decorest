@@ -113,7 +113,6 @@ def test_user_agent(client):
 def test_headers(client):
     """
     """
-
     def ci(d):
         return CaseInsensitiveDict(d)
 
@@ -135,11 +134,39 @@ def test_headers(client):
 
     assert ci(res['headers'])['B'] == 'BB'
 
+
+@pytest.mark.parametrize("client", pytest_params)
+def test_headers_in_args(client):
+    """
+    """
     # Check passing header value in arguments
     res = client.headers_in_args('1234', 'ABCD')
 
-    assert ci(res['headers'])['First'] == '1234'
-    assert ci(res['headers'])['SecondHeader'] == 'ABCD'
+    ci = CaseInsensitiveDict(res['headers'])
+
+    assert ci['First'] == '1234'
+    assert ci['Second-Header'] == 'ABCD'
+    assert ci['Third-Header'] == 'Third header value'
+    assert ci['Fourth-Header'] == 'WXYZ'
+    assert ci['Content-Type'] == 'application/json'
+    assert ci['Accept'] == 'application/xml'
+
+
+@pytest.mark.parametrize("client", pytest_params)
+def test_headers_multivalue(client):
+    """
+    """
+    # Check passing header value in arguments
+    res = client.headers_multivalue_headers()
+    ci = CaseInsensitiveDict(res['headers'])
+
+    assert ci['A'] == '3, 2, 1'
+    assert ci['B'] == 'X, Y, Z'
+
+    res = client.headers_multi_accept()
+    ci = CaseInsensitiveDict(res['headers'])
+
+    assert ci['accept'] == 'application/xml, application/json, text/plain'
 
 
 @pytest.mark.parametrize("client", pytest_params)

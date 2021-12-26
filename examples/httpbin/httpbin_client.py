@@ -78,8 +78,32 @@ class HttpBinClient(RestClient):
 
     @GET('headers')
     @header('first')
-    @header('second_header', 'SecondHeader')
-    def headers_in_args(self, first, second_header):
+    @header('second_header', 'Second-Header')
+    @header('Third-Header', 'Third header value')
+    @header('fourth_header', 'Fourth-Header')
+    @content('application/json')
+    @accept('application/xml')
+    def headers_in_args(self, first, second_header, fourth_header='WXYZ'):
+        """Return header dict."""
+
+    @GET('headers')
+    @header('A', '1')
+    @header('A', '2')
+    @header('A', '3')
+    @header('B', ['X', 'Y', 'Z'])
+    def headers_multivalue_headers(self):
+        """Return header dict."""
+
+    @GET('headers')
+    @accept('text/plain')
+    @accept('application/json')
+    @accept('application/xml')
+    def headers_multi_accept(self):
+        """Return header dict."""
+
+    @GET('headers')
+    @header('A', 'a')
+    def headers_multivalue_headers_with_override(self, a=['1', '2', '3']):
         """Return header dict."""
 
     @GET('get')

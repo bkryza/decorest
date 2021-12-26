@@ -20,8 +20,8 @@ import typing
 
 from requests.structures import CaseInsensitiveDict
 
-from .types import HttpMethod
-from .utils import merge_dicts
+from .types import HeaderDict, HttpMethod
+from .utils import merge_dicts, merge_header_dicts
 
 DECOR_KEY = '__decorest__'
 
@@ -55,6 +55,24 @@ def set_decor(t: typing.Any, name: str, value: typing.Any) -> None:
         d[name].extend(value)
     else:
         d[name] = value
+
+
+def set_header_decor(t: typing.Any,
+                     value: HeaderDict) -> None:
+    """Decorate a function or class with header decorator."""
+    if hasattr(t, '__wrapped__') and hasattr(t.__wrapped__, DECOR_KEY):
+        setattr(t, DECOR_KEY, t.__wrapped__.__decorest__)
+
+    if not hasattr(t, DECOR_KEY):
+        setattr(t, DECOR_KEY, {})
+
+    d = getattr(t, DECOR_KEY)
+    name = 'header'
+
+    if not d.get(name):
+        d[name] = CaseInsensitiveDict()
+
+    d[name] = merge_header_dicts(d[name], value)
 
 
 def get_decor(t: typing.Any, name: str) -> typing.Optional[typing.Any]:
