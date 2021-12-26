@@ -35,7 +35,6 @@ from decorest import accept, body, content, endpoint, header, on, query
 @endpoint('http://petstore.example.com')
 class PetAPI(RestClient):
     """Everything about your Pets."""
-
     @POST('pet')
     @content('application/json')
     @accept('application/json')
@@ -79,7 +78,6 @@ class PetAPI(RestClient):
 
 class StoreAPI(RestClient):
     """Access to Petstore orders."""
-
     @GET('store/inventory')
     def get_inventory(self):
         """Return pet inventories by status."""
@@ -100,7 +98,6 @@ class StoreAPI(RestClient):
 
 class UserAPI(RestClient):
     """Operations about user."""
-
     @POST('user')
     @body('user', lambda o: json.dumps(o))
     @on(200, lambda r: True)

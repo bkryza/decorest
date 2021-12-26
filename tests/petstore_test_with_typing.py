@@ -34,9 +34,9 @@ def client(backend: typing.Literal['requests', 'httpx']) \
     host = "localhost"
     port = os.environ['PETSTORE_8080_TCP_PORT']
 
-    return PetstoreClientWithTyping(
-        'http://{host}:{port}/api'.format(host=host, port=port),
-        backend=backend)
+    return PetstoreClientWithTyping('http://{host}:{port}/api'.format(
+        host=host, port=port),
+                                    backend=backend)
 
 
 client_requests = client('requests')
@@ -151,4 +151,3 @@ def test_user_methods(client: PetstoreClientWithTyping) -> None:
     assert res['password'] == 'guess'
 
     client.delete_user('swagger')
-

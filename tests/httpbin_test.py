@@ -119,7 +119,8 @@ def test_headers(client):
     # Check
     res = client.headers(header={'A': 'AA', 'B': 'CC'})
 
-    assert ci(res['headers'])['User-Agent'] == 'decorest/{v}'.format(v=__version__)
+    assert ci(
+        res['headers'])['User-Agent'] == 'decorest/{v}'.format(v=__version__)
     assert ci(res['headers'])['A'] == 'AA'
     assert ci(res['headers'])['B'] == 'CC'
 

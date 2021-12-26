@@ -43,7 +43,6 @@ def on(status: typing.Union[types.ellipsis, int],
     The handler is a function or lambda which will receive as
     the sole parameter the requests response object.
     """
-
     def on_decorator(t: TDecor) -> TDecor:
         if status is Ellipsis:  # type: ignore
             set_decor(t, 'on', {HttpStatus.ANY: handler})
@@ -59,7 +58,6 @@ def on(status: typing.Union[types.ellipsis, int],
 def query(name: str, value: typing.Optional[str] = None) \
         -> typing.Callable[[TDecor], TDecor]:
     """Query parameter decorator."""
-
     def query_decorator(t: TDecor) -> TDecor:
         value_ = value
         if inspect.isclass(t):
@@ -75,7 +73,6 @@ def query(name: str, value: typing.Optional[str] = None) \
 def form(name: str, value: typing.Optional[str] = None) \
         -> typing.Callable[[TDecor], TDecor]:
     """Form parameter decorator."""
-
     def form_decorator(t: TDecor) -> TDecor:
         value_ = value
         if inspect.isclass(t):
@@ -91,7 +88,6 @@ def form(name: str, value: typing.Optional[str] = None) \
 def multipart(name: str, value: typing.Optional[str] = None) \
         -> typing.Callable[[TDecor], TDecor]:
     """Multipart parameter decorator."""
-
     def multipart_decorator(t: TDecor) -> TDecor:
         value_ = value
         if inspect.isclass(t):
@@ -107,7 +103,6 @@ def multipart(name: str, value: typing.Optional[str] = None) \
 def header(name: str, value: typing.Optional[str] = None) \
         -> typing.Callable[[TDecor], TDecor]:
     """Header class and method decorator."""
-
     def header_decorator(t: TDecor) -> TDecor:
         set_header_decor(t, CaseInsensitiveDict({name: value or name}))
         return t
@@ -117,7 +112,6 @@ def header(name: str, value: typing.Optional[str] = None) \
 
 def endpoint(value: str) -> typing.Callable[[TDecor], TDecor]:
     """Endpoint class and method decorator."""
-
     def endpoint_decorator(t: TDecor) -> TDecor:
         set_decor(t, 'endpoint', value)
         return t
@@ -127,7 +121,6 @@ def endpoint(value: str) -> typing.Callable[[TDecor], TDecor]:
 
 def content(value: str) -> typing.Callable[[TDecor], TDecor]:
     """Content-type header class and method decorator."""
-
     def content_decorator(t: TDecor) -> TDecor:
         set_header_decor(t, CaseInsensitiveDict({'Content-Type': value}))
         return t
@@ -137,7 +130,6 @@ def content(value: str) -> typing.Callable[[TDecor], TDecor]:
 
 def accept(value: str) -> typing.Callable[[TDecor], TDecor]:
     """Accept header class and method decorator."""
-
     def accept_decorator(t: TDecor) -> TDecor:
         set_header_decor(t, CaseInsensitiveDict({'Accept': value}))
         return t
@@ -153,7 +145,6 @@ def body(name: str,
 
     Determines which method argument provides the body.
     """
-
     def body_decorator(t: TDecor) -> TDecor:
         set_decor(t, 'body', (name, serializer))
         return t
@@ -167,7 +158,6 @@ def timeout(value: float) -> typing.Callable[[TDecor], TDecor]:
 
     Specifies a default timeout value for method or entire API.
     """
-
     def timeout_decorator(t: TDecor) -> TDecor:
         set_decor(t, 'timeout', value)
         return t
@@ -188,7 +178,6 @@ def stream(t: TDecor) -> TDecor:
 
 class HttpMethodDecorator:
     """Abstract decorator for HTTP method decorators."""
-
     def __init__(self, path: str):
         """Initialize decorator with endpoint relative path."""
         self.path_template = path
@@ -213,7 +202,8 @@ class HttpMethodDecorator:
                         and http_request.is_multipart_request:
                     # TODO: Why do I have to do this?
                     if 'headers' in http_request.kwargs:
-                        http_request.kwargs['headers'].pop('content-type', None)
+                        http_request.kwargs['headers'].pop(
+                            'content-type', None)
 
                 result = await self.__dispatch_async(http_request)
         except Exception as e:
@@ -221,8 +211,8 @@ class HttpMethodDecorator:
 
         return http_request.handle(result)
 
-    def call(self, func: typing.Callable[..., typing.Any],
-             *args: typing.Any, **kwargs: typing.Any) -> typing.Any:
+    def call(self, func: typing.Callable[..., typing.Any], *args: typing.Any,
+             **kwargs: typing.Any) -> typing.Any:
         """Execute the API HTTP request."""
         http_request = HttpRequest(func, self.path_template, args, kwargs)
 
@@ -239,7 +229,8 @@ class HttpMethodDecorator:
                         and http_request.is_multipart_request:
                     # TODO: Why do I have to do this?
                     if 'headers' in http_request.kwargs:
-                        http_request.kwargs['headers'].pop('content-type', None)
+                        http_request.kwargs['headers'].pop(
+                            'content-type', None)
 
                 result = self.__dispatch(http_request)
         except Exception as e:
@@ -263,8 +254,7 @@ class HttpMethodDecorator:
             method = http_request.http_method.value[0].lower()
 
         ctx = http_request.execution_context
-        return methodcaller(method,
-                            http_request.req,
+        return methodcaller(method, http_request.req,
                             **http_request.kwargs)(ctx)
 
     async def __dispatch_async(self, http_request: HttpRequest) -> typing.Any:
@@ -286,8 +276,7 @@ class HttpMethodDecorator:
 
         if not isinstance(http_request.execution_context, httpx.AsyncClient):
             async with httpx.AsyncClient() as client:
-                return await client.request(method.upper(),
-                                            http_request.req,
+                return await client.request(method.upper(), http_request.req,
                                             **http_request.kwargs)
         else:
             return await http_request.execution_context.request(

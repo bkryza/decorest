@@ -48,10 +48,9 @@ class HttpRequest:
     execution_context: typing.Any
     rest_client: RestClient
 
-    def __init__(self, func: typing.Callable[..., typing.Any],
-                 path_template: str,
-                 args: typing.Tuple[typing.Any, ...],
-                 kwargs: ArgsDict):
+    def __init__(self, func: typing.Callable[...,
+                                             typing.Any], path_template: str,
+                 args: typing.Tuple[typing.Any, ...], kwargs: ArgsDict):
         """
         Construct HttpRequest instance.
 
@@ -69,9 +68,8 @@ class HttpRequest:
                                     HttpMethod.PUT, HttpMethod.PATCH,
                                     HttpMethod.DELETE, HttpMethod.HEAD,
                                     HttpMethod.OPTIONS):
-            raise ValueError(
-                'Unsupported HTTP method: {method}'.format(
-                    method=self.http_method))
+            raise ValueError('Unsupported HTTP method: {method}'.format(
+                method=self.http_method))
 
         self.rest_client = args[0]
         args_dict = dict_from_args(func, *args)
@@ -87,9 +85,9 @@ class HttpRequest:
         query_parameters = self.__merge_args(args_dict, func, 'query')
         form_parameters = self.__merge_args(args_dict, func, 'form')
         multipart_parameters = self.__merge_args(args_dict, func, 'multipart')
-        header_parameters = CaseInsensitiveDict(merge_dicts(
-            get_header_decor(self.rest_client.__class__),
-            self.__merge_args(args_dict, func, 'header')))
+        header_parameters = CaseInsensitiveDict(
+            merge_dicts(get_header_decor(self.rest_client.__class__),
+                        self.__merge_args(args_dict, func, 'header')))
 
         # Merge header parameters with default values, treat header
         # decorators with 2 params as default values only if they
@@ -120,8 +118,8 @@ class HttpRequest:
         auth = self.rest_client._auth()
 
         # Get status handlers
-        self.on_handlers = merge_dicts(get_on_decor(self.rest_client.__class__),
-                                       get_on_decor(func))
+        self.on_handlers = merge_dicts(
+            get_on_decor(self.rest_client.__class__), get_on_decor(func))
 
         # Get timeout
         request_timeout = get_timeout_decor(self.rest_client.__class__)
@@ -268,9 +266,8 @@ class HttpRequest:
             cls(class): Expected type of decorator parameter
         """
         if not isinstance(kwargs[decor], cls):
-            raise TypeError(
-                "{} value must be an instance of {}".format(
-                    decor, cls.__name__))
+            raise TypeError("{} value must be an instance of {}".format(
+                decor, cls.__name__))
 
     def __merge_args(self, args_dict: ArgsDict,
                      func: typing.Callable[..., typing.Any], decor: str) \

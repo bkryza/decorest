@@ -62,9 +62,9 @@ HTTPErrors = typing.Union['requests.HTTPError', 'httpx.HTTPStatusError']
 
 TDecor = typing.TypeVar('TDecor', bound=typing.Callable[..., typing.Any])
 
-
 if typing.TYPE_CHECKING:
-    class ellipsis(enum.Enum): # noqa N801
+
+    class ellipsis(enum.Enum):  # noqa N801
         """
         Ellipsis type for typechecking.
 
@@ -72,6 +72,7 @@ if typing.TYPE_CHECKING:
         for the 'on' decorator.
         """
         Ellipsis = "..."
+
     Ellipsis = ellipsis.Ellipsis
 else:
     ellipsis = type(Ellipsis)

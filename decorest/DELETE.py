@@ -34,12 +34,13 @@ class DELETE(HttpMethodDecorator):
         set_decor(func, 'http_method', HttpMethod.DELETE)
 
         if asyncio.iscoroutinefunction(func):
+
             @wraps(func)
             async def async_delete_decorator(*args: typing.Any,
                                              **kwargs: typing.Any) \
                     -> typing.Any:
-                return await super(DELETE, self).call_async(func,
-                                                            *args, **kwargs)
+                return await super(DELETE,
+                                   self).call_async(func, *args, **kwargs)
 
             return typing.cast(TDecor, async_delete_decorator)
 

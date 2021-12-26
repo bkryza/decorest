@@ -32,9 +32,9 @@ def client(backend: str) -> PetstoreClient:
     host = "localhost"
     port = os.environ['PETSTORE_8080_TCP_PORT']
 
-    return PetstoreClient(
-        'http://{host}:{port}/api'.format(host=host, port=port),
-        backend=backend)
+    return PetstoreClient('http://{host}:{port}/api'.format(host=host,
+                                                            port=port),
+                          backend=backend)
 
 
 # Prepare pytest params

@@ -58,7 +58,6 @@ def parse_image(response: typing.Any) -> typing.Optional[Image]:
 @endpoint('http://httpbin.org')
 class HttpBinClientWithTyping(RestClient):
     """Client to HttpBin service (httpbin.org)."""
-
     @GET('ip')
     def ip(self) -> JsonDictType:
         """Return Origin IP."""
@@ -108,8 +107,8 @@ class HttpBinClientWithTyping(RestClient):
     @multipart('part1')
     @multipart('part_2', 'part2')
     @multipart('test')
-    def post_multipart(self, part1: typing.Any,
-                       part_2: typing.Any, test: typing.Any) -> JsonDictType:
+    def post_multipart(self, part1: typing.Any, part_2: typing.Any,
+                       test: typing.Any) -> JsonDictType:
         """Return multipart POST data."""
 
     @PATCH('patch')
@@ -171,7 +170,9 @@ class HttpBinClientWithTyping(RestClient):
     @query('first_name', 'firstName')
     @query('last_name', 'lastName')
     @query('nickname')
-    def response_headers(self, first_name: str, last_name: str,
+    def response_headers(self,
+                         first_name: str,
+                         last_name: str,
                          nickname: str = 'httpbin') -> JsonDictType:
         """Return given response headers."""
 
@@ -219,8 +220,8 @@ class HttpBinClientWithTyping(RestClient):
         """404'd BasicAuth."""
 
     @GET('digest-auth/{qop}/{user}/{passwd}/{algorithm}/never')
-    def digest_auth_algorithm(self, qop: str, user: str,
-                              passwd: str, algorithm: str) -> JsonDictType:
+    def digest_auth_algorithm(self, qop: str, user: str, passwd: str,
+                              algorithm: str) -> JsonDictType:
         """Challenge HTTP Digest Auth."""
 
     @GET('digest-auth/{qop}/{user}/{passwd}')
@@ -243,8 +244,8 @@ class HttpBinClientWithTyping(RestClient):
     @query('duration')
     @query('delay')
     @query('code')
-    def drip(self, numbytes: int, duration: float,
-             delay: int, code: int) -> JsonDictType:
+    def drip(self, numbytes: int, duration: float, delay: int,
+             code: int) -> JsonDictType:
         """Drip data over a duration.
 
         Drip data over a duration after an optional initial delay, then

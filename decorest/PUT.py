@@ -34,6 +34,7 @@ class PUT(HttpMethodDecorator):
         set_decor(func, 'http_method', HttpMethod.PUT)
 
         if asyncio.iscoroutinefunction(func):
+
             @wraps(func)
             async def async_put_decorator(*args: typing.Any,
                                           **kwargs: typing.Any) \

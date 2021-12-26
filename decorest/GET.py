@@ -34,6 +34,7 @@ class GET(HttpMethodDecorator):
         set_decor(func, 'http_method', HttpMethod.GET)
 
         if asyncio.iscoroutinefunction(func):
+
             @wraps(func)
             async def async_get_decorator(*args: typing.Any,
                                           **kwargs: typing.Any) \

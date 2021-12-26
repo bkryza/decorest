@@ -40,7 +40,6 @@ JsonDictType = typing.Dict[str, typing.Any]
 @endpoint('http://petstore.example.com')
 class PetAPI(RestClient):
     """Everything about your Pets."""
-
     @POST('pet')
     @content('application/json')
     @accept('application/json')
@@ -86,7 +85,6 @@ class PetAPI(RestClient):
 
 class StoreAPI(RestClient):
     """Access to Petstore orders."""
-
     @GET('store/inventory')
     def get_inventory(self) -> JsonDictType:
         """Return pet inventories by status."""
@@ -107,7 +105,6 @@ class StoreAPI(RestClient):
 
 class UserAPI(RestClient):
     """Operations about user."""
-
     @POST('user')
     @body('user', lambda o: json.dumps(o))
     @on(200, lambda r: True)

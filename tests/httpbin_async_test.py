@@ -46,8 +46,9 @@ def client() -> HttpBinAsyncClient:
     host = os.environ["HTTPBIN_HOST"]
     port = os.environ["HTTPBIN_80_TCP_PORT"]
 
-    return HttpBinAsyncClient("http://{host}:{port}".format(host=host, port=port),
-                         backend='httpx')
+    return HttpBinAsyncClient("http://{host}:{port}".format(host=host,
+                                                            port=port),
+                              backend='httpx')
 
 
 @pytest.fixture
@@ -56,8 +57,9 @@ def basic_auth_client():
     host = os.environ["HTTPBIN_HOST"]
     port = os.environ["HTTPBIN_80_TCP_PORT"]
 
-    client = HttpBinAsyncClient("http://{host}:{port}".format(host=host, port=port),
-                           backend='httpx')
+    client = HttpBinAsyncClient("http://{host}:{port}".format(host=host,
+                                                              port=port),
+                                backend='httpx')
     client._set_auth(HTTPBasicAuth('user', 'password'))
 
     return client
@@ -104,14 +106,14 @@ async def test_user_agent(client):
 async def test_headers(client):
     """
     """
-
     def ci(d):
         return CaseInsensitiveDict(d)
 
     # Check
     res = await client.headers(header={'A': 'AA', 'B': 'CC'})
 
-    assert ci(res['headers'])['User-Agent'] == 'decorest/{v}'.format(v=__version__)
+    assert ci(
+        res['headers'])['User-Agent'] == 'decorest/{v}'.format(v=__version__)
     assert ci(res['headers'])['A'] == 'AA'
     assert ci(res['headers'])['B'] == 'CC'
 
@@ -182,10 +184,9 @@ async def test_post_multipart_decorators(client):
     """
     """
     f = 'tests/testdata/multipart.dat'
-    res = await client.post_multipart(bytes('TEST1', 'utf-8'),
-                                      bytes('TEST2', 'utf-8'),
-                                      ('filename', open(f, 'rb'),
-                                       'text/plain'))
+    res = await client.post_multipart(
+        bytes('TEST1', 'utf-8'), bytes('TEST2', 'utf-8'),
+        ('filename', open(f, 'rb'), 'text/plain'))
 
     assert res["files"]["part1"] == 'TEST1'
     assert res["files"]["part2"] == 'TEST2'
@@ -219,9 +220,11 @@ async def test_multi_put(client):
     """
     request_count = 100
     async with client._async_session() as s:
-        reqs = [asyncio.ensure_future(s.put({i: str(i)},
-                                            content="application/json"))
-                for i in range(0, request_count)]
+        reqs = [
+            asyncio.ensure_future(
+                s.put({i: str(i)}, content="application/json"))
+            for i in range(0, request_count)
+        ]
 
         reqs_result = await asyncio.gather(*reqs)
 
@@ -257,9 +260,9 @@ async def test_anything_anything(client):
     """
     data = {"a": "b", "c": "1"}
     res = await client.anything_anything("something",
-                                   data,
-                                   content="application/json",
-                                   query=data)
+                                         data,
+                                         content="application/json",
+                                         query=data)
 
     assert res["args"] == data
     assert res["json"] == data
@@ -322,8 +325,8 @@ async def test_redirect(client):
     """
     """
     res = await client.redirect(2,
-                          on={302: lambda r: 'REDIRECTED'},
-                          follow_redirects=False)
+                                on={302: lambda r: 'REDIRECTED'},
+                                follow_redirects=False)
 
     assert res == 'REDIRECTED'
 
@@ -333,8 +336,8 @@ async def test_redirect_to(client):
     """
     """
     res = await client.redirect_to('http://httpbin.org',
-                             on={302: lambda r: 'REDIRECTED'},
-                             follow_redirects=False)
+                                   on={302: lambda r: 'REDIRECTED'},
+                                   follow_redirects=False)
 
     assert res == 'REDIRECTED'
 
@@ -344,9 +347,9 @@ async def test_redirect_to_foo(client):
     """
     """
     res = await client.redirect_to_foo('http://httpbin.org',
-                                 307,
-                                 on={307: lambda r: 'REDIRECTED'},
-                                 follow_redirects=False)
+                                       307,
+                                       on={307: lambda r: 'REDIRECTED'},
+                                       follow_redirects=False)
 
     assert res == 'REDIRECTED'
 
@@ -355,9 +358,8 @@ async def test_redirect_to_foo(client):
 async def test_relative_redirect(client):
     """
     """
-    res = await client.relative_redirect(1,
-                                   on={302: lambda r: r.headers['Location']},
-                                   follow_redirects=False)
+    res = await client.relative_redirect(
+        1, on={302: lambda r: r.headers['Location']}, follow_redirects=False)
 
     assert res == '/get'
 
@@ -366,9 +368,8 @@ async def test_relative_redirect(client):
 async def test_absolute_redirect(client):
     """
     """
-    res = await client.absolute_redirect(1,
-                                   on={302: lambda r: r.headers['Location']},
-                                   follow_redirects=False)
+    res = await client.absolute_redirect(
+        1, on={302: lambda r: r.headers['Location']}, follow_redirects=False)
 
     assert res.endswith('/get')
 
@@ -390,9 +391,11 @@ async def test_cookies(client):
 async def test_cookies_set(client):
     """
     """
-    res = await client.cookies_set(
-        query={"cookie1": "A", "cookie2": "B"},
-        follow_redirects=True)
+    res = await client.cookies_set(query={
+        "cookie1": "A",
+        "cookie2": "B"
+    },
+                                   follow_redirects=True)
 
     assert res["cookies"]["cookie1"] == "A"
     assert res["cookies"]["cookie2"] == "B"
@@ -404,9 +407,11 @@ async def test_cookies_session(client):
     """
     s = client._async_session()
     pprint.pprint(type(s))
-    res = await s.cookies_set(
-        query={"cookie1": "A", "cookie2": "B"},
-        follow_redirects=True)
+    res = await s.cookies_set(query={
+        "cookie1": "A",
+        "cookie2": "B"
+    },
+                              follow_redirects=True)
 
     assert res["cookies"]["cookie1"] == "A"
     assert res["cookies"]["cookie2"] == "B"
@@ -425,9 +430,11 @@ async def test_cookies_session_with_contextmanager(client):
     """
     async with client._async_session() as s:
         s._requests_session.verify = False
-        res = await s.cookies_set(
-            query={"cookie1": "A", "cookie2": "B"},
-            follow_redirects=True)
+        res = await s.cookies_set(query={
+            "cookie1": "A",
+            "cookie2": "B"
+        },
+                                  follow_redirects=True)
 
         assert res["cookies"]["cookie1"] == "A"
         assert res["cookies"]["cookie2"] == "B"
@@ -442,10 +449,12 @@ async def test_cookies_session_with_contextmanager(client):
 async def test_cookies_delete(client):
     """
     """
-    await client.cookies_set(query={"cookie1": "A", "cookie2": "B"},
+    await client.cookies_set(query={
+        "cookie1": "A",
+        "cookie2": "B"
+    },
                              follow_redirects=True)
-    await client.cookies_delete(query={"cookie1": None},
-                                follow_redirects=True)
+    await client.cookies_delete(query={"cookie1": None}, follow_redirects=True)
     res = await client.cookies()
 
     assert "cookie1" not in res["cookies"]
@@ -480,8 +489,9 @@ async def test_hidden_basic_auth(client):
     """
     """
     res = await client.hidden_basic_auth('user',
-                                   'password',
-                                   auth=HTTPBasicAuth('user', 'password'))
+                                         'password',
+                                         auth=HTTPBasicAuth(
+                                             'user', 'password'))
 
     assert res['authenticated'] is True
 
@@ -493,10 +503,10 @@ async def test_digest_auth_algorithm(client):
     auth = httpx.DigestAuth('user', 'password')
 
     res = await client.digest_auth_algorithm('auth',
-                                       'user',
-                                       'password',
-                                       'MD5',
-                                       auth=auth)
+                                             'user',
+                                             'password',
+                                             'MD5',
+                                             auth=auth)
 
     assert res['authenticated'] is True
 
@@ -507,8 +517,7 @@ async def test_digest_auth(client):
     """
     auth = httpx.DigestAuth('user', 'password')
 
-    res = await client.digest_auth(
-        'auth', 'user', 'password', auth=auth)
+    res = await client.digest_auth('auth', 'user', 'password', auth=auth)
 
     assert res['authenticated'] is True
 
@@ -621,15 +630,17 @@ async def test_cache_n(client):
 async def test_etag(client):
     """
     """
-    status_code = await client.etag('etag',
-                              header={'If-Match': 'notetag'},
-                              on={HttpStatus.ANY: lambda r: r.status_code})
+    status_code = await client.etag(
+        'etag',
+        header={'If-Match': 'notetag'},
+        on={HttpStatus.ANY: lambda r: r.status_code})
 
     assert status_code == 412
 
-    status_code = await client.etag('etag',
-                              header={'If-Match': 'etag'},
-                              on={HttpStatus.ANY: lambda r: r.status_code})
+    status_code = await client.etag(
+        'etag',
+        header={'If-Match': 'etag'},
+        on={HttpStatus.ANY: lambda r: r.status_code})
 
     assert status_code == 200
 

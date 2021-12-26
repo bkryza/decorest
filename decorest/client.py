@@ -115,7 +115,7 @@ class RestClient:
         """
         LOG.debug("Building request from path tokens: %s", path_components)
 
-        req = urllib.parse.urljoin(
-            normalize_url(self.endpoint), "/".join(path_components))
+        req = urllib.parse.urljoin(normalize_url(self.endpoint),
+                                   "/".join(path_components))
 
         return req

@@ -34,12 +34,13 @@ class HEAD(HttpMethodDecorator):
         set_decor(func, 'http_method', HttpMethod.HEAD)
 
         if asyncio.iscoroutinefunction(func):
+
             @wraps(func)
             async def async_head_decorator(*args: typing.Any,
                                            **kwargs: typing.Any) \
                     -> typing.Any:
-                return await super(HEAD, self).call_async(
-                    func, *args, **kwargs)
+                return await super(HEAD,
+                                   self).call_async(func, *args, **kwargs)
 
             return typing.cast(TDecor, async_head_decorator)
 

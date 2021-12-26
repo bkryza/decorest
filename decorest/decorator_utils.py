@@ -57,8 +57,7 @@ def set_decor(t: typing.Any, name: str, value: typing.Any) -> None:
         d[name] = value
 
 
-def set_header_decor(t: typing.Any,
-                     value: HeaderDict) -> None:
+def set_header_decor(t: typing.Any, value: HeaderDict) -> None:
     """Decorate a function or class with header decorator."""
     if hasattr(t, '__wrapped__') and hasattr(t.__wrapped__, DECOR_KEY):
         setattr(t, DECOR_KEY, t.__wrapped__.__decorest__)
@@ -132,20 +131,17 @@ def get_on_decor(t: typing.Any) \
 
 def get_accept_decor(t: typing.Any) -> typing.Optional[str]:
     """Return accept decor value."""
-    return typing.cast(typing.Optional[str],
-                       get_decor(t, 'accept'))
+    return typing.cast(typing.Optional[str], get_decor(t, 'accept'))
 
 
 def get_content_decor(t: typing.Any) -> typing.Optional[str]:
     """Return content-type decor value."""
-    return typing.cast(typing.Optional[str],
-                       get_decor(t, 'content'))
+    return typing.cast(typing.Optional[str], get_decor(t, 'content'))
 
 
 def get_timeout_decor(t: typing.Any) -> typing.Optional[numbers.Real]:
     """Return timeout decor value."""
-    return typing.cast(typing.Optional[numbers.Real],
-                       get_decor(t, 'timeout'))
+    return typing.cast(typing.Optional[numbers.Real], get_decor(t, 'timeout'))
 
 
 def get_stream_decor(t: typing.Any) -> bool:

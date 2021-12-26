@@ -34,12 +34,13 @@ class OPTIONS(HttpMethodDecorator):
         set_decor(func, 'http_method', HttpMethod.OPTIONS)
 
         if asyncio.iscoroutinefunction(func):
+
             @wraps(func)
             async def async_options_decorator(*args: typing.Any,
                                               **kwargs: typing.Any) \
                     -> typing.Any:
-                return await super(OPTIONS, self).call_async(
-                    func, *args, **kwargs)
+                return await super(OPTIONS,
+                                   self).call_async(func, *args, **kwargs)
 
             return typing.cast(TDecor, async_options_decorator)
 

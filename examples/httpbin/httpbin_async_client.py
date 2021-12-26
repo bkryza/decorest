@@ -53,7 +53,6 @@ def parse_image(response):
 @endpoint('http://httpbin.org')
 class HttpBinAsyncClient(RestClient):
     """Client to HttpBin service (httpbin.org)."""
-
     @GET('ip')
     async def ip(self):
         """Return Origin IP."""
@@ -161,7 +160,10 @@ class HttpBinAsyncClient(RestClient):
     @query('first_name', 'firstName')
     @query('last_name', 'lastName')
     @query('nickname')
-    async def response_headers(self, first_name, last_name, nickname='httpbin'):
+    async def response_headers(self,
+                               first_name,
+                               last_name,
+                               nickname='httpbin'):
         """Return given response headers."""
 
     @GET('redirect/{n}')

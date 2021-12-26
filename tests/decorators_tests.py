@@ -32,7 +32,6 @@ from decorest.decorator_utils import get_decor, get_header_decor, \
 @endpoint('https://dog.ceo/')
 class DogClient(RestClient):
     """DogClient client"""
-
     @GET('breed/{breed_name}/list')
     def list_subbreeds(self, breed_name: str) -> typing.Any:
         """List all sub-breeds"""
@@ -98,12 +97,12 @@ class DogClient(RestClient):
     @stream
     @query('size')
     @query('offset', 'off')
-    def stream_range(self, n: int, m: int,
-                     size: int, offset: int) -> typing.Any:
+    def stream_range(self, n: int, m: int, size: int,
+                     offset: int) -> typing.Any:
         """Get data range"""
 
-    def plain_stream_range(self, n: int, m: int,
-                           size: int, offset: int) -> typing.Any:
+    def plain_stream_range(self, n: int, m: int, size: int,
+                           offset: int) -> typing.Any:
         """Get data range"""
 
 
@@ -137,11 +136,7 @@ def test_set_decor() -> None:
         'key1': 'key1',
         'key2': 'keyTwo'
     }
-    assert get_query_decor(DogClient.queries) == {
-        'a': 'a',
-        'b': 'b',
-        'c': 'd'
-    }
+    assert get_query_decor(DogClient.queries) == {'a': 'a', 'b': 'b', 'c': 'd'}
 
     assert get_stream_decor(DogClient.stream_range) is True
     assert get_query_decor(DogClient.stream_range) == {

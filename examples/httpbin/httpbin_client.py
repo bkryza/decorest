@@ -53,7 +53,6 @@ def parse_image(response):
 @endpoint('http://httpbin.org')
 class HttpBinClient(RestClient):
     """Client to HttpBin service (httpbin.org)."""
-
     @GET('ip')
     def ip(self):
         """Return Origin IP."""
