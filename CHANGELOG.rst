@@ -5,6 +5,9 @@
 
 * Deprecated Python 2 support
 * Added typing support and mypy tests
+* Added asyncio support through httpx
+* Fixed handling of multiple header decorators
+
 
 0.0.7 (2021-11-27)
 ++++++++++++++++++
