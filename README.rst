@@ -249,7 +249,26 @@ name matches one of the arguments, e.g.:
 
         @GET('breed/{breed_name}/list')
         @header('accept')
-        def list_subbreeds(self, breed_name, accept):
+        @header('user_agent', 'user-agent')
+        def list_subbreeds(self, breed_name, accept, user_agent='decorest'):
+            """List all sub-breeds"""
+
+In case the first argument of the header decorator matches one of the
+method args, it's optional second value determines the actual header
+name that will be send in the request. A default value for the header
+in such case must be provided in the method signature.
+
+Multiple values for the same header can be provided either as separate
+decorators or as a decorator with a list of values, e.g.:
+
+.. code-block:: python
+
+        @GET('breed/{breed_name}/list')
+        @header('abc', 'a')
+        @header('abc', 'b')
+        @header('abc', 'c')
+        @header('xyz', ['x', 'y', 'z'])
+        def list_subbreeds(self, breed_name):
             """List all sub-breeds"""
 
 @body
@@ -345,6 +364,25 @@ This decorator is a shortcut for :py:`@header('accept', ...)`, e.g:
         @accept('application/xml')
         def list_subbreeds(self, breed_name):
             """List all sub-breeds"""
+
+Multiple :py:`@accept()` decorators can be added and will be joined into
+a list, e.g.:
+
+.. code-block:: python
+
+        @GET('breed/{breed_name}/list')
+        @content('application/json')
+        @accept('application/xml')
+        @accept('application/json')
+        @accept('text/plain')
+        def list_subbreeds(self, breed_name):
+            """List all sub-breeds"""
+
+will submit the following header to the server:
+
+.. code-block:: bash
+
+        Accept: text/plain, application/json, application/xml
 
 @endpoint
 ~~~~~~~~~
