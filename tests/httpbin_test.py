@@ -206,30 +206,35 @@ def test_post_form(client):
 def test_post_multipart(client):
     """
     """
-    f = 'tests/testdata/multipart.dat'
+    file = 'tests/testdata/multipart.dat'
 
-    if client._backend() == 'requests':
-        m = MultipartEncoder(
-            fields={'test': ('filename', open(f, 'rb'), 'text/plain')})
-        res = client.post(None, content=m.content_type, data=m)
-    else:
-        res = client.post(
-            None, files={'test': ('filename', open(f, 'rb'), 'text/plain')})
+    with open(file, 'rb') as f:
+        if client._backend() == 'requests':
+            m = MultipartEncoder(
+                fields={'test': ('filename', f, 'text/plain')})
+            res = client.post(None, content=m.content_type, data=m)
+        else:
+            res = client.post(None,
+                              files={'test': ('filename', f, 'text/plain')})
 
-    assert res["files"]["test"] == open(f, 'rb').read().decode("utf-8")
+    with open(file, 'rb') as f:
+        assert res["files"]["test"] == f.read().decode("utf-8")
 
 
 @pytest.mark.parametrize("client", pytest_params)
 def test_post_multipart_decorators(client):
     """
     """
-    f = 'tests/testdata/multipart.dat'
-    res = client.post_multipart('TEST1', 'TEST2',
-                                ('filename', open(f, 'rb'), 'text/plain'))
+    file = 'tests/testdata/multipart.dat'
+
+    with open(file, 'rb') as f:
+        res = client.post_multipart('TEST1', 'TEST2',
+                                    ('filename', f, 'text/plain'))
 
     assert res["files"]["part1"] == 'TEST1'
     assert res["files"]["part2"] == 'TEST2'
-    assert res["files"]["test"] == open(f, 'rb').read().decode("utf-8")
+    with open(file, 'rb') as f:
+        assert res["files"]["test"] == f.read().decode("utf-8")
 
 
 @pytest.mark.parametrize("client", pytest_params)

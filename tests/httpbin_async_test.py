@@ -171,26 +171,31 @@ async def test_post_form(client):
 async def test_post_multipart(client):
     """
     """
-    f = 'tests/testdata/multipart.dat'
+    file = 'tests/testdata/multipart.dat'
 
-    res = await client.post(
-        None, files={'test': ('filename', open(f, 'rb'), 'text/plain')})
+    with open(file, 'rb') as f:
+        res = await client.post(None,
+                                files={'test': ('filename', f, 'text/plain')})
 
-    assert res["files"]["test"] == open(f, 'rb').read().decode("utf-8")
+    with open(file, 'rb') as f:
+        assert res["files"]["test"] == f.read().decode("utf-8")
 
 
 @pytest.mark.asyncio
 async def test_post_multipart_decorators(client):
     """
     """
-    f = 'tests/testdata/multipart.dat'
-    res = await client.post_multipart(
-        bytes('TEST1', 'utf-8'), bytes('TEST2', 'utf-8'),
-        ('filename', open(f, 'rb'), 'text/plain'))
+    file = 'tests/testdata/multipart.dat'
+
+    with open(file, 'rb') as f:
+        res = await client.post_multipart(bytes('TEST1', 'utf-8'),
+                                          bytes('TEST2', 'utf-8'),
+                                          ('filename', f, 'text/plain'))
 
     assert res["files"]["part1"] == 'TEST1'
     assert res["files"]["part2"] == 'TEST2'
-    assert res["files"]["test"] == open(f, 'rb').read().decode("utf-8")
+    with open(file, 'rb') as f:
+        assert res["files"]["test"] == f.read().decode("utf-8")
 
 
 @pytest.mark.asyncio
