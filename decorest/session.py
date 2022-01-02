@@ -50,6 +50,10 @@ class RestClientSession:
 
     def __getattr__(self, name: str) -> typing.Any:
         """Forward any method invocation to actual client with session."""
+        if name == '_backend_session':
+            return self.__session
+
+        # deprecated
         if name == '_requests_session':
             return self.__session
 

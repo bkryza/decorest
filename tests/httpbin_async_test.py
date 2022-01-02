@@ -424,7 +424,7 @@ async def test_cookies_session_with_contextmanager(client):
     """
     """
     async with client._async_session() as s:
-        s._requests_session.verify = False
+        s._backend_session.verify = False
         res = await s.cookies_set(query={"cookie1": "A", "cookie2": "B"})
 
         assert res["cookies"]["cookie1"] == "A"

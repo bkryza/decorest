@@ -471,12 +471,12 @@ class.
 
 If some additional customization of the session is required, the underlying
 `requests session`_ object can be retrieved from decorest_ session object
-using :py:`_requests_session` attribute:
+using :py:`_backend_session` attribute:
 
 .. code-block:: python
 
         with client._session() as s:
-            s._requests_session.verify = '/path/to/cert.pem'
+            s._backend_session.verify = '/path/to/cert.pem'
             s.list_subbreeds('hound')
             s.list_subbreeds('husky')
 
@@ -493,7 +493,7 @@ or `httpx_` authentication mechanism) can be set in the client object using
 
         client._set_auth(HTTPBasicAuth('user', 'password'))
         with client._session() as s:
-            s._requests_session.verify = '/path/to/cert.pem'
+            s._backend_session.verify = '/path/to/cert.pem'
             s.list_subbreeds('hound')
             s.list_subbreeds('husky')
 

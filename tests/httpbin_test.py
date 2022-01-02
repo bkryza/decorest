@@ -451,7 +451,7 @@ def test_cookies_session_with_contextmanager(client):
     """
     """
     with client._session() as s:
-        s._requests_session.verify = False
+        s._backend_session.verify = False
         res = s.cookies_set(query={"cookie1": "A", "cookie2": "B"})
 
         assert res["cookies"]["cookie1"] == "A"
