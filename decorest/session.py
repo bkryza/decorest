@@ -59,6 +59,9 @@ class RestClientSession:
         if name == '_close':
             return self.__session.close
 
+        if name == '_auth':
+            return self.__session.auth
+
         def invoker(*args: typing.Any, **kwargs: typing.Any) -> typing.Any:
             kwargs['__session'] = self.__session
             return getattr(self.__client, name)(*args, **kwargs)
@@ -98,6 +101,9 @@ class RestClientAsyncSession:
 
         if name == '_close':
             return self.__session.aclose
+
+        if name == '_auth':
+            return self.__session.auth
 
         async def invoker(*args: typing.Any,
                           **kwargs: typing.Any) -> typing.Any:

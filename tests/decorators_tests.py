@@ -18,6 +18,9 @@ import typing
 import pytest
 import functools
 
+from requests.auth import HTTPBasicAuth as r_HTTPBasicAuth
+from httpx import BasicAuth as x_HTTPBasicAuth
+
 from decorest import RestClient, HttpMethod
 from decorest import GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS
 from decorest import accept, content, endpoint, form, header, query, stream
@@ -209,3 +212,34 @@ def test_introspection() -> None:
     if '__decorest__' in d:
         del d['__decorest__']
     assert d == DogClient.plain_stream_range.__dict__
+
+
+def test_authentication_settings() -> None:
+    """
+    Tests if authentication is properly configured.
+    """
+
+    r_client = DogClient(backend='requests')
+    assert r_client._auth() is None
+    r_client._set_auth(r_HTTPBasicAuth('username', 'password'))
+    assert r_client._auth() == r_HTTPBasicAuth('username', 'password')
+
+    r_client_auth = DogClient(backend='requests',
+                              auth=r_HTTPBasicAuth('username', 'password'))
+    assert r_client_auth._auth() == r_HTTPBasicAuth('username', 'password')
+    r_session_auth = r_client_auth._session()
+    assert r_session_auth._auth == r_HTTPBasicAuth('username', 'password')
+
+    x_client = DogClient(backend='httpx')
+    assert x_client._auth() is None
+    x_client._set_auth(x_HTTPBasicAuth('username', 'password'))
+    assert x_client._auth()._auth_header == \
+           x_HTTPBasicAuth('username', 'password')._auth_header
+
+    x_client_auth = DogClient(backend='httpx',
+                              auth=x_HTTPBasicAuth('username', 'password'))
+    assert x_client_auth._auth()._auth_header == \
+           x_HTTPBasicAuth('username', 'password')._auth_header
+    x_session_auth = x_client_auth._session()
+    assert x_session_auth._auth._auth_header == \
+           x_HTTPBasicAuth('username', 'password')._auth_header

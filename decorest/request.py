@@ -216,7 +216,8 @@ class HttpRequest:
         LOG.debug('Request: {method} {request}'.format(method=self.http_method,
                                                        request=self.req))
         if auth:
-            self.kwargs['auth'] = auth
+            if self.rest_client._backend() == 'requests':
+                self.kwargs['auth'] = auth
         if request_timeout:
             self.kwargs['timeout'] = request_timeout
         if body_content:
