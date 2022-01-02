@@ -254,6 +254,7 @@ class HttpMethodDecorator:
             method = http_request.http_method.value[0].lower()
 
         ctx = http_request.execution_context
+
         return methodcaller(method, http_request.req,
                             **http_request.kwargs)(ctx)
 
@@ -275,7 +276,10 @@ class HttpMethodDecorator:
         import httpx
 
         if not isinstance(http_request.execution_context, httpx.AsyncClient):
-            async with httpx.AsyncClient() as client:
+            custom_kwargs = dict()
+            if http_request.rest_client.auth is not None:
+                custom_kwargs['auth'] = http_request.rest_client.auth
+            async with httpx.AsyncClient(**custom_kwargs) as client:
                 return await client.request(method.upper(), http_request.req,
                                             **http_request.kwargs)
         else:

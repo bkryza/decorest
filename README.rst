@@ -94,7 +94,7 @@ To select a specific backend, simply pass it's name to the constructor of the cl
 
 If no backend is provided, requests_ is used by default. The client usage is largely
 independent of the backend, however there some minor differences in handling streams
-and multipart messages, please consult tests in `httpbin test suite`_.
+and multipart messages, please consult tests in `httpbin test suite`_ and `httpx compatibility guide`_.
 
 Decorators
 ----------
@@ -486,7 +486,7 @@ Authentication
 Since authentication is highly specific to actual invocation of the REST API,
 and not to it's specification, there is not decorator for authentication,
 but instead an authentication object (compatible with `requests_`
-authentication mechanism) can be set in the client object using
+or `httpx_` authentication mechanism) can be set in the client object using
 :py:`_set_auth()` method, for example:
 
 .. code-block:: python
@@ -499,6 +499,13 @@ authentication mechanism) can be set in the client object using
 
 The authentication object will be used in both regular API calls, as well
 as when using sessions.
+
+Furthermore, the `auth` object can be also passed to the client
+constructor, e.g.:
+
+.. code-block:: python
+
+        client = DogClient(backend='httpx', auth=httpx.BasicAuth('user', 'password'))
 
 
 Error handling
@@ -639,3 +646,4 @@ limitations under the License.
 .. _`httpbin test suite`: https://github.com/bkryza/decorest/blob/master/tests/httpbin_test.py
 .. _tox: https://github.com/tox-dev/tox
 .. _tox-docker: https://github.com/tox-dev/tox-docker
+.. _httpx compatibility guide: https://www.python-httpx.org/compatibility/

@@ -215,9 +215,31 @@ class HttpRequest:
 
         LOG.debug('Request: {method} {request}'.format(method=self.http_method,
                                                        request=self.req))
-        if auth:
+
+        # If '__session' was passed in the kwargs, execute this request
+        # using the session context, otherwise execute directly via the
+        # requests or httpx module
+        if self.session:
+            self.execution_context = self.session
+        else:
             if self.rest_client._backend() == 'requests':
-                self.kwargs['auth'] = auth
+                self.execution_context = requests
+            else:
+                import httpx
+                self.execution_context = httpx
+
+        if auth:
+            self.kwargs['auth'] = auth
+
+            try:
+                import httpx
+                if isinstance(self.execution_context,
+                              (httpx.Client, httpx.AsyncClient)):
+                    # httpx does not allow 'auth' parameter on session requests
+                    del self.kwargs['auth']
+            except ImportError:
+                pass
+
         if request_timeout:
             self.kwargs['timeout'] = request_timeout
         if body_content:
@@ -243,18 +265,6 @@ class HttpRequest:
             self.kwargs['stream'] = self.is_stream
         if header_parameters:
             self.kwargs['headers'] = dict(header_parameters.items())
-
-        # If '__session' was passed in the kwargs, execute this request
-        # using the session context, otherwise execute directly via the
-        # requests or httpx module
-        if self.session:
-            self.execution_context = self.session
-        else:
-            if self.rest_client._backend() == 'requests':
-                self.execution_context = requests
-            else:
-                import httpx
-                self.execution_context = httpx
 
     def __validate_decor(self, decor: str, kwargs: ArgsDict,
                          cls: typing.Type[typing.Any]) -> None:

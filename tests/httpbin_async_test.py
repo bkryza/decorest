@@ -24,14 +24,12 @@ import sys
 import json
 
 import httpx
+from httpx import BasicAuth
 
 from requests.structures import CaseInsensitiveDict
 
 from decorest import __version__, HttpStatus, HTTPErrorWrapper
 from requests import cookies
-from requests.exceptions import ReadTimeout
-from requests.auth import HTTPBasicAuth, HTTPDigestAuth
-from requests_toolbelt.multipart.encoder import MultipartEncoder
 import xml.etree.ElementTree as ET
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../examples")
@@ -59,8 +57,8 @@ def basic_auth_client():
 
     client = HttpBinAsyncClient("http://{host}:{port}".format(host=host,
                                                               port=port),
-                                backend='httpx')
-    client._set_auth(HTTPBasicAuth('user', 'password'))
+                                backend='httpx',
+                                auth=BasicAuth('user', 'password'))
 
     return client
 
@@ -482,7 +480,6 @@ async def test_basic_auth(client, basic_auth_client):
 async def test_basic_auth_with_session(client, basic_auth_client):
     """
     """
-    res = None
     with basic_auth_client._session() as s:
         res = await s.basic_auth('user', 'password')
 
@@ -495,8 +492,7 @@ async def test_hidden_basic_auth(client):
     """
     res = await client.hidden_basic_auth('user',
                                          'password',
-                                         auth=HTTPBasicAuth(
-                                             'user', 'password'))
+                                         auth=BasicAuth('user', 'password'))
 
     assert res['authenticated'] is True
 

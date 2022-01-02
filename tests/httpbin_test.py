@@ -32,6 +32,7 @@ import xml.etree.ElementTree as ET
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../examples")
 from httpbin.httpbin_client import HttpBinClient, parse_image
+from httpx import BasicAuth
 
 
 def client(backend: str) -> HttpBinClient:
@@ -50,9 +51,14 @@ def basic_auth_client(backend):
     host = os.environ["HTTPBIN_HOST"]
     port = os.environ["HTTPBIN_80_TCP_PORT"]
 
+    if backend == 'requests':
+        auth = HTTPBasicAuth('user', 'password')
+    else:
+        auth = BasicAuth('user', 'password')
+
     client = HttpBinClient("http://{host}:{port}".format(host=host, port=port),
-                           backend=backend)
-    client._set_auth(HTTPBasicAuth('user', 'password'))
+                           backend=backend,
+                           auth=auth)
 
     return client
 
