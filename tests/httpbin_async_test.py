@@ -394,11 +394,7 @@ async def test_cookies(client):
 async def test_cookies_set(client):
     """
     """
-    res = await client.cookies_set(query={
-        "cookie1": "A",
-        "cookie2": "B"
-    },
-                                   follow_redirects=True)
+    res = await client.cookies_set(query={"cookie1": "A", "cookie2": "B"})
 
     assert res["cookies"]["cookie1"] == "A"
     assert res["cookies"]["cookie2"] == "B"
@@ -410,11 +406,7 @@ async def test_cookies_session(client):
     """
     s = client._async_session()
     pprint.pprint(type(s))
-    res = await s.cookies_set(query={
-        "cookie1": "A",
-        "cookie2": "B"
-    },
-                              follow_redirects=True)
+    res = await s.cookies_set(query={"cookie1": "A", "cookie2": "B"})
 
     assert res["cookies"]["cookie1"] == "A"
     assert res["cookies"]["cookie2"] == "B"
@@ -433,11 +425,7 @@ async def test_cookies_session_with_contextmanager(client):
     """
     async with client._async_session() as s:
         s._requests_session.verify = False
-        res = await s.cookies_set(query={
-            "cookie1": "A",
-            "cookie2": "B"
-        },
-                                  follow_redirects=True)
+        res = await s.cookies_set(query={"cookie1": "A", "cookie2": "B"})
 
         assert res["cookies"]["cookie1"] == "A"
         assert res["cookies"]["cookie2"] == "B"
@@ -452,12 +440,8 @@ async def test_cookies_session_with_contextmanager(client):
 async def test_cookies_delete(client):
     """
     """
-    await client.cookies_set(query={
-        "cookie1": "A",
-        "cookie2": "B"
-    },
-                             follow_redirects=True)
-    await client.cookies_delete(query={"cookie1": None}, follow_redirects=True)
+    await client.cookies_set(query={"cookie1": "A", "cookie2": "B"})
+    await client.cookies_delete(query={"cookie1": None})
     res = await client.cookies()
 
     assert "cookie1" not in res["cookies"]

@@ -192,11 +192,18 @@ class HttpMethodDecorator:
             if http_request.http_method == HttpMethod.GET \
                     and http_request.is_stream:
                 del kwargs['stream']
+                follow_redirects = True
+                if 'follow_redirects' in http_request.kwargs:
+                    follow_redirects = http_request.kwargs['follow_redirects']
+                    del http_request.kwargs['follow_redirects']
+
                 req = http_request.execution_context.build_request(
                     'GET', http_request.req, **http_request.kwargs)
 
-                result = await http_request.execution_context.send(req,
-                                                                   stream=True)
+                result = await http_request.\
+                    execution_context.send(req,
+                                           stream=True,
+                                           follow_redirects=follow_redirects)
             else:
                 if http_request.http_method == HttpMethod.POST \
                         and http_request.is_multipart_request:

@@ -231,15 +231,6 @@ class HttpRequest:
         if auth:
             self.kwargs['auth'] = auth
 
-            try:
-                import httpx
-                if isinstance(self.execution_context,
-                              (httpx.Client, httpx.AsyncClient)):
-                    # httpx does not allow 'auth' parameter on session requests
-                    del self.kwargs['auth']
-            except ImportError:
-                pass
-
         if request_timeout:
             self.kwargs['timeout'] = request_timeout
         if body_content:
@@ -265,6 +256,22 @@ class HttpRequest:
             self.kwargs['stream'] = self.is_stream
         if header_parameters:
             self.kwargs['headers'] = dict(header_parameters.items())
+
+        try:
+            import httpx
+            if isinstance(self.execution_context,
+                          (httpx.Client, httpx.AsyncClient)):
+                # httpx does not allow 'auth' parameter on session requests
+                if 'auth' in self.kwargs:
+                    del self.kwargs['auth']
+                if 'follow_redirects' not in self.kwargs:
+                    self.kwargs['follow_redirects'] = True
+
+            if self.execution_context is httpx:
+                if 'follow_redirects' not in self.kwargs:
+                    self.kwargs['follow_redirects'] = True
+        except ImportError:
+            pass
 
     def __validate_decor(self, decor: str, kwargs: ArgsDict,
                          cls: typing.Type[typing.Any]) -> None:
