@@ -29,10 +29,6 @@ from decorest import __version__
 from decorest import accept, body, content, endpoint, header, on, query
 
 
-@header('user-agent', 'decorest/{v}'.format(v=__version__))
-@content('application/json')
-@accept('application/json')
-@endpoint('http://petstore.example.com')
 class PetAPI(RestClient):
     """Everything about your Pets."""
     @POST('pet')
@@ -139,5 +135,9 @@ class UserAPI(RestClient):
         """Delete user."""
 
 
+@header('user-agent', 'decorest/{v}'.format(v=__version__))
+@content('application/json')
+@accept('application/json')
+@endpoint('http://petstore.example.com')
 class PetstoreClient(PetAPI, StoreAPI, UserAPI):
     """Swagger Petstore client."""

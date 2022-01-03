@@ -34,10 +34,6 @@ from decorest import accept, body, content, endpoint, header, on, query
 JsonDictType = typing.Dict[str, typing.Any]
 
 
-@header('user-agent', 'decorest/{v}'.format(v=__version__))
-@content('application/json')
-@accept('application/json')
-@endpoint('http://petstore.example.com')
 class PetAPI(RestClient):
     """Everything about your Pets."""
     @POST('pet')
@@ -148,6 +144,10 @@ class UserAPI(RestClient):
         """Delete user."""
 
 
+@header('user-agent', 'decorest/{v}'.format(v=__version__))
+@content('application/json')
+@accept('application/json')
+@endpoint('http://petstore.example.com')
 class PetstoreClientWithTyping(PetAPI, StoreAPI, UserAPI):
     """Swagger Petstore client."""
 
