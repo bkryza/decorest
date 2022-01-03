@@ -440,6 +440,22 @@ object which then can be accessed for instance using :py:`iter_content()` method
             content.append(b)
 
 
+@backend
+~~~~~~~~
+Specifies the default backend to use by the client, currently the only possible
+values are `requests` (default) and `httpx`, e.g.:
+
+.. code-block:: python
+
+        @endpoint('https://dog.ceo/api')
+        @backend('httpx')
+        class DogClient(RestClient):
+            """List all sub-breeds"""
+            ...
+
+The backend provided in the constructor arguments when creating client instance has precedence
+over the value provided in this decorator. This decorator can only be applied to classes.
+
 Sessions
 --------
 
