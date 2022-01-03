@@ -24,7 +24,7 @@ from PIL import Image
 from decorest import DELETE, GET, PATCH, POST, PUT
 from decorest import HttpStatus, RestClient
 from decorest import __version__, accept, body, content, endpoint, form
-from decorest import header, multipart, on, query, stream, timeout
+from decorest import backend, header, multipart, on, query, stream, timeout
 
 
 def repeatdecorator(f):
@@ -51,6 +51,7 @@ def parse_image(response):
 @header('user-agent', 'decorest/{v}'.format(v=__version__))
 @accept('application/json')
 @endpoint('http://httpbin.org')
+@backend('httpx')
 class HttpBinAsyncClient(RestClient):
     """Client to HttpBin service (httpbin.org)."""
     @GET('ip')

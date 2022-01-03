@@ -45,8 +45,7 @@ def client() -> HttpBinAsyncClient:
     port = os.environ["HTTPBIN_80_TCP_PORT"]
 
     return HttpBinAsyncClient("http://{host}:{port}".format(host=host,
-                                                            port=port),
-                              backend='httpx')
+                                                            port=port))
 
 
 @pytest.fixture
@@ -57,7 +56,6 @@ def basic_auth_client():
 
     client = HttpBinAsyncClient("http://{host}:{port}".format(host=host,
                                                               port=port),
-                                backend='httpx',
                                 auth=BasicAuth('user', 'password'))
 
     return client

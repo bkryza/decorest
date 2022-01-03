@@ -23,8 +23,9 @@ from httpx import BasicAuth as x_HTTPBasicAuth
 
 from decorest import RestClient, HttpMethod
 from decorest import GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS
-from decorest import accept, content, endpoint, form, header, query, stream
-from decorest.decorator_utils import get_decor, get_header_decor, \
+from decorest import accept, backend, content, endpoint, form, header
+from decorest import query, stream
+from decorest.decorator_utils import get_backend_decor, get_header_decor, \
     get_endpoint_decor, get_form_decor, get_query_decor, \
     get_stream_decor, get_on_decor, get_method_decor
 
@@ -33,6 +34,7 @@ from decorest.decorator_utils import get_decor, get_header_decor, \
 @content('application/xml')
 @header('X-Auth-Key', 'ABCD')
 @endpoint('https://dog.ceo/')
+@backend('requests')
 class DogClient(RestClient):
     """DogClient client"""
     @GET('breed/{breed_name}/list')
@@ -146,6 +148,8 @@ def test_set_decor() -> None:
         'offset': 'off',
         'size': 'size'
     }
+
+    assert get_backend_decor(DogClient) == 'requests'
 
 
 def test_endpoint_decorator() -> None:

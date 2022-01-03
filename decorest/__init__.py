@@ -23,7 +23,7 @@ from .PATCH import PATCH
 from .POST import POST
 from .PUT import PUT
 from .client import RestClient
-from .decorators import accept, body, content, endpoint, form, header
+from .decorators import accept, backend, body, content, endpoint, form, header
 from .decorators import multipart, on, query, stream, timeout
 from .errors import HTTPErrorWrapper
 from .request import HttpRequest
@@ -33,7 +33,7 @@ __all__ = [
     'GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS', 'RestClient',
     'HTTPErrorWrapper', 'HttpMethod', 'HttpStatus', 'HttpRequest', 'query',
     'body', 'header', 'on', 'accept', 'content', 'endpoint', 'timeout',
-    'stream', 'form', 'multipart'
+    'stream', 'form', 'multipart', 'backend'
 ]
 
 __version__ = "0.1.0"

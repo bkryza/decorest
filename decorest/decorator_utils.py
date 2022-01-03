@@ -20,7 +20,7 @@ import typing
 
 from requests.structures import CaseInsensitiveDict
 
-from .types import HeaderDict, HttpMethod
+from .types import Backends, HeaderDict, HttpMethod
 from .utils import merge_dicts, merge_header_dicts
 
 DECOR_KEY = '__decorest__'
@@ -157,3 +157,8 @@ def get_body_decor(t: typing.Any) -> typing.Optional[typing.Any]:
 def get_endpoint_decor(t: typing.Any) -> typing.Optional[str]:
     """Return endpoint decor value."""
     return typing.cast(typing.Optional[str], get_decor(t, 'endpoint'))
+
+
+def get_backend_decor(t: typing.Any) -> Backends:
+    """Return backend decor value."""
+    return typing.cast(Backends, get_decor(t, 'backend'))

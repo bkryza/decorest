@@ -22,7 +22,7 @@ import logging as LOG
 import typing
 import urllib.parse
 
-from .decorator_utils import get_decor
+from .decorator_utils import get_backend_decor, get_endpoint_decor
 from .session import RestClientAsyncSession, RestClientSession
 from .types import AuthTypes, Backends
 from .utils import normalize_url
@@ -33,13 +33,11 @@ class RestClient:
     def __init__(self,
                  endpoint: typing.Optional[str] = None,
                  auth: typing.Optional[AuthTypes] = None,
-                 backend: Backends = 'requests'):
+                 backend: typing.Optional[Backends] = None):
         """Initialize the client with optional endpoint."""
-        self.endpoint = str(get_decor(self, 'endpoint'))
+        self.endpoint = endpoint or get_endpoint_decor(self)
         self.auth = auth
-        self._set_backend(backend)
-        if endpoint is not None:
-            self.endpoint = endpoint
+        self._set_backend(backend or get_backend_decor(self) or 'requests')
 
     def _session(self) -> RestClientSession:
         """
@@ -114,6 +112,9 @@ class RestClient:
         and query components.
         """
         LOG.debug("Building request from path tokens: %s", path_components)
+
+        if not self.endpoint:
+            raise ValueError("Server endpoint was not provided.")
 
         req = urllib.parse.urljoin(normalize_url(self.endpoint),
                                    "/".join(path_components))

@@ -31,7 +31,7 @@ from . import types
 from .decorator_utils import set_decor, set_header_decor
 from .errors import HTTPErrorWrapper
 from .request import HttpRequest
-from .types import HttpMethod, HttpStatus, TDecor
+from .types import Backends, HttpMethod, HttpStatus, TDecor
 
 
 def on(status: typing.Union[types.ellipsis, int],
@@ -174,6 +174,23 @@ def stream(t: TDecor) -> TDecor:
     """
     set_decor(t, 'stream', True)
     return t
+
+
+def backend(value: Backends) -> typing.Callable[[TDecor], TDecor]:
+    """
+    Specify default backend for the client.
+
+    Without this decorator, default backend is 'requests'.
+    This decorator is only applicable to client classes.
+    """
+    def backend_decorator(t: TDecor) -> TDecor:
+        if not inspect.isclass(t):
+            raise TypeError("@backend decorator can only be "
+                            "applied to classes.")
+        set_decor(t, 'backend', value)
+        return typing.cast(TDecor, t)
+
+    return backend_decorator
 
 
 class HttpMethodDecorator:
