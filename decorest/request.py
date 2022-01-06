@@ -189,7 +189,7 @@ class HttpRequest:
                     else:
                         pass
         # Build request from endpoint and query params
-        self.req = self.rest_client.build_request(req_path.split('/'))
+        self.req = self.rest_client.build_path_(req_path.split('/'))
 
         # Handle multipart parameters, either from decorators
         # or ones passed directly through kwargs

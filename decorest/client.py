@@ -147,21 +147,12 @@ class RestClient:
         """Set named client argument."""
         self.__client_args[key] = value
 
-    def set_auth_(self, auth: AuthTypes) -> None:
-        """Set authentication for the client."""
-        self.__client_args['auth'] = auth
-
-    def auth_(self) -> typing.Any:
-        """Return the client authentication."""
-        return self._get_or_none('auth')
-
-    # TODO: make protected (or private)
-    def build_request(self, path_components: typing.List[str]) -> str:
+    def build_path_(self, path_components: typing.List[str]) -> str:
         """
-        Build request.
+        Build request path.
 
         Request is built by combining the endpoint with path
-        and query components.
+        components.
         """
         LOG.debug("Building request from path tokens: %s", path_components)
 
@@ -174,6 +165,14 @@ class RestClient:
         return req
 
     # here start the deprecated methods for compatibility
+    def set_auth_(self, auth: AuthTypes) -> None:
+        """Set authentication for the client."""
+        self.__client_args['auth'] = auth
+
+    def auth_(self) -> typing.Any:
+        """Return the client authentication."""
+        return self._get_or_none('auth')
+
     def _backend(self) -> str:
         """
         Get active backend [deprecated].

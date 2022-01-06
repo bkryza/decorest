@@ -241,7 +241,7 @@ class HttpMethodDecorator:
         http_request = HttpRequest(func, self.path_template, args, kwargs)
 
         try:
-            if http_request.rest_client._backend() == 'httpx' \
+            if http_request.rest_client.backend_ == 'httpx' \
                     and http_request.http_method == HttpMethod.GET \
                     and http_request.is_stream:
                 del kwargs['stream']
