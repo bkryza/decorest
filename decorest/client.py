@@ -43,7 +43,7 @@ class RestClient:
 
     def __init__(self,
                  endpoint: typing.Optional[str] = None,
-                 **kwargs: ArgsDict):
+                 **kwargs: typing.Any):
         """Initialize the client with optional endpoint."""
         # First determine the preferred backend
         backend = None
@@ -53,7 +53,7 @@ class RestClient:
         self.__backend = backend or get_backend_decor(self) or 'requests'
 
         # Check if the client arguments contain endpoint value
-        self.__endpoint = endpoint or get_endpoint_decor(self)
+        self.__endpoint = endpoint or get_endpoint_decor(self)  # type: ignore
 
         # Check if the other named arguments match the allowed arguments
         # for specified backend
@@ -74,7 +74,7 @@ class RestClient:
 
         self.__client_args = kwargs
 
-    def session_(self, **kwargs) -> RestClientSession:
+    def session_(self, **kwargs: ArgsDict) -> RestClientSession:
         """
         Initialize RestClientSession session object.
 
@@ -86,7 +86,7 @@ class RestClient:
         """
         return RestClientSession(self, **kwargs)
 
-    def async_session_(self, **kwargs) -> RestClientAsyncSession:
+    def async_session_(self, **kwargs: ArgsDict) -> RestClientAsyncSession:
         """
         Initialize RestClientAsyncSession session object.
 

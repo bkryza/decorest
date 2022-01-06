@@ -280,7 +280,7 @@ class HttpRequest:
         else:
             self._normalize_for_httpx(self.kwargs)
 
-    def _normalize_for_httpx(self, kwargs: ArgsDict):
+    def _normalize_for_httpx(self, kwargs: ArgsDict) -> None:
         """
         Normalize kwargs for httpx.
 
@@ -292,7 +292,7 @@ class HttpRequest:
             kwargs['follow_redirects'] = kwargs['allow_redirects']
             del kwargs['allow_redirects']
 
-    def _normalize_for_requests(self, kwargs: ArgsDict):
+    def _normalize_for_requests(self, kwargs: ArgsDict) -> None:
         """
         Normalize kwargs for requests.
 

@@ -18,6 +18,7 @@
 import asyncio
 import typing
 
+from .types import ArgsDict
 from .utils import merge_dicts
 
 if typing.TYPE_CHECKING:
@@ -26,7 +27,7 @@ if typing.TYPE_CHECKING:
 
 class RestClientSession:
     """Wrap a `requests` session for specific API client."""
-    def __init__(self, client: 'RestClient', **kwargs) -> None:
+    def __init__(self, client: 'RestClient', **kwargs: ArgsDict) -> None:
         """Initialize the session instance with a specific API client."""
         self.__client: 'RestClient' = client
 
@@ -86,7 +87,8 @@ class RestClientSession:
 
 class RestClientAsyncSession:
     """Wrap a `requests` session for specific API client."""
-    def __init__(self, client: 'RestClient', **kwargs) -> None:
+    def __init__(self, client: 'RestClient', **kwargs: ArgsDict) \
+            -> None:
         """Initialize the session instance with a specific API client."""
         self.__client: 'RestClient' = client
 
