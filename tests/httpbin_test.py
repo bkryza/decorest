@@ -15,12 +15,14 @@
 # limitations under the License.
 import pprint
 
+import httpx
 import pytest
 import time
 import os
 import sys
 import json
 
+import requests
 from requests.structures import CaseInsensitiveDict
 
 from decorest import __version__, HttpStatus, HTTPErrorWrapper
@@ -72,7 +74,7 @@ pytest_basic_auth_params = [
 ]
 
 client_httpx = client('httpx')
-pytest_params.append(pytest.param(client_requests, id='httpx'))
+pytest_params.append(pytest.param(client_httpx, id='httpx'))
 basic_auth_client_httpx = basic_auth_client('httpx')
 pytest_basic_auth_params.append(
     pytest.param(client_httpx, basic_auth_client_httpx, id='httpx'))
@@ -234,7 +236,7 @@ def test_post_multipart_decorators(client):
     file = 'tests/testdata/multipart.dat'
 
     with open(file, 'rb') as f:
-        res = client.post_multipart('TEST1', 'TEST2',
+        res = client.post_multipart(b'TEST1', b'TEST2',
                                     ('filename', f, 'text/plain'))
 
     assert res["files"]["part1"] == 'TEST1'
@@ -403,6 +405,18 @@ def test_absolute_redirect(client):
                                    allow_redirects=False)
 
     assert res.endswith('/get')
+
+
+@pytest.mark.parametrize("client", pytest_params)
+def test_max_redirect(client):
+    """
+    """
+    with client.session_(max_redirects=1) as s:
+        with pytest.raises(HTTPErrorWrapper) as e:
+            s.redirect(5, on={302: lambda r: 'REDIRECTED'})
+
+        assert isinstance(e.value.wrapped,
+                          (requests.TooManyRedirects, httpx.TooManyRedirects))
 
 
 @pytest.mark.parametrize("client", pytest_params)

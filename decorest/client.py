@@ -24,22 +24,57 @@ import urllib.parse
 
 from .decorator_utils import get_backend_decor, get_endpoint_decor
 from .session import RestClientAsyncSession, RestClientSession
-from .types import AuthTypes, Backends
+from .types import ArgsDict, AuthTypes, Backends
 from .utils import normalize_url
 
 
 class RestClient:
-    """Base class for decorest REST clients."""
+    """
+    Base class for decorest REST clients.
+
+    Method naming conventions for this class:
+      - rule #1: do not restrict user's API
+      - internal methods should be prefixed with '_'
+      - user accessible methods should be suffixed with '_'
+    """
+    __backend: Backends
+    __endpoint: str
+    __client_args: typing.Any
+
     def __init__(self,
                  endpoint: typing.Optional[str] = None,
-                 auth: typing.Optional[AuthTypes] = None,
-                 backend: typing.Optional[Backends] = None):
+                 **kwargs: ArgsDict):
         """Initialize the client with optional endpoint."""
-        self.endpoint = endpoint or get_endpoint_decor(self)
-        self.auth = auth
-        self._set_backend(backend or get_backend_decor(self) or 'requests')
+        # First determine the preferred backend
+        backend = None
+        if 'backend' in kwargs:
+            backend = kwargs['backend']
+            del kwargs['backend']
+        self.__backend = backend or get_backend_decor(self) or 'requests'
 
-    def _session(self) -> RestClientSession:
+        # Check if the client arguments contain endpoint value
+        self.__endpoint = endpoint or get_endpoint_decor(self)
+
+        # Check if the other named arguments match the allowed arguments
+        # for specified backend
+        if self.__backend == 'requests':
+            import requests
+            valid_client_args = requests.Session.__attrs__
+        elif self.__backend == 'httpx':
+            import httpx
+            import inspect
+            valid_client_args \
+                = inspect.getfullargspec(httpx.Client.__init__).kwonlyargs
+        else:
+            raise ValueError(f'Invalid backend: {self._backend}')
+
+        if not set(kwargs.keys()).issubset(set(valid_client_args)):
+            raise ValueError(f'Invalid named arguments passed to the client: '
+                             f'{set(valid_client_args) - set(kwargs.keys())}')
+
+        self.__client_args = kwargs
+
+    def session_(self, **kwargs) -> RestClientSession:
         """
         Initialize RestClientSession session object.
 
@@ -49,9 +84,9 @@ class RestClient:
         Each valid API method defined in the API client can be called
         directly via the session object.
         """
-        return RestClientSession(self)
+        return RestClientSession(self, **kwargs)
 
-    def _async_session(self) -> RestClientAsyncSession:
+    def async_session_(self, **kwargs) -> RestClientAsyncSession:
         """
         Initialize RestClientAsyncSession session object.
 
@@ -61,49 +96,66 @@ class RestClient:
         Each valid API method defined in the API client can be called
         directly via the session object.
         """
-        return RestClientAsyncSession(self)
+        return RestClientAsyncSession(self, **kwargs)
 
-    def _set_auth(self, auth: AuthTypes) -> None:
-        """
-        Set a default authentication method for the client.
-
-        Currently the object must be a proper subclass of
-        `requests.auth.AuthBase` class.
-        """
-        self.auth = auth
-
-    def _auth(self) -> typing.Optional[AuthTypes]:
-        """
-        Get authentication object.
-
-        Returns the authentication object set for this client.
-        """
-        return self.auth
-
-    def _set_backend(self, backend: Backends) -> None:
-        """
-        Set preferred backend.
-
-        This method allows to select which backend should be used for
-        making actual HTTP[S] requests, currently supported are:
-            * requests (default)
-            * httpx
-
-        The options should be passed as string.
-        """
-        if backend not in ('requests', 'httpx'):
-            raise ValueError('{} backend not supported...'.format(backend))
-
-        self.backend = backend
-
-    def _backend(self) -> str:
+    @property
+    def backend_(self) -> str:
         """
         Get active backend.
 
         Returns the name of the active backend.
         """
-        return self.backend
+        return self.__backend
 
+    @property
+    def endpoint_(self) -> str:
+        """
+        Get server endpoint.
+
+        Returns the endpoint for the server, which was provided in the
+        class decorator or in the client constructor arguments.
+        """
+        return self.__endpoint
+
+    @property
+    def client_args_(self) -> typing.Any:
+        """
+        Get arguments provided to client.
+
+        Returns the dictionary with arguments that will be passed
+        to session objects or requests. The dictionary keys depend
+        on the backend:
+          - for requests the valid keys are specified in:
+              requests.Session.__attrs__
+          - for httpx the valid keys are specified in the
+            method:
+              https.Client.__init__
+        """
+        return self.__client_args
+
+    def _get_or_none(self, key: str) -> typing.Any:
+        if key in self.__client_args:
+            return self.__client_args[key]
+
+        return None
+
+    def __getitem__(self, key: str) -> typing.Any:
+        """Return named client argument."""
+        return self._get_or_none(key)
+
+    def __setitem__(self, key: str, value: typing.Any) -> None:
+        """Set named client argument."""
+        self.__client_args[key] = value
+
+    def set_auth_(self, auth: AuthTypes) -> None:
+        """Set authentication for the client."""
+        self.__client_args['auth'] = auth
+
+    def auth_(self) -> typing.Any:
+        """Return the client authentication."""
+        return self._get_or_none('auth')
+
+    # TODO: make protected (or private)
     def build_request(self, path_components: typing.List[str]) -> str:
         """
         Build request.
@@ -113,10 +165,36 @@ class RestClient:
         """
         LOG.debug("Building request from path tokens: %s", path_components)
 
-        if not self.endpoint:
+        if not self.__endpoint:
             raise ValueError("Server endpoint was not provided.")
 
-        req = urllib.parse.urljoin(normalize_url(self.endpoint),
+        req = urllib.parse.urljoin(normalize_url(self.__endpoint),
                                    "/".join(path_components))
 
         return req
+
+    # here start the deprecated methods for compatibility
+    def _backend(self) -> str:
+        """
+        Get active backend [deprecated].
+
+        Returns the name of the active backend.
+        """
+        return self.__backend
+
+    def _auth(self) -> AuthTypes:
+        """
+        Get auth method if specified [deprecated].
+
+        Returns the authentication object provided in the arguments.
+        """
+        return self.auth_()
+
+    def _session(self) -> RestClientSession:
+        return self.session_()
+
+    def _async_session(self) -> RestClientAsyncSession:
+        return self.async_session_()
+
+    def _set_auth(self, auth: AuthTypes) -> None:
+        self.set_auth_(auth)

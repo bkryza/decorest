@@ -196,7 +196,7 @@ class HttpRequest:
         if multipart_parameters:
             self.is_multipart_request = True
             self.kwargs['files'] = multipart_parameters
-        elif self.rest_client._backend() == 'requests':
+        elif self.rest_client.backend_ == 'requests':
             from requests_toolbelt.multipart.encoder import MultipartEncoder
             self.is_multipart_request = \
                 'data' in self.kwargs and \
@@ -222,7 +222,7 @@ class HttpRequest:
         if self.session:
             self.execution_context = self.session
         else:
-            if self.rest_client._backend() == 'requests':
+            if self.rest_client.backend_ == 'requests':
                 self.execution_context = requests
             else:
                 import httpx
@@ -238,7 +238,7 @@ class HttpRequest:
                 if isinstance(body_content, dict):
                     body_content = json.dumps(body_content)
 
-            if self.rest_client._backend() == 'httpx':
+            if self.rest_client.backend_ == 'httpx':
                 if isinstance(body_content, dict):
                     self.kwargs['data'] = body_content
                 else:
@@ -267,11 +267,73 @@ class HttpRequest:
                 if 'follow_redirects' not in self.kwargs:
                     self.kwargs['follow_redirects'] = True
 
+                merge_dicts(self.kwargs, self.rest_client.client_args_)
+
             if self.execution_context is httpx:
                 if 'follow_redirects' not in self.kwargs:
                     self.kwargs['follow_redirects'] = True
         except ImportError:
             pass
+
+        if self.rest_client.backend_ == 'requests':
+            self._normalize_for_requests(self.kwargs)
+        else:
+            self._normalize_for_httpx(self.kwargs)
+
+    def _normalize_for_httpx(self, kwargs: ArgsDict):
+        """
+        Normalize kwargs for httpx.
+
+        Translates and converts argument names and values from
+        requests to httpx, e.g.
+            'allow_redirects' -> 'follow_redirects'
+        """
+        if 'allow_redirects' in kwargs:
+            kwargs['follow_redirects'] = kwargs['allow_redirects']
+            del kwargs['allow_redirects']
+
+    def _normalize_for_requests(self, kwargs: ArgsDict):
+        """
+        Normalize kwargs for requests.
+
+        Translates and converts argument names and values from
+        requests to httpx, e.g.
+            'follow_redirects' -> 'allow_redirects'
+        """
+        if 'follow_redirects' in kwargs:
+            kwargs['allow_redirects'] = kwargs['follow_redirects']
+            del kwargs['follow_redirects']
+
+    def handle_response(self, result: typing.Any) -> typing.Any:
+        """Handle result response."""
+        if self.on_handlers and result.status_code in self.on_handlers:
+            # Use a registered handler for the returned status code
+            return self.on_handlers[result.status_code](result)
+        elif self.on_handlers and HttpStatus.ANY in self.on_handlers:
+            # If a catch all status handler is provided - use it
+            return self.on_handlers[HttpStatus.ANY](result)
+        else:
+            # If stream option was passed and no content handler
+            # was defined, return response
+            if self.is_stream:
+                return result
+
+            # Default response handler
+            try:
+                result.raise_for_status()
+            except Exception as e:
+                raise HTTPErrorWrapper(typing.cast(HTTPErrors, e))
+
+            if result.text:
+                content_type = result.headers.get('content-type')
+                if content_type == 'application/json':
+                    return result.json()
+                elif content_type == 'application/octet-stream':
+                    return result.content
+                else:
+                    return result.text
+
+            return None
 
     def __validate_decor(self, decor: str, kwargs: ArgsDict,
                          cls: typing.Type[typing.Any]) -> None:
@@ -311,34 +373,3 @@ class HttpRequest:
                 else:
                     parameters[arg] = value
         return parameters
-
-    def handle(self, result: typing.Any) -> typing.Any:
-        """Handle result response."""
-        if self.on_handlers and result.status_code in self.on_handlers:
-            # Use a registered handler for the returned status code
-            return self.on_handlers[result.status_code](result)
-        elif self.on_handlers and HttpStatus.ANY in self.on_handlers:
-            # If a catch all status handler is provided - use it
-            return self.on_handlers[HttpStatus.ANY](result)
-        else:
-            # If stream option was passed and no content handler
-            # was defined, return response
-            if self.is_stream:
-                return result
-
-            # Default response handler
-            try:
-                result.raise_for_status()
-            except Exception as e:
-                raise HTTPErrorWrapper(typing.cast(HTTPErrors, e))
-
-            if result.text:
-                content_type = result.headers.get('content-type')
-                if content_type == 'application/json':
-                    return result.json()
-                elif content_type == 'application/octet-stream':
-                    return result.content
-                else:
-                    return result.text
-
-            return None

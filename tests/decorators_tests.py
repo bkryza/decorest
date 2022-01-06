@@ -159,11 +159,11 @@ def test_endpoint_decorator() -> None:
 
     default_client = DogClient()
 
-    assert default_client.endpoint == 'https://dog.ceo/'
+    assert default_client.endpoint_ == 'https://dog.ceo/'
 
     custom_client = DogClient('http://dogceo.example.com')
 
-    assert custom_client.endpoint == 'http://dogceo.example.com'
+    assert custom_client.endpoint_ == 'http://dogceo.example.com'
 
 
 def test_introspection() -> None:
@@ -222,15 +222,53 @@ def test_authentication_settings() -> None:
     """
     Tests if authentication is properly configured.
     """
+    r_client = DogClient(backend='requests')
+    assert r_client['auth'] is None
+    r_client['auth'] = r_HTTPBasicAuth('username', 'password')
+    assert r_client['auth'] == r_HTTPBasicAuth('username', 'password')
+
+    r_client_auth = DogClient(backend='requests',
+                              auth=r_HTTPBasicAuth('username', 'password'))
+    assert r_client_auth['auth'] == r_HTTPBasicAuth('username', 'password')
+
+    r_session_auth = r_client_auth._session()
+    assert r_session_auth['auth'] == r_HTTPBasicAuth('username', 'password')
+
+    x_client = DogClient(backend='httpx')
+    assert x_client['auth'] is None
+    x_client['auth'] = x_HTTPBasicAuth('username', 'password')
+    assert x_client['auth']._auth_header == \
+           x_HTTPBasicAuth('username', 'password')._auth_header
+
+    x_client_auth = DogClient(backend='httpx',
+                              auth=x_HTTPBasicAuth('username', 'password'))
+    assert x_client_auth['auth']._auth_header == \
+           x_HTTPBasicAuth('username', 'password')._auth_header
+    x_session_auth = x_client_auth._session()
+    assert x_session_auth._auth._auth_header == \
+           x_HTTPBasicAuth('username', 'password')._auth_header
+
+
+def test_authentication_settings_deprecated() -> None:
+    """
+    Tests if authentication is properly configured.
+    """
 
     r_client = DogClient(backend='requests')
-    assert r_client._auth() is None
+    assert r_client.auth_() is None
     r_client._set_auth(r_HTTPBasicAuth('username', 'password'))
+    assert r_client['auth'] == r_HTTPBasicAuth('username', 'password')
+
+    assert r_client.auth_() == r_HTTPBasicAuth('username', 'password')
+
     assert r_client._auth() == r_HTTPBasicAuth('username', 'password')
 
     r_client_auth = DogClient(backend='requests',
                               auth=r_HTTPBasicAuth('username', 'password'))
+    assert r_client_auth.auth_() == r_HTTPBasicAuth('username', 'password')
+
     assert r_client_auth._auth() == r_HTTPBasicAuth('username', 'password')
+
     r_session_auth = r_client_auth._session()
     assert r_session_auth._auth == r_HTTPBasicAuth('username', 'password')
 

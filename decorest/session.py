@@ -18,27 +18,30 @@
 import asyncio
 import typing
 
+from .utils import merge_dicts
+
 if typing.TYPE_CHECKING:
     from .client import RestClient
 
 
 class RestClientSession:
     """Wrap a `requests` session for specific API client."""
-    def __init__(self, client: 'RestClient') -> None:
+    def __init__(self, client: 'RestClient', **kwargs) -> None:
         """Initialize the session instance with a specific API client."""
         self.__client: 'RestClient' = client
 
         # Create a session of type specific for given backend
-        if client._backend() == 'requests':
+        if self.__client.backend_ == 'requests':
             import requests
             from decorest.types import SessionTypes
             self.__session: SessionTypes = requests.Session()
+            for a in requests.Session.__attrs__:
+                if a in kwargs:
+                    setattr(self.__session, a, kwargs[a])
         else:
             import httpx
-            self.__session = httpx.Client()
-
-        if self.__client.auth is not None:
-            self.__session.auth = self.__client.auth
+            args = merge_dicts(self.__client.client_args_, kwargs)
+            self.__session = httpx.Client(**args)
 
     def __enter__(self) -> 'RestClientSession':
         """Context manager initialization."""
@@ -48,23 +51,31 @@ class RestClientSession:
         """Context manager destruction."""
         self.__session.close()
 
+    def __getitem__(self, key: str) -> typing.Any:
+        """Return named client argument."""
+        return self.__client._get_or_none(key)
+
+    def __setitem__(self, key: str, value: typing.Any) -> None:
+        """Set named client argument."""
+        self.__client[key] = value
+
     def __getattr__(self, name: str) -> typing.Any:
         """Forward any method invocation to actual client with session."""
-        if name == '_backend_session':
+        if name == 'backend_session_':
             return self.__session
 
         # deprecated
         if name == '_requests_session':
             return self.__session
 
-        if name == '_client':
+        if name == 'client_' or name == '_client':
             return self.__client
 
         if name == '_close':
             return self.__session.close
 
-        if name == '_auth':
-            return self.__session.auth
+        if name == 'auth_' or name == '_auth':
+            return self.__client['auth']
 
         def invoker(*args: typing.Any, **kwargs: typing.Any) -> typing.Any:
             kwargs['__session'] = self.__session
@@ -75,16 +86,14 @@ class RestClientSession:
 
 class RestClientAsyncSession:
     """Wrap a `requests` session for specific API client."""
-    def __init__(self, client: 'RestClient') -> None:
+    def __init__(self, client: 'RestClient', **kwargs) -> None:
         """Initialize the session instance with a specific API client."""
         self.__client: 'RestClient' = client
 
         # Create a session of type specific for given backend
         import httpx
-        self.__session = httpx.AsyncClient()
-
-        if self.__client.auth is not None:
-            self.__session.auth = self.__client.auth
+        args = merge_dicts(self.__client.client_args_, kwargs)
+        self.__session = httpx.AsyncClient(**args)
 
     async def __aenter__(self) -> 'RestClientAsyncSession':
         """Context manager initialization."""
@@ -112,6 +121,8 @@ class RestClientAsyncSession:
         async def invoker(*args: typing.Any,
                           **kwargs: typing.Any) -> typing.Any:
             kwargs['__session'] = self.__session
+
+            # TODO: MERGE __client_args with kwargs
             assert asyncio.iscoroutinefunction(getattr(self.__client, name))
             return await getattr(self.__client, name)(*args, **kwargs)
 

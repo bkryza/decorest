@@ -233,7 +233,7 @@ class HttpMethodDecorator:
         except Exception as e:
             raise HTTPErrorWrapper(typing.cast(types.HTTPErrors, e))
 
-        return http_request.handle(result)
+        return http_request.handle_response(result)
 
     def call(self, func: typing.Callable[..., typing.Any], *args: typing.Any,
              **kwargs: typing.Any) -> typing.Any:
@@ -260,7 +260,7 @@ class HttpMethodDecorator:
         except Exception as e:
             raise HTTPErrorWrapper(typing.cast(types.HTTPErrors, e))
 
-        return http_request.handle(result)
+        return http_request.handle_response(result)
 
     def __dispatch(self, http_request: HttpRequest) -> typing.Any:
         """
@@ -301,8 +301,8 @@ class HttpMethodDecorator:
 
         if not isinstance(http_request.execution_context, httpx.AsyncClient):
             custom_kwargs = dict()
-            if http_request.rest_client.auth is not None:
-                custom_kwargs['auth'] = http_request.rest_client.auth
+            if http_request.rest_client.auth_() is not None:
+                custom_kwargs['auth'] = http_request.rest_client.auth_()
             async with httpx.AsyncClient(**custom_kwargs) as client:
                 return await client.request(method.upper(), http_request.req,
                                             **http_request.kwargs)

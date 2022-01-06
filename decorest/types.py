@@ -55,7 +55,7 @@ if typing.TYPE_CHECKING:
 
 ArgsDict = typing.Dict[str, typing.Any]
 Backends = typing_extensions.Literal['requests', 'httpx']
-AuthTypes = typing.Union['requests.auth.AuthBase', 'httpx.Auth']
+AuthTypes = typing.Union['requests.auth.AuthBase', 'httpx.AuthTypes']
 HeaderDict = typing.Mapping[str, typing.Union[str, typing.List[str]]]
 SessionTypes = typing.Union['requests.Session', 'httpx.Client']
 HTTPErrors = typing.Union['requests.HTTPError', 'httpx.HTTPStatusError']
