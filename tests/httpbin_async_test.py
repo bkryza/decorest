@@ -376,6 +376,17 @@ async def test_absolute_redirect(client):
 
 
 @pytest.mark.asyncio
+async def test_max_redirect(client):
+    """
+    """
+    async with client.async_session_(max_redirects=1) as s:
+        with pytest.raises(HTTPErrorWrapper) as e:
+            await s.redirect(5, on={302: lambda r: 'REDIRECTED'})
+
+        assert isinstance(e.value.wrapped, httpx.TooManyRedirects)
+
+
+@pytest.mark.asyncio
 async def test_cookies(client):
     """
     """
@@ -421,7 +432,7 @@ async def test_cookies_session(client):
 async def test_cookies_session_with_contextmanager(client):
     """
     """
-    async with client._async_session() as s:
+    async with client.async_session_() as s:
         s._backend_session.verify = False
         res = await s.cookies_set(query={"cookie1": "A", "cookie2": "B"})
 
@@ -510,7 +521,7 @@ async def test_stream_n(client):
     """
     """
     count = 0
-    async with client._async_session() as s:
+    async with client.async_session_() as s:
         r = await s.stream_n(5)
         async for _ in r.aiter_lines():
             count += 1
@@ -537,7 +548,7 @@ async def test_drip(client):
     """
     """
     content = []
-    async with client._async_session() as s:
+    async with client.async_session_() as s:
         r = await s.drip(10, 5, 1, 200)
         async for b in r.aiter_raw():
             content.append(b)
@@ -551,7 +562,7 @@ async def test_range(client):
     """
     content = []
 
-    async with client._async_session() as s:
+    async with client.async_session_() as s:
         r = await s.range(128, 1, 2, header={"Range": "bytes=10-19"})
         async for b in r.aiter_raw():
             content.append(b)
