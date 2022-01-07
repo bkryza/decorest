@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """HTTP request wrapper."""
-
 import json
 import logging as LOG
 import numbers
@@ -72,6 +71,7 @@ class HttpRequest:
                 method=self.http_method))
 
         self.rest_client = args[0]
+
         args_dict = dict_from_args(func, *args)
         req_path = render_path(self.path_template, args_dict)
         self.session = None
@@ -82,12 +82,12 @@ class HttpRequest:
         # Merge query parameters from common values for all method
         # invocations with arguments provided in the method
         # arguments
-        query_parameters = self.__merge_args(args_dict, func, 'query')
-        form_parameters = self.__merge_args(args_dict, func, 'form')
-        multipart_parameters = self.__merge_args(args_dict, func, 'multipart')
+        query_parameters = self._merge_args(args_dict, func, 'query')
+        form_parameters = self._merge_args(args_dict, func, 'form')
+        multipart_parameters = self._merge_args(args_dict, func, 'multipart')
         header_parameters = CaseInsensitiveDict(
             merge_dicts(get_header_decor(self.rest_client.__class__),
-                        self.__merge_args(args_dict, func, 'header')))
+                        self._merge_args(args_dict, func, 'header')))
 
         # Merge header parameters with default values, treat header
         # decorators with 2 params as default values only if they
@@ -141,46 +141,46 @@ class HttpRequest:
             for decor in DECOR_LIST:
                 if decor in self.kwargs:
                     if decor == 'header':
-                        self.__validate_decor(decor, self.kwargs, dict)
+                        self._validate_decor(decor, self.kwargs, dict)
                         header_parameters = merge_dicts(
                             header_parameters, self.kwargs['header'])
                         del self.kwargs['header']
                     elif decor == 'query':
-                        self.__validate_decor(decor, self.kwargs, dict)
+                        self._validate_decor(decor, self.kwargs, dict)
                         query_parameters = merge_dicts(query_parameters,
                                                        self.kwargs['query'])
                         del self.kwargs['query']
                     elif decor == 'form':
-                        self.__validate_decor(decor, self.kwargs, dict)
+                        self._validate_decor(decor, self.kwargs, dict)
                         form_parameters = merge_dicts(form_parameters,
                                                       self.kwargs['form'])
                         del self.kwargs['form']
                     elif decor == 'multipart':
-                        self.__validate_decor(decor, self.kwargs, dict)
+                        self._validate_decor(decor, self.kwargs, dict)
                         multipart_parameters = merge_dicts(
                             multipart_parameters, self.kwargs['multipart'])
                         del self.kwargs['multipart']
                     elif decor == 'on':
-                        self.__validate_decor(decor, self.kwargs, dict)
+                        self._validate_decor(decor, self.kwargs, dict)
                         self.on_handlers = merge_dicts(self.on_handlers,
                                                        self.kwargs['on'])
                         del self.kwargs['on']
                     elif decor == 'accept':
-                        self.__validate_decor(decor, self.kwargs, str)
+                        self._validate_decor(decor, self.kwargs, str)
                         header_parameters['accept'] = self.kwargs['accept']
                         del self.kwargs['accept']
                     elif decor == 'content':
-                        self.__validate_decor(decor, self.kwargs, str)
+                        self._validate_decor(decor, self.kwargs, str)
                         header_parameters['content-type'] \
                             = self.kwargs['content']
                         del self.kwargs['content']
                     elif decor == 'timeout':
-                        self.__validate_decor(decor, self.kwargs,
-                                              numbers.Number)
+                        self._validate_decor(decor, self.kwargs,
+                                             numbers.Number)
                         request_timeout = self.kwargs['timeout']
                         del self.kwargs['timeout']
                     elif decor == 'stream':
-                        self.__validate_decor(decor, self.kwargs, bool)
+                        self._validate_decor(decor, self.kwargs, bool)
                         self.is_stream = self.kwargs['stream']
                         del self.kwargs['stream']
                     elif decor == 'body':
@@ -335,8 +335,8 @@ class HttpRequest:
 
             return None
 
-    def __validate_decor(self, decor: str, kwargs: ArgsDict,
-                         cls: typing.Type[typing.Any]) -> None:
+    def _validate_decor(self, decor: str, kwargs: ArgsDict,
+                        cls: typing.Type[typing.Any]) -> None:
         """
         Ensure kwargs contain decor with specific type.
 
@@ -349,8 +349,8 @@ class HttpRequest:
             raise TypeError("{} value must be an instance of {}".format(
                 decor, cls.__name__))
 
-    def __merge_args(self, args_dict: ArgsDict,
-                     func: typing.Callable[..., typing.Any], decor: str) \
+    def _merge_args(self, args_dict: ArgsDict,
+                    func: typing.Callable[..., typing.Any], decor: str) \
             -> ArgsDict:
         """
         Match named arguments from method call.

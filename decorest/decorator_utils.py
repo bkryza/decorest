@@ -27,7 +27,7 @@ DECOR_KEY = '__decorest__'
 
 DECOR_LIST = [
     'header', 'query', 'form', 'multipart', 'on', 'accept', 'content',
-    'timeout', 'stream', 'body', 'endpoint'
+    'timeout', 'stream', 'body', 'endpoint', 'backend'
 ]
 
 
@@ -86,7 +86,7 @@ def get_decor(t: typing.Any, name: str) -> typing.Optional[typing.Any]:
         object: any value assigned to the name key
 
     """
-    if hasattr(t, DECOR_KEY) and getattr(t, DECOR_KEY).get(name):
+    if hasattr(t, DECOR_KEY) and name in getattr(t, DECOR_KEY):
         return getattr(t, DECOR_KEY)[name]
 
     return None

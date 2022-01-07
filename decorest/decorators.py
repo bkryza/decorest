@@ -229,7 +229,7 @@ class HttpMethodDecorator:
                         http_request.kwargs['headers'].pop(
                             'content-type', None)
 
-                result = await self.__dispatch_async(http_request)
+                result = await self._dispatch_async(http_request)
         except Exception as e:
             raise HTTPErrorWrapper(typing.cast(types.HTTPErrors, e))
 
@@ -256,13 +256,13 @@ class HttpMethodDecorator:
                         http_request.kwargs['headers'].pop(
                             'content-type', None)
 
-                result = self.__dispatch(http_request)
+                result = self._dispatch(http_request)
         except Exception as e:
             raise HTTPErrorWrapper(typing.cast(types.HTTPErrors, e))
 
         return http_request.handle_response(result)
 
-    def __dispatch(self, http_request: HttpRequest) -> typing.Any:
+    def _dispatch(self, http_request: HttpRequest) -> typing.Any:
         """
         Dispatch HTTP method based on HTTPMethod enum type.
 
@@ -282,7 +282,7 @@ class HttpMethodDecorator:
         return methodcaller(method, http_request.req,
                             **http_request.kwargs)(ctx)
 
-    async def __dispatch_async(self, http_request: HttpRequest) -> typing.Any:
+    async def _dispatch_async(self, http_request: HttpRequest) -> typing.Any:
         """
         Dispatch HTTP method based on HTTPMethod enum type.
 
