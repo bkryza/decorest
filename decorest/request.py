@@ -24,8 +24,8 @@ from requests.structures import CaseInsensitiveDict
 
 from .client import RestClient
 from .decorator_utils import DECOR_LIST, get_body_decor, get_decor, \
-    get_header_decor, get_method_decor, get_on_decor, \
-    get_stream_decor, get_timeout_decor
+    get_header_decor, get_method_class_decor, get_method_decor, \
+    get_on_decor, get_stream_decor, get_timeout_decor
 from .errors import HTTPErrorWrapper
 from .types import ArgsDict, HTTPErrors, HttpMethod, HttpStatus
 from .utils import dict_from_args, merge_dicts, render_path
@@ -44,6 +44,7 @@ class HttpRequest:
     kwargs: ArgsDict
     on_handlers: typing.Mapping[int, typing.Callable[..., typing.Any]]
     session: typing.Optional[str]
+    session_endpoint: typing.Optional[str]
     execution_context: typing.Any
     rest_client: RestClient
 
@@ -78,6 +79,10 @@ class HttpRequest:
         if '__session' in self.kwargs:
             self.session = self.kwargs['__session']
             del self.kwargs['__session']
+        self.session_endpoint = None
+        if '__endpoint' in self.kwargs:
+            self.session_endpoint = self.kwargs['__endpoint']
+            del self.kwargs['__endpoint']
 
         # Merge query parameters from common values for all method
         # invocations with arguments provided in the method
@@ -115,7 +120,7 @@ class HttpRequest:
                 body_content = body_parameter[1](body_content)
 
         # Get authentication method for this call
-        auth = self.rest_client._auth()
+        auth = self.rest_client.auth_()
 
         # Get status handlers
         self.on_handlers = merge_dicts(
@@ -188,8 +193,15 @@ class HttpRequest:
                         del self.kwargs['body']
                     else:
                         pass
+
         # Build request from endpoint and query params
-        self.req = self.rest_client.build_path_(req_path.split('/'))
+        effective_endpoint = self.session_endpoint \
+            or self.rest_client.endpoint_ \
+            or get_method_class_decor(func, self.rest_client, 'endpoint')\
+            or get_decor(self.rest_client, 'endpoint')
+
+        self.req = self.rest_client.build_path_(req_path.split('/'),
+                                                effective_endpoint)
 
         # Handle multipart parameters, either from decorators
         # or ones passed directly through kwargs

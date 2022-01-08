@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Decorator utility functions."""
-
+import inspect
 import numbers
 import typing
 
@@ -31,16 +31,15 @@ DECOR_LIST = [
 ]
 
 
-def set_decor(t: typing.Any, name: str, value: typing.Any) -> None:
-    """Decorate a function or class by storing the value under specific key."""
-    if hasattr(t, '__wrapped__') and hasattr(t.__wrapped__, DECOR_KEY):
-        setattr(t, DECOR_KEY, t.__wrapped__.__decorest__)
+def decor_key_cls(cls: type) -> str:
+    """Get class specific decor key."""
+    assert (inspect.isclass(cls))
+    return DECOR_KEY + cls.__name__
 
-    if not hasattr(t, DECOR_KEY):
-        setattr(t, DECOR_KEY, {})
 
-    d = getattr(t, DECOR_KEY)
-
+def set_decor_value(d: typing.MutableMapping[str, typing.Any], name: str,
+                    value: typing.Any) -> None:
+    """Set decorator value in the decorator dict."""
     if isinstance(value, CaseInsensitiveDict):
         if not d.get(name):
             d[name] = CaseInsensitiveDict()
@@ -55,6 +54,25 @@ def set_decor(t: typing.Any, name: str, value: typing.Any) -> None:
         d[name].extend(value)
     else:
         d[name] = value
+
+
+def set_decor(t: typing.Any, name: str, value: typing.Any) -> None:
+    """Decorate a function or class by storing the value under specific key."""
+    if hasattr(t, '__wrapped__') and hasattr(t.__wrapped__, DECOR_KEY):
+        setattr(t, DECOR_KEY, t.__wrapped__.__decorest__)
+
+    if not hasattr(t, DECOR_KEY):
+        setattr(t, DECOR_KEY, {})
+
+    # Set the decor value in the common decorator
+    set_decor_value(getattr(t, DECOR_KEY), name, value)
+
+    # Set the decor value in the class specific decorator
+    # for reverse inheritance of class decors
+    if inspect.isclass(t):
+        if not hasattr(t, decor_key_cls(t)):
+            setattr(t, decor_key_cls(t), {})
+        set_decor_value(getattr(t, decor_key_cls(t)), name, value)
 
 
 def set_header_decor(t: typing.Any, value: HeaderDict) -> None:
@@ -86,10 +104,52 @@ def get_decor(t: typing.Any, name: str) -> typing.Optional[typing.Any]:
         object: any value assigned to the name key
 
     """
+    if inspect.isclass(t):
+        class_decor_key = DECOR_KEY + t.__name__
+        if hasattr(t, class_decor_key) and name in getattr(t, class_decor_key):
+            return getattr(t, class_decor_key)[name]
+
     if hasattr(t, DECOR_KEY) and name in getattr(t, DECOR_KEY):
         return getattr(t, DECOR_KEY)[name]
 
     return None
+
+
+def get_method_class_decor(f: typing.Any, c: typing.Any, name: str) \
+        -> typing.Any:
+    """Get decorator from base class of c where method f is defined."""
+    decor = None
+    # First find all super classes which 'have' method f
+    # (this will not work in case of name conflicts)
+    classes_with_f = []
+    for base_class in inspect.getmro(c.__class__):
+        decor = get_decor(base_class, name)
+        for m in inspect.getmembers(base_class, predicate=inspect.isfunction):
+            if m[0] == f.__name__:
+                classes_with_f.append(base_class)
+                break
+
+    # Now sort the classes based on the inheritance chain
+    def sort_by_superclass(a: typing.Any, b: typing.Any) -> int:
+        """Compare two types according to inheritance relation."""
+        if a == b:
+            return 0
+        elif issubclass(b, a):
+            return -1
+        else:
+            return 1
+
+    import functools
+    classes_with_f.sort(key=functools.cmp_to_key(sort_by_superclass))
+
+    # Now get the decor from the first class in the list which has
+    # the requested decor
+    for base in classes_with_f:
+        decor = get_decor(base, name)
+        if decor:
+            break
+
+    return decor
 
 
 def get_method_decor(t: typing.Any) -> HttpMethod:

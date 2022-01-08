@@ -159,7 +159,7 @@ def test_endpoint_decorator() -> None:
 
     default_client = DogClient()
 
-    assert default_client.endpoint_ == 'https://dog.ceo/'
+    assert default_client.endpoint_ is None  # 'https://dog.ceo/'
 
     custom_client = DogClient('http://dogceo.example.com')
 

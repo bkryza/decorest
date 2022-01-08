@@ -22,7 +22,7 @@ import logging as LOG
 import typing
 import urllib.parse
 
-from .decorator_utils import get_backend_decor, get_endpoint_decor
+from .decorator_utils import get_backend_decor
 from .session import RestClientAsyncSession, RestClientSession
 from .types import ArgsDict, AuthTypes, Backends
 from .utils import normalize_url
@@ -53,7 +53,7 @@ class RestClient:
         self.__backend = backend or get_backend_decor(self) or 'requests'
 
         # Check if the client arguments contain endpoint value
-        self.__endpoint = endpoint or get_endpoint_decor(self)  # type: ignore
+        self.__endpoint = endpoint  # type: ignore
 
         # Check if the other named arguments match the allowed arguments
         # for specified backend
@@ -147,7 +147,8 @@ class RestClient:
         """Set named client argument."""
         self.__client_args[key] = value
 
-    def build_path_(self, path_components: typing.List[str]) -> str:
+    def build_path_(self, path_components: typing.List[str],
+                    endpoint: typing.Optional[str]) -> str:
         """
         Build request path.
 
@@ -156,10 +157,13 @@ class RestClient:
         """
         LOG.debug("Building request from path tokens: %s", path_components)
 
-        if not self.__endpoint:
+        if not endpoint:
+            endpoint = self.__endpoint
+
+        if not endpoint:
             raise ValueError("Server endpoint was not provided.")
 
-        req = urllib.parse.urljoin(normalize_url(self.__endpoint),
+        req = urllib.parse.urljoin(normalize_url(endpoint),
                                    "/".join(path_components))
 
         return req

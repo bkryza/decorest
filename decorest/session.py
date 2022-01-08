@@ -27,9 +27,16 @@ if typing.TYPE_CHECKING:
 
 class RestClientSession:
     """Wrap a `requests` session for specific API client."""
+    __client: 'RestClient'
+    __endpoint: typing.Optional[str] = None
+
     def __init__(self, client: 'RestClient', **kwargs: ArgsDict) -> None:
         """Initialize the session instance with a specific API client."""
-        self.__client: 'RestClient' = client
+        self.__client = client
+
+        if 'endpoint' in kwargs:
+            self.__endpoint = typing.cast(str, kwargs['endpoint'])
+            del kwargs['endpoint']
 
         # Create a session of type specific for given backend
         if self.__client.backend_ == 'requests':
@@ -65,14 +72,13 @@ class RestClientSession:
         if name == 'backend_session_':
             return self.__session
 
-        # deprecated
-        if name == '_requests_session':
+        if name == '_requests_session':  # deprecated
             return self.__session
 
         if name == 'client_' or name == '_client':
             return self.__client
 
-        if name == '_close':
+        if name == 'close_' or name == '_close':
             return self.__session.close
 
         if name == 'auth_' or name == '_auth':
@@ -80,17 +86,30 @@ class RestClientSession:
 
         def invoker(*args: typing.Any, **kwargs: typing.Any) -> typing.Any:
             kwargs['__session'] = self.__session
+            kwargs['__endpoint'] = self.__endpoint
             return getattr(self.__client, name)(*args, **kwargs)
 
         return invoker
 
+    @property
+    def endpoint_(self) -> typing.Optional[str]:
+        """Return session specific endpoint."""
+        return self.__endpoint
+
 
 class RestClientAsyncSession:
     """Wrap a `requests` session for specific API client."""
+    __client: 'RestClient'
+    __endpoint: typing.Optional[str] = None
+
     def __init__(self, client: 'RestClient', **kwargs: ArgsDict) \
             -> None:
         """Initialize the session instance with a specific API client."""
-        self.__client: 'RestClient' = client
+        self.__client = client
+
+        if 'endpoint' in kwargs:
+            self.__endpoint = typing.cast(str, kwargs['endpoint'])
+            del kwargs['endpoint']
 
         # Create a session of type specific for given backend
         import httpx
@@ -108,16 +127,19 @@ class RestClientAsyncSession:
 
     def __getattr__(self, name: str) -> typing.Any:
         """Forward any method invocation to actual client with session."""
-        if name == '_requests_session':
+        if name == 'backend_session_':
             return self.__session
 
-        if name == '_client':
+        if name == '_requests_session':  # deprecated
+            return self.__session
+
+        if name == 'client_' or name == '_client':
             return self.__client
 
-        if name == '_close':
+        if name == 'close_' or name == '_close':
             return self.__session.aclose
 
-        if name == '_auth':
+        if name == 'auth_' or name == '_auth':
             return self.__session.auth
 
         async def invoker(*args: typing.Any,
@@ -129,3 +151,8 @@ class RestClientAsyncSession:
             return await getattr(self.__client, name)(*args, **kwargs)
 
         return invoker
+
+    @property
+    def endpoint_(self) -> typing.Optional[str]:
+        """Return session specific endpoint."""
+        return self.__endpoint

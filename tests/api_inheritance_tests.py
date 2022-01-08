@@ -29,23 +29,35 @@ from decorest import accept, backend, body, content, endpoint, header
 from decorest import GET, PATCH, PUT
 
 
-class APIOne(RestClient):
+class A(RestClient):
     """API One client"""
-    @GET('stuff/{what}')
+    @GET('stuff/{sth}')
     @on(200, lambda r: r.json())
-    def get(self, what: str) -> typing.Any:
+    def get(self, sth: str) -> typing.Any:
         """Get what"""
 
 
-class APITwo(RestClient):
+class B(RestClient):
     """API One client"""
-    @PUT('stuff/{what}')
+    @PUT('stuff/{sth}')
     @body('body')
-    def put(self, sth: str, body: bytes) -> typing.Any:
+    @on(204, lambda _: True)
+    def put_b(self, sth: str, body: bytes) -> typing.Any:
         """Put sth"""
 
 
-class APIThree(RestClient):
+@endpoint('https://put.example.com')
+class BB(B):
+    """API One client"""
+    @PUT('stuff/{sth}')
+    @body('body')
+    @on(204, lambda _: True)
+    def put_bb(self, sth: str, body: bytes) -> typing.Any:
+        """Put sth"""
+
+
+@endpoint('https://patches.example.com')
+class C(RestClient):
     """API Three client"""
     @PATCH('stuff/{sth}')
     @body('body')
@@ -60,7 +72,7 @@ class APIThree(RestClient):
 @header('X-Auth-Key', 'ABCD')
 @endpoint('https://example.com')
 @backend('httpx')
-class InheritedClient(APITwo, APIOne, APIThree):
+class InheritedClient(A, BB, C):
     ...
 
 
@@ -72,20 +84,20 @@ def test_api_inheritance_properties() -> None:
     client = InheritedClient()
 
     assert client.backend_ == 'httpx'
-    assert client.endpoint_ == 'https://example.com'
+    assert client.endpoint_ is None  # 'https://example.com'
 
-    client = InheritedClient(backend='requests',
-                             endpoint="https://patches.example.com")
+    client = InheritedClient('https://patches.example.com', backend='requests')
 
     assert client.backend_ == 'requests'
     assert client.endpoint_ == 'https://patches.example.com'
 
 
-def test_api_inheritance_basic(respx_mock) -> None:
+@pytest.mark.parametrize("backend", ['httpx'])
+def test_api_inheritance_basic(respx_mock, backend) -> None:
     """
 
     """
-    client = InheritedClient()
+    client = InheritedClient(backend=backend)
 
     expected = dict(id=1, name='thing1')
     req = respx_mock.get("https://example.com/stuff/thing1")\
@@ -96,12 +108,22 @@ def test_api_inheritance_basic(respx_mock) -> None:
     assert req.called is True
     assert res == expected
 
+    client = InheritedClient('https://example2.com', backend=backend)
 
-def test_api_inheritance_custom_endpoint(respx_mock) -> None:
-    """
+    req = respx_mock.get('https://example2.com/stuff/thing1')\
+                    .mock(return_value=httpx.Response(200, content=json.dumps(expected)))
 
+    res = client.get('thing1')
+
+    assert req.called is True
+    assert res == expected
+
+
+@pytest.mark.parametrize("backend", ['httpx'])
+def test_api_inheritance_custom_endpoint(respx_mock, backend) -> None:
     """
-    client = InheritedClient(endpoint='https://patches.example.com')
+    """
+    client = InheritedClient(backend=backend)
 
     req = respx_mock.patch("https://patches.example.com/stuff/thing1")\
                     .mock(return_value=httpx.Response(204))
@@ -112,11 +134,56 @@ def test_api_inheritance_custom_endpoint(respx_mock) -> None:
     assert req.called is True
     assert res is True
 
-    req = respx_mock.patch("https://patches.example.com/stuff/thing1")\
+    req = respx_mock.patch("https://patches.example.com/stuff/thing2")\
                     .mock(return_value=httpx.Response(500))
 
-    res = client.patch('thing1',
+    res = client.patch('thing2',
                        body=json.loads('{"id": 1, "notname": "thing2"}'))
 
     assert req.called is True
     assert not res
+
+    with client.session_() as s:
+        res = s.patch('thing1', body=json.loads('{"id": 3, "name": "thing3"}'))
+        assert req.called is True
+        assert res is True
+
+    req = respx_mock.patch("https://patches2.example.com/stuff/thing1")\
+                    .mock(return_value=httpx.Response(204))
+    with client.session_(endpoint="https://patches2.example.com") as s:
+        res = s.patch('thing1', body=json.loads('{"id": 3, "name": "thing3"}'))
+        assert req.called is True
+        assert res is True
+
+    redirect_headers = {
+        'Location': 'https://patches3.example.com/stuff/thing1'
+    }
+    req = respx_mock.patch("https://patches.example.com/stuff/thing1").mock(
+        return_value=httpx.Response(301, headers=redirect_headers))
+
+    req_redirect \
+        = respx_mock.patch("https://patches3.example.com/stuff/thing1").mock(
+        return_value=httpx.Response(204))
+
+    with client.session_() as s:
+        res = s.patch('thing1', body=json.loads('{"id": 3, "name": "thing3"}'))
+        assert req.called and req_redirect.called
+        assert res is True
+
+    req = respx_mock.put("https://put.example.com/stuff/thing1")\
+                    .mock(return_value=httpx.Response(204))
+
+    res = client.put_b('thing1',
+                       body=json.loads('{"id": 1, "name": "thing2"}'))
+
+    assert req.called is True
+    assert res
+
+    req = respx_mock.put("https://put.example.com/stuff/thing2")\
+                    .mock(return_value=httpx.Response(204))
+
+    res = client.put_bb('thing2',
+                        body=json.loads('{"id": 1, "name": "thing2"}'))
+
+    assert req.called is True
+    assert res
