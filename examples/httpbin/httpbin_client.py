@@ -21,7 +21,7 @@ import json
 
 from PIL import Image
 
-from decorest import DELETE, GET, PATCH, POST, PUT
+from decorest import DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT
 from decorest import HttpStatus, RestClient
 from decorest import __version__, accept, body, content, endpoint, form
 from decorest import header, multipart, on, query, stream, timeout
@@ -56,6 +56,16 @@ class HttpBinClient(RestClient):
     @GET('ip')
     def ip(self):
         """Return Origin IP."""
+
+    @HEAD('ip')
+    @on(200, lambda _: True)
+    def head_ip(self):
+        """Return Origin IP request headers only."""
+
+    @OPTIONS('ip')
+    @on(200, lambda r: r.headers)
+    def options_ip(self):
+        """Return Origin IP options."""
 
     @repeatdecorator
     @GET('ip')

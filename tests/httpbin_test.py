@@ -90,6 +90,24 @@ def test_ip(client):
 
 
 @pytest.mark.parametrize("client", pytest_params)
+def test_ip_head(client):
+    """
+    """
+    res = client.head_ip()
+
+    assert res
+
+
+@pytest.mark.parametrize("client", pytest_params)
+def test_ip_options(client):
+    """
+    """
+    res = client.options_ip()
+
+    assert sorted(res['allow'].split(", ")) == ['GET', 'HEAD', 'OPTIONS']
+
+
+@pytest.mark.parametrize("client", pytest_params)
 def test_ip_repeat(client):
     """
     """
@@ -368,7 +386,7 @@ def test_redirect_to(client):
     """
     res = client.redirect_to('http://httpbin.org',
                              on={302: lambda r: 'REDIRECTED'},
-                             allow_redirects=False)
+                             follow_redirects=False)
 
     assert res == 'REDIRECTED'
 

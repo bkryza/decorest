@@ -31,8 +31,8 @@ def render_path(path: str, args: ArgsDict) -> str:
     while matches:
         path_token = matches.group(1)
         if path_token not in args:
-            raise ValueError("Missing argument %s in REST call" % (path_token))
-        result = re.sub('{%s}' % (path_token), str(args[path_token]), result)
+            raise ValueError("Missing argument %s in REST call." % path_token)
+        result = re.sub('{%s}' % path_token, str(args[path_token]), result)
         matches = re.search(r'{([^}.]*)}', result)
     return result
 

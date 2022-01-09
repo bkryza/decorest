@@ -40,11 +40,7 @@ def decor_key_cls(cls: type) -> str:
 def set_decor_value(d: typing.MutableMapping[str, typing.Any], name: str,
                     value: typing.Any) -> None:
     """Set decorator value in the decorator dict."""
-    if isinstance(value, CaseInsensitiveDict):
-        if not d.get(name):
-            d[name] = CaseInsensitiveDict()
-        d[name] = merge_dicts(d[name], value)
-    elif isinstance(value, dict):
+    if isinstance(value, dict):
         if not d.get(name):
             d[name] = {}
         d[name] = merge_dicts(d[name], value)
@@ -92,6 +88,27 @@ def set_header_decor(t: typing.Any, value: HeaderDict) -> None:
     d[name] = merge_header_dicts(d[name], value)
 
 
+def get_class_specific_decor(t: typing.Any,
+                             name: str) -> typing.Optional[typing.Any]:
+    """
+    Retrieve a named decorator value from specific class.
+
+    Args:
+        t (type): Decorated class
+        name (str): Name of the key
+
+    Returns:
+        object: any value assigned to the name key
+
+    """
+    if inspect.isclass(t):
+        class_decor_key = DECOR_KEY + t.__name__
+        if hasattr(t, class_decor_key) and name in getattr(t, class_decor_key):
+            return getattr(t, class_decor_key)[name]
+
+    return None
+
+
 def get_decor(t: typing.Any, name: str) -> typing.Optional[typing.Any]:
     """
     Retrieve a named decorator value from class or function.
@@ -104,10 +121,9 @@ def get_decor(t: typing.Any, name: str) -> typing.Optional[typing.Any]:
         object: any value assigned to the name key
 
     """
-    if inspect.isclass(t):
-        class_decor_key = DECOR_KEY + t.__name__
-        if hasattr(t, class_decor_key) and name in getattr(t, class_decor_key):
-            return getattr(t, class_decor_key)[name]
+    class_specific_decor = get_class_specific_decor(t, name)
+    if class_specific_decor:
+        return class_specific_decor
 
     if hasattr(t, DECOR_KEY) and name in getattr(t, DECOR_KEY):
         return getattr(t, DECOR_KEY)[name]
@@ -145,7 +161,7 @@ def get_method_class_decor(f: typing.Any, c: typing.Any, name: str) \
     # Now get the decor from the first class in the list which has
     # the requested decor
     for base in classes_with_f:
-        decor = get_decor(base, name)
+        decor = get_class_specific_decor(base, name)
         if decor:
             break
 
@@ -191,12 +207,26 @@ def get_on_decor(t: typing.Any) \
 
 def get_accept_decor(t: typing.Any) -> typing.Optional[str]:
     """Return accept decor value."""
-    return typing.cast(typing.Optional[str], get_decor(t, 'accept'))
+    header_decor = get_header_decor(t)
+    if not header_decor:
+        return None
+
+    if 'accept' in header_decor:
+        return header_decor['accept']
+
+    return None
 
 
 def get_content_decor(t: typing.Any) -> typing.Optional[str]:
     """Return content-type decor value."""
-    return typing.cast(typing.Optional[str], get_decor(t, 'content'))
+    header_decor = get_header_decor(t)
+    if not header_decor:
+        return None
+
+    if 'content-type' in header_decor:
+        return header_decor['content-type']
+
+    return None
 
 
 def get_timeout_decor(t: typing.Any) -> typing.Optional[numbers.Real]:

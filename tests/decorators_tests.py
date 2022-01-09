@@ -21,13 +21,14 @@ import functools
 from requests.auth import HTTPBasicAuth as r_HTTPBasicAuth
 from httpx import BasicAuth as x_HTTPBasicAuth
 
-from decorest import RestClient, HttpMethod
+from decorest import RestClient, HttpMethod, HTTPErrorWrapper, multipart, on
 from decorest import GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS
 from decorest import accept, backend, content, endpoint, form, header
 from decorest import query, stream
 from decorest.decorator_utils import get_backend_decor, get_header_decor, \
     get_endpoint_decor, get_form_decor, get_query_decor, \
-    get_stream_decor, get_on_decor, get_method_decor
+    get_stream_decor, get_on_decor, get_method_decor, get_method_class_decor, get_multipart_decor, get_accept_decor, \
+    get_content_decor
 
 
 @accept('application/json')
@@ -77,6 +78,13 @@ class DogClient(RestClient):
     @form('key2', 'keyTwo')
     def post_form(self, key1: str, key2: str) -> None:
         """Post 2 keys"""
+
+    @POST('post')
+    @multipart('part1')
+    @multipart('part_2', 'part2')
+    @multipart('test')
+    async def post_multipart(self, part1, part_2, test):
+        """Return multipart POST data."""
 
     @PUT('put')
     def put(self, a: str) -> None:
@@ -128,6 +136,11 @@ def test_set_decor() -> None:
 
     assert get_endpoint_decor(DogClient) == 'https://dog.ceo/'
 
+    assert get_accept_decor(DogClient) == 'application/json'
+    assert get_content_decor(DogClient) == 'application/xml'
+    assert get_content_decor(DogClient.headers) == 'application/json'
+    assert get_accept_decor(DogClient.headers) == 'application/xml'
+
     assert get_method_decor(DogClient.get) == HttpMethod.GET
     assert get_method_decor(DogClient.post) == HttpMethod.POST
     assert get_method_decor(DogClient.put) == HttpMethod.PUT
@@ -141,6 +154,13 @@ def test_set_decor() -> None:
         'key1': 'key1',
         'key2': 'keyTwo'
     }
+
+    assert get_multipart_decor(DogClient.post_multipart) == {
+        'part1': 'part1',
+        'part_2': 'part2',
+        'test': 'test'
+    }
+
     assert get_query_decor(DogClient.queries) == {'a': 'a', 'b': 'b', 'c': 'd'}
 
     assert get_stream_decor(DogClient.stream_range) is True
@@ -164,6 +184,143 @@ def test_endpoint_decorator() -> None:
     custom_client = DogClient('http://dogceo.example.com')
 
     assert custom_client.endpoint_ == 'http://dogceo.example.com'
+
+
+def test_missing_endpoint_decorator() -> None:
+    """
+    """
+    class EmptyClient(RestClient):
+        """EmptyClient client"""
+        @GET('{sth}')
+        def get(self, sth: str) -> typing.Any:
+            """Get sth"""
+
+    with pytest.raises(ValueError) as e:
+        default_client = EmptyClient()
+        default_client.get('stuff')
+
+    assert str(e.value) == 'Server endpoint was not provided.'
+
+
+def test_invalid_on_decorator() -> None:
+    """
+    """
+    with pytest.raises(TypeError) as e:
+
+        class EmptyClient(RestClient):
+            """EmptyClient client"""
+            @GET('{sth}')
+            @on('200', lambda x: x)
+            def get(self, sth: str) -> typing.Any:
+                """Get sth"""
+
+        client = EmptyClient()
+
+    assert str(e.value) == "Status in @on decorator must be integer or '...'."
+
+
+def test_invalid_query_decorator() -> None:
+    """
+    """
+    with pytest.raises(TypeError) as e:
+
+        @query('{sthelse}')
+        class EmptyClient(RestClient):
+            """EmptyClient client"""
+            @GET('{sth}')
+            def get(self, sth: str) -> typing.Any:
+                """Get sth"""
+
+        client = EmptyClient()
+
+    assert str(e.value) == "@query decorator can only be applied to methods."
+
+
+def test_invalid_multipart_decorator() -> None:
+    """
+    """
+    with pytest.raises(TypeError) as e:
+
+        @multipart('{sthelse}')
+        class EmptyClient(RestClient):
+            """EmptyClient client"""
+            @GET('{sth}')
+            def get(self, sth: str) -> typing.Any:
+                """Get sth"""
+
+        client = EmptyClient()
+
+    assert str(
+        e.value) == "@multipart decorator can only be applied to methods."
+
+
+def test_invalid_form_decorator() -> None:
+    """
+    """
+    with pytest.raises(TypeError) as e:
+
+        @form('{sthelse}')
+        class EmptyClient(RestClient):
+            """EmptyClient client"""
+            @GET('{sth}')
+            def get(self, sth: str) -> typing.Any:
+                """Get sth"""
+
+        client = EmptyClient()
+
+    assert str(e.value) == "@form decorator can only be applied to methods."
+
+
+def test_invalid_backend_decorator() -> None:
+    """
+    """
+    with pytest.raises(TypeError) as e:
+
+        class EmptyClient(RestClient):
+            """EmptyClient client"""
+            @GET('{sth}')
+            @backend('http://example.com')
+            def get(self, sth: str) -> typing.Any:
+                """Get sth"""
+
+        client = EmptyClient()
+
+    assert str(e.value) == "@backend decorator can only be applied to classes."
+
+
+def test_missing_path_argument() -> None:
+    """
+    """
+    class EmptyClient(RestClient):
+        """EmptyClient client"""
+        @GET('{something}')
+        def get(self, sth: str) -> typing.Any:
+            """Get sth"""
+
+    with pytest.raises(ValueError) as e:
+        default_client = EmptyClient()
+        default_client.get('stuff')
+
+    assert str(e.value) == 'Missing argument something in REST call.'
+
+
+def test_invalid_backend() -> None:
+    """
+    """
+    with pytest.raises(ValueError) as e:
+        client = DogClient(backend='yahl')
+
+    assert str(e.value) == 'Invalid backend: yahl'
+
+
+def test_invalid_client_named_args() -> None:
+    """
+    """
+    with pytest.raises(ValueError) as e:
+        client = DogClient(no_such_arg='foo')
+
+    assert str(e.value) == "Invalid named arguments passed " \
+                           "to the client: {'no_such_arg'}"
 
 
 def test_introspection() -> None:
@@ -216,6 +373,69 @@ def test_introspection() -> None:
     if '__decorest__' in d:
         del d['__decorest__']
     assert d == DogClient.plain_stream_range.__dict__
+
+
+def test_get_method_class_decor() -> None:
+    """
+
+    """
+    @endpoint('http://a.example.com')
+    class A(RestClient):
+        @GET('{a}')
+        def a(self, a: str):
+            ...
+
+    class B(RestClient):
+        @GET('{b}')
+        def b(self, b: str):
+            ...
+
+    @endpoint('http://bb.example.com')
+    class BB(B):
+        @GET('{bb}')
+        def bb(self, bb: str):
+            ...
+
+    class BBB(BB):
+        @GET('{bbb}')
+        def bbb(self, bbb: str):
+            ...
+
+    class BBB2(BB):
+        @GET('{bbb2}')
+        def bbb2(self, bbb2: str):
+            ...
+
+    class C(RestClient):
+        @GET('{c}')
+        def c(self, c: str):
+            ...
+
+    class CC(C):
+        @GET('{cc}')
+        def cc(self, cc: str):
+            ...
+
+    @endpoint('http://example.com')
+    class Client(A, BBB, BBB2, CC):
+        ...
+
+    client = Client()
+
+    assert get_method_class_decor(A.a, client,
+                                  'endpoint') == 'http://a.example.com'
+    assert get_method_class_decor(B.b, client,
+                                  'endpoint') == 'http://bb.example.com'
+    assert get_method_class_decor(BB.bb, client,
+                                  'endpoint') == 'http://bb.example.com'
+    assert get_method_class_decor(BBB.bbb, client,
+                                  'endpoint') == 'http://example.com'
+    assert get_method_class_decor(BBB2.bbb2, client,
+                                  'endpoint') == 'http://example.com'
+    assert get_method_class_decor(C.c, client,
+                                  'endpoint') == 'http://example.com'
+    assert get_method_class_decor(CC.cc, client,
+                                  'endpoint') == 'http://example.com'
 
 
 def test_authentication_settings() -> None:

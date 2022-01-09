@@ -71,6 +71,24 @@ async def test_ip(client):
 
 
 @pytest.mark.asyncio
+async def test_ip_head(client):
+    """
+    """
+    res = await client.head_ip()
+
+    assert res
+
+
+@pytest.mark.asyncio
+async def test_ip_options(client):
+    """
+    """
+    res = await client.options_ip()
+
+    assert sorted(res['allow'].split(", ")) == ['GET', 'HEAD', 'OPTIONS']
+
+
+@pytest.mark.asyncio
 async def test_ip_repeat(client):
     """
     """

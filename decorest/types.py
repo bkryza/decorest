@@ -33,7 +33,8 @@ class HttpMethod(DEnum):
     PATCH = 'PATCH',
     DELETE = 'DELETE',
     HEAD = 'HEAD',
-    OPTIONS = 'OPTIONS'
+    OPTIONS = 'OPTIONS',
+    INVALID = ''  # without this 'OPTIONS' becomes 'O'
 
 
 class HttpStatus(DIntEnum):

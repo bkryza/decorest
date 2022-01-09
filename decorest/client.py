@@ -66,11 +66,11 @@ class RestClient:
             valid_client_args \
                 = inspect.getfullargspec(httpx.Client.__init__).kwonlyargs
         else:
-            raise ValueError(f'Invalid backend: {self._backend}')
+            raise ValueError(f'Invalid backend: {self.backend_}')
 
         if not set(kwargs.keys()).issubset(set(valid_client_args)):
             raise ValueError(f'Invalid named arguments passed to the client: '
-                             f'{set(valid_client_args) - set(kwargs.keys())}')
+                             f'{set(kwargs.keys()) - set(valid_client_args)}')
 
         self.__client_args = kwargs
 

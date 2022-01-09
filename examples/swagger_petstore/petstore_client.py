@@ -23,7 +23,7 @@ Example decorest based client to Swagger Petstore sample service.
 import json
 import xml.etree.ElementTree as ET
 
-from decorest import DELETE, GET, POST, PUT
+from decorest import DELETE, GET, HEAD, POST, PUT
 from decorest import HttpStatus, RestClient
 from decorest import __version__
 from decorest import accept, body, content, endpoint, header, on, query
@@ -58,6 +58,10 @@ class PetAPI(RestClient):
     @GET('pet/{pet_id}')
     def find_pet_by_id(self, pet_id):
         """Find Pet by ID."""
+
+    @HEAD('pet/{pet_id}')
+    def head_find_pet(self, pet_id):
+        """Head find Pet by ID."""
 
     @POST('pet/{pet_id}')
     def update_pet_by_id(self, pet_id):

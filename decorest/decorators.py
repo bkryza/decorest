@@ -49,7 +49,8 @@ def on(status: typing.Union[types.ellipsis, int],
         elif isinstance(status, numbers.Integral):
             set_decor(t, 'on', {status: handler})
         else:
-            raise TypeError("Status in @on decorator must be integer or '...'")
+            raise TypeError(
+                "Status in @on decorator must be integer or '...'.")
         return t
 
     return on_decorator
