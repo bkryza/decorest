@@ -273,10 +273,7 @@ class HttpMethodDecorator:
             kwargs(dict): named arguments passed to the API method
             req(): request object
         """
-        if isinstance(http_request.http_method, str):
-            method = http_request.http_method
-        else:
-            method = http_request.http_method.value[0].lower()
+        method = str(http_request.http_method).lower()
 
         ctx = http_request.execution_context
 

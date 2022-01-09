@@ -91,6 +91,10 @@ class RestClientSession:
 
         return invoker
 
+    def __repr__(self) -> str:
+        """Return instance representation."""
+        return f'<{type(self).__name__} client: {repr(self.__client)}>'
+
     @property
     def endpoint_(self) -> typing.Optional[str]:
         """Return session specific endpoint."""
@@ -151,6 +155,10 @@ class RestClientAsyncSession:
             return await getattr(self.__client, name)(*args, **kwargs)
 
         return invoker
+
+    def __repr__(self) -> str:
+        """Return instance representation."""
+        return f'<{type(self).__name__} client: {repr(self.__client)}>'
 
     @property
     def endpoint_(self) -> typing.Optional[str]:

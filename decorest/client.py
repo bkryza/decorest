@@ -22,7 +22,7 @@ import logging as LOG
 import typing
 import urllib.parse
 
-from .decorator_utils import get_backend_decor
+from .decorator_utils import get_backend_decor, get_endpoint_decor
 from .session import RestClientAsyncSession, RestClientSession
 from .types import ArgsDict, AuthTypes, Backends
 from .utils import normalize_url
@@ -73,6 +73,19 @@ class RestClient:
                              f'{set(kwargs.keys()) - set(valid_client_args)}')
 
         self.__client_args = kwargs
+
+    def __getitem__(self, key: str) -> typing.Any:
+        """Return named client argument."""
+        return self._get_or_none(key)
+
+    def __setitem__(self, key: str, value: typing.Any) -> None:
+        """Set named client argument."""
+        self.__client_args[key] = value
+
+    def __repr__(self) -> str:
+        """Return instance representation."""
+        return f'<{type(self).__name__} backend: {self.__backend} ' \
+               f'endpoint: \'{self.__endpoint or get_endpoint_decor(self)}\'>'
 
     def session_(self, **kwargs: ArgsDict) -> RestClientSession:
         """
@@ -138,14 +151,6 @@ class RestClient:
             return self.__client_args[key]
 
         return None
-
-    def __getitem__(self, key: str) -> typing.Any:
-        """Return named client argument."""
-        return self._get_or_none(key)
-
-    def __setitem__(self, key: str, value: typing.Any) -> None:
-        """Set named client argument."""
-        self.__client_args[key] = value
 
     def build_path_(self, path_components: typing.List[str],
                     endpoint: typing.Optional[str]) -> str:

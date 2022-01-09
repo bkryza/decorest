@@ -21,14 +21,14 @@ import functools
 from requests.auth import HTTPBasicAuth as r_HTTPBasicAuth
 from httpx import BasicAuth as x_HTTPBasicAuth
 
-from decorest import RestClient, HttpMethod, HTTPErrorWrapper, multipart, on
+from decorest import RestClient, HttpMethod, HTTPErrorWrapper, multipart, on, HttpRequest
 from decorest import GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS
 from decorest import accept, backend, content, endpoint, form, header
 from decorest import query, stream
 from decorest.decorator_utils import get_backend_decor, get_header_decor, \
     get_endpoint_decor, get_form_decor, get_query_decor, \
     get_stream_decor, get_on_decor, get_method_decor, get_method_class_decor, get_multipart_decor, get_accept_decor, \
-    get_content_decor
+    get_content_decor, set_decor
 
 
 @accept('application/json')
@@ -505,3 +505,27 @@ def test_authentication_settings_deprecated() -> None:
     x_session_auth = x_client_auth._session()
     assert x_session_auth._auth._auth_header == \
            x_HTTPBasicAuth('username', 'password')._auth_header
+
+
+def test_repr_methods():
+    r_client = DogClient(backend='requests')
+    assert repr(r_client) \
+           == '<DogClient backend: requests endpoint: \'https://dog.ceo/\'>'
+
+    x_client = DogClient(backend='httpx')
+    assert repr(x_client) \
+           == '<DogClient backend: httpx endpoint: \'https://dog.ceo/\'>'
+
+    class MockClient(RestClient):
+        def func(self, breed_name: str):
+            return breed_name
+
+    set_decor(MockClient.func, 'http_method', HttpMethod.GET)
+    req = HttpRequest(MockClient.func,
+                      'breed/{breed_name}/list',
+                      args=(r_client, "dog"),
+                      kwargs={})
+    assert repr(req) == '<HttpRequest method: GET path: \'breed/dog/list\'>'
+
+    with r_client.session_() as s:
+        assert repr(s) == f'<RestClientSession client: {repr(r_client)}>'

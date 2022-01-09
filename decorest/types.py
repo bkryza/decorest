@@ -36,6 +36,10 @@ class HttpMethod(DEnum):
     OPTIONS = 'OPTIONS',
     INVALID = ''  # without this 'OPTIONS' becomes 'O'
 
+    def __str__(self) -> str:
+        """Return string representation."""
+        return typing.cast(str, self.value[0])
+
 
 class HttpStatus(DIntEnum):
     """Enum with HTTP error code classes."""

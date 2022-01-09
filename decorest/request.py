@@ -74,7 +74,7 @@ class HttpRequest:
         self.rest_client = args[0]
 
         args_dict = dict_from_args(func, *args)
-        req_path = render_path(self.path_template, args_dict)
+        self.req_path = render_path(self.path_template, args_dict)
         self.session = None
         if '__session' in self.kwargs:
             self.session = self.kwargs['__session']
@@ -200,7 +200,7 @@ class HttpRequest:
             or get_method_class_decor(func, self.rest_client, 'endpoint')\
             or get_decor(self.rest_client, 'endpoint')
 
-        self.req = self.rest_client.build_path_(req_path.split('/'),
+        self.req = self.rest_client.build_path_(self.req_path.split('/'),
                                                 effective_endpoint)
 
         # Handle multipart parameters, either from decorators
@@ -291,6 +291,11 @@ class HttpRequest:
             self._normalize_for_requests(self.kwargs)
         else:
             self._normalize_for_httpx(self.kwargs)
+
+    def __repr__(self) -> str:
+        """Return instance representation."""
+        return f'<{type(self).__name__} method: {str(self.http_method)} ' \
+               f'path: \'{self.req_path}\'>'
 
     def _normalize_for_httpx(self, kwargs: ArgsDict) -> None:
         """
