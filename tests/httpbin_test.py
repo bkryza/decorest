@@ -23,9 +23,9 @@ import sys
 import json
 
 import requests
-from requests.structures import CaseInsensitiveDict
 
-from decorest import __version__, HttpStatus, HTTPErrorWrapper
+from decorest import __version__
+from decorest import CaseInsensitiveDict, HttpStatus, HTTPErrorWrapper
 from requests import cookies
 from requests.exceptions import ReadTimeout
 from requests.auth import HTTPBasicAuth, HTTPDigestAuth

@@ -18,10 +18,8 @@ import inspect
 import numbers
 import typing
 
-from requests.structures import CaseInsensitiveDict
-
 from .types import Backends, HeaderDict, HttpMethod
-from .utils import merge_dicts, merge_header_dicts
+from .utils import CaseInsensitiveDict, merge_dicts, merge_header_dicts
 
 DECOR_KEY = '__decorest__'
 

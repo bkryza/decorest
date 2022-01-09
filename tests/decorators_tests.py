@@ -21,7 +21,7 @@ import functools
 from requests.auth import HTTPBasicAuth as r_HTTPBasicAuth
 from httpx import BasicAuth as x_HTTPBasicAuth
 
-from decorest import RestClient, HttpMethod, HTTPErrorWrapper, multipart, on, HttpRequest
+from decorest import RestClient, HttpMethod, HTTPErrorWrapper, multipart, on, HttpRequest, CaseInsensitiveDict
 from decorest import GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS
 from decorest import accept, backend, content, endpoint, form, header
 from decorest import query, stream
@@ -29,6 +29,7 @@ from decorest.decorator_utils import get_backend_decor, get_header_decor, \
     get_endpoint_decor, get_form_decor, get_query_decor, \
     get_stream_decor, get_on_decor, get_method_decor, get_method_class_decor, get_multipart_decor, get_accept_decor, \
     get_content_decor, set_decor
+from decorest.utils import merge_header_dicts
 
 
 @accept('application/json')
@@ -117,6 +118,39 @@ class DogClient(RestClient):
     def plain_stream_range(self, n: int, m: int, size: int,
                            offset: int) -> typing.Any:
         """Get data range"""
+
+
+def test_case_insensitive_dict() -> None:
+    """
+    Tests for case insensitive dict.
+    """
+    d = CaseInsensitiveDict()
+
+    d['Accept'] = 'application/json'
+    d['content-type'] = 'application/xml'
+    assert d['accept'] == 'application/json'
+    assert d['Content-Type'] == 'application/xml'
+    assert 'accept' in d
+    assert 'ACCEPT' in d
+    assert 'CONTENT-TYPE' in d
+    assert len(d) == 2
+
+    d1 = CaseInsensitiveDict(accept='application/json', allow='*')
+    assert d1['Accept'] == 'application/json'
+    assert d1['Allow'] == '*'
+    assert len(d1) == 2
+
+    ds = {'Content-TYPE': 'application/json', 'aCCEPT': 'application/xml'}
+    d2 = CaseInsensitiveDict(ds)
+    assert d2['content-type'] == 'application/json'
+    assert d2['Accept'] == 'application/xml'
+    assert len(d2) == 2
+
+    d3 = merge_header_dicts(d1, d2)
+    assert d3['content-type'] == 'application/json'
+    assert d3['accept'] == ['application/json', 'application/xml']
+    assert d3['allow'] == '*'
+    assert len(d3) == 3
 
 
 def test_set_decor() -> None:

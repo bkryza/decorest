@@ -19,15 +19,13 @@ import logging as LOG
 import numbers
 import typing
 
-import requests
-from requests.structures import CaseInsensitiveDict
-
 from .client import RestClient
 from .decorator_utils import DECOR_LIST, get_body_decor, get_decor, \
     get_header_decor, get_method_class_decor, get_method_decor, \
     get_on_decor, get_stream_decor, get_timeout_decor
 from .errors import HTTPErrorWrapper
 from .types import ArgsDict, HTTPErrors, HttpMethod, HttpStatus
+from .utils import CaseInsensitiveDict
 from .utils import dict_from_args, merge_dicts, render_path
 
 
@@ -147,8 +145,9 @@ class HttpRequest:
                 if decor in self.kwargs:
                     if decor == 'header':
                         self._validate_decor(decor, self.kwargs, dict)
-                        header_parameters = merge_dicts(
-                            header_parameters, self.kwargs['header'])
+                        header_parameters \
+                            = typing.cast(CaseInsensitiveDict, merge_dicts(
+                                header_parameters, self.kwargs['header']))
                         del self.kwargs['header']
                     elif decor == 'query':
                         self._validate_decor(decor, self.kwargs, dict)
@@ -235,6 +234,7 @@ class HttpRequest:
             self.execution_context = self.session
         else:
             if self.rest_client.backend_ == 'requests':
+                import requests
                 self.execution_context = requests
             else:
                 import httpx

@@ -25,13 +25,12 @@ import numbers
 import typing
 from operator import methodcaller
 
-from requests.structures import CaseInsensitiveDict
-
 from . import types
 from .decorator_utils import set_decor, set_header_decor
 from .errors import HTTPErrorWrapper
 from .request import HttpRequest
 from .types import Backends, HttpMethod, HttpStatus, TDecor
+from .utils import CaseInsensitiveDict
 
 
 def on(status: typing.Union[types.ellipsis, int],

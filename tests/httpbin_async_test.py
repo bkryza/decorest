@@ -26,9 +26,8 @@ import json
 import httpx
 from httpx import BasicAuth
 
-from requests.structures import CaseInsensitiveDict
-
-from decorest import __version__, HttpStatus, HTTPErrorWrapper
+from decorest import __version__
+from decorest import CaseInsensitiveDict, HttpStatus, HTTPErrorWrapper
 from requests import cookies
 import xml.etree.ElementTree as ET
 

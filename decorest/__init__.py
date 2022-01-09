@@ -28,12 +28,13 @@ from .decorators import multipart, on, query, stream, timeout
 from .errors import HTTPErrorWrapper
 from .request import HttpRequest
 from .types import HttpMethod, HttpStatus
+from .utils import CaseInsensitiveDict
 
 __all__ = [
     'GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS', 'RestClient',
-    'HTTPErrorWrapper', 'HttpMethod', 'HttpStatus', 'HttpRequest', 'query',
-    'body', 'header', 'on', 'accept', 'content', 'endpoint', 'timeout',
-    'stream', 'form', 'multipart', 'backend'
+    'HTTPErrorWrapper', 'HttpMethod', 'HttpStatus', 'HttpRequest',
+    'CaseInsensitiveDict', 'query', 'body', 'header', 'on', 'accept',
+    'content', 'endpoint', 'timeout', 'stream', 'form', 'multipart', 'backend'
 ]
 
 __version__ = "0.1.0"

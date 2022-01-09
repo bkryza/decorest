@@ -14,13 +14,72 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Utility functions."""
+import collections
 import copy
 import inspect
 import logging as LOG
 import re
 import typing
 
-from decorest.types import ArgsDict
+from decorest.types import ArgsDict, StrDict
+
+
+class CaseInsensitiveDict(collections.abc.MutableMapping[str, typing.Any]):
+    """
+    Case insensitive dict for storing header values.
+
+    Mostly modeled after CaseInsensitiveDict in:
+        https://github.com/kennethreitz/requests
+    """
+    __original: typing.MutableMapping[str, typing.Any]
+
+    def __init__(self, data: StrDict = {}, **kwargs: typing.Any) -> None:
+        """Construct dict."""
+        self.__original = dict()
+        self.update(data, **kwargs)
+
+    def __setitem__(self, key: str, value: typing.Any) -> None:
+        """Set item under key."""
+        self.__original[key.lower()] = (key, value)
+
+    def __getitem__(self, key: str) -> typing.Any:
+        """Get item for key."""
+        return self.__original[key.lower()][1]
+
+    def __delitem__(self, key: str) -> None:
+        """Delete item with key."""
+        del self.__original[key.lower()]
+
+    def __contains__(self, key: str) -> bool:  # type: ignore[override]
+        """Check if key exists."""
+        return key.lower() in self.__original
+
+    def __iter__(self) -> typing.Iterator[str]:
+        """Return key iterator."""
+        return (stored_key for stored_key, _ in self.__original.values())
+
+    def __len__(self) -> int:
+        """Return number of keys."""
+        return len(self.__original)
+
+    def __eq__(self, d: StrDict) -> bool:  # type: ignore[override]
+        """Compare with another dict."""
+        if isinstance(d, collections.Mapping):
+            d = CaseInsensitiveDict(d)
+        else:
+            raise NotImplementedError
+
+        return dict(self.iteritems_lower()) == dict(d.iteritems_lower())
+
+    def __repr__(self) -> str:
+        """Return dict representation."""
+        return f'<{self.__class__.__name__} {dict(self.items())}>'
+
+    def iteritems_lower(self) \
+            -> typing.Iterable[typing.Tuple[str, typing.Any]]:
+        """Iterate over lower case keys."""
+        return ((lkey, keyval[1])
+                for (lkey, keyval) in self.__original.items())
 
 
 def render_path(path: str, args: ArgsDict) -> str:
@@ -60,7 +119,7 @@ def dict_from_args(func: typing.Callable[..., typing.Any],
 
 
 def merge_dicts(*dict_args: typing.Any) \
-        -> typing.Dict[typing.Any, typing.Any]:
+        -> typing.MutableMapping[typing.Any, typing.Any]:
     """
     Merge all dicts passed as arguments, skips None objects.
 

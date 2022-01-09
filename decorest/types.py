@@ -58,7 +58,8 @@ if typing.TYPE_CHECKING:
     import requests
     import httpx
 
-ArgsDict = typing.Dict[str, typing.Any]
+ArgsDict = typing.MutableMapping[str, typing.Any]
+StrDict = typing.Mapping[str, typing.Any]
 Backends = typing_extensions.Literal['requests', 'httpx']
 AuthTypes = typing.Union['requests.auth.AuthBase', 'httpx.AuthTypes']
 HeaderDict = typing.Mapping[str, typing.Union[str, typing.List[str]]]
