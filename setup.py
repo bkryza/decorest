@@ -14,17 +14,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """decorest - decorator heavy REST client library for Python."""
-
-
 import os
+import pathlib
 import re
 
 from setuptools import find_packages, setup
 
+# Determine the dependencies based on preferred backend
+# (i.e. requests[default] vs httpx)
+backend_deps = ['requests', 'requests-toolbelt']
+backend_env = os.environ.get("DECOREST_BACKEND", None)
+if backend_env:
+    if backend_env not in ['requests', 'httpx']:
+        raise ValueError(f'Invalid backend provided in '
+                         f'DECOREST_BACKEND: {backend_env}')
+    if backend_env == 'httpx':
+        backend_deps = ['httpx']
+
 
 def get_version():
     """Return package version as listed in `__version__` in `init.py`."""
-    init_py = open('decorest/__init__.py').read()
+    init_path = \
+        str(pathlib.Path(pathlib.Path(__file__).parent.absolute(),
+                         'decorest/__init__.py'))
+    init_py = open(init_path).read()
     return re.search("__version__ = ['\"]([^'\"]+)['\"]", init_py).group(1)
 
 
@@ -65,6 +78,6 @@ setup(
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10'
     ],
-    install_requires=['requests', 'requests-toolbelt'],
+    install_requires=backend_deps,
     tests_require=['pytest', 'tox', 'tox-docker']
 )
