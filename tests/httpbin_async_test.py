@@ -237,7 +237,7 @@ async def test_multi_put(client):
     """
     """
     request_count = 100
-    async with client._async_session() as s:
+    async with client.async_session_() as s:
         reqs = [
             asyncio.ensure_future(
                 s.put({i: str(i)}, content="application/json"))
