@@ -20,6 +20,7 @@ parts/
 sdist/
 var/
 wheels/
+playground/
 *.egg-info/
 .installed.cfg
 *.egg
@@ -89,6 +90,9 @@ env/
 venv/
 venv2/
 venv3/
+venv36/
+venv37/
+venv38/
 ENV/
 env.bak/
 venv.bak/

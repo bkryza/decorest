@@ -9,26 +9,6 @@ on:
     paths-ignore:
       - '**.rst'
 jobs:
-  python2:
-    name: Test on Python 2
-    runs-on: ${{ matrix.operating-system }}
-    env:
-      TOX_DOCKER_VERSION: 1.7.0
-    strategy:
-      matrix:
-        operating-system: [ ubuntu-latest ]
-        python-version: [ '2.7' ]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Install Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - run: pip install tox tox-gh-actions tox-docker==$TOX_DOCKER_VERSION
-      - run: tox -c tox-py2.ini -e flake8,basic,swaggerpetstore,httpbin
   python3:
     name: Test on Python 3
     runs-on: ${{ matrix.operating-system }}
@@ -47,5 +27,9 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - run: pip install tox tox-gh-actions tox-docker==$TOX_DOCKER_VERSION
-    - run: tox -c tox.ini -e flake8,basic,swaggerpetstore,httpbin
+    - run: pip install coverage tox tox-gh-actions tox-docker==$TOX_DOCKER_VERSION
+    - run: tox -c tox.ini -e yapf,rstcheck,flake8,mypy,basic,swaggerpetstore,httpbin,asynchttpbin
+    - run: coverage xml
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v2

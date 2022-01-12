@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018-2021 Bartosz Kryza <bkryza@gmail.com>
+# Copyright 2018-2022 Bartosz Kryza <bkryza@gmail.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,16 +15,17 @@
 # limitations under the License.
 import pprint
 
+import httpx
 import pytest
 import time
 import os
-import six
 import sys
 import json
 
-from requests.structures import CaseInsensitiveDict
+import requests
 
-from decorest import __version__, HttpStatus, HTTPErrorWrapper
+from decorest import __version__
+from decorest import CaseInsensitiveDict, HttpStatus, HTTPErrorWrapper
 from requests import cookies
 from requests.exceptions import ReadTimeout
 from requests.auth import HTTPBasicAuth, HTTPDigestAuth
@@ -33,32 +34,34 @@ import xml.etree.ElementTree as ET
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../examples")
 from httpbin.httpbin_client import HttpBinClient, parse_image
+from httpx import BasicAuth
 
 
-def client(backend):
+def client(backend: str) -> HttpBinClient:
     # Give Docker and HTTPBin some time to spin up
     time.sleep(2)
-    if six.PY2:
-        host = os.environ["KENNETHREITZ_HTTPBIN_HOST"]
-        port = os.environ["KENNETHREITZ_HTTPBIN_80_TCP_PORT"]
-    else:
-        host = os.environ["HTTPBIN_HOST"]
-        port = os.environ["HTTPBIN_80_TCP_PORT"]
+
+    host = os.environ["HTTPBIN_HOST"]
+    port = os.environ["HTTPBIN_80_TCP_PORT"]
+
     return HttpBinClient("http://{host}:{port}".format(host=host, port=port),
                          backend=backend)
 
 
 def basic_auth_client(backend):
     # Give Docker and HTTPBin some time to spin up
-    if six.PY2:
-        host = os.environ["KENNETHREITZ_HTTPBIN_HOST"]
-        port = os.environ["KENNETHREITZ_HTTPBIN_80_TCP_PORT"]
+    host = os.environ["HTTPBIN_HOST"]
+    port = os.environ["HTTPBIN_80_TCP_PORT"]
+
+    if backend == 'requests':
+        auth = HTTPBasicAuth('user', 'password')
     else:
-        host = os.environ["HTTPBIN_HOST"]
-        port = os.environ["HTTPBIN_80_TCP_PORT"]
+        auth = BasicAuth('user', 'password')
+
     client = HttpBinClient("http://{host}:{port}".format(host=host, port=port),
-                           backend=backend)
-    client._set_auth(HTTPBasicAuth('user', 'password'))
+                           backend=backend,
+                           auth=auth)
+
     return client
 
 
@@ -69,12 +72,12 @@ pytest_params = [pytest.param(client_requests, id='requests')]
 pytest_basic_auth_params = [
     pytest.param(client_requests, basic_auth_client_requests, id='requests')
 ]
-if six.PY3:
-    client_httpx = client('httpx')
-    pytest_params.append(pytest.param(client_requests, id='httpx'))
-    basic_auth_client_httpx = basic_auth_client('httpx')
-    pytest_basic_auth_params.append(
-        pytest.param(client_httpx, basic_auth_client_httpx, id='httpx'))
+
+client_httpx = client('httpx')
+pytest_params.append(pytest.param(client_httpx, id='httpx'))
+basic_auth_client_httpx = basic_auth_client('httpx')
+pytest_basic_auth_params.append(
+    pytest.param(client_httpx, basic_auth_client_httpx, id='httpx'))
 
 
 @pytest.mark.parametrize("client", pytest_params)
@@ -84,6 +87,24 @@ def test_ip(client):
     res = client.ip()
 
     assert "origin" in res
+
+
+@pytest.mark.parametrize("client", pytest_params)
+def test_ip_head(client):
+    """
+    """
+    res = client.head_ip()
+
+    assert res
+
+
+@pytest.mark.parametrize("client", pytest_params)
+def test_ip_options(client):
+    """
+    """
+    res = client.options_ip()
+
+    assert sorted(res['allow'].split(", ")) == ['GET', 'HEAD', 'OPTIONS']
 
 
 @pytest.mark.parametrize("client", pytest_params)
@@ -118,14 +139,14 @@ def test_user_agent(client):
 def test_headers(client):
     """
     """
-
     def ci(d):
         return CaseInsensitiveDict(d)
 
     # Check
     res = client.headers(header={'A': 'AA', 'B': 'CC'})
 
-    assert ci(res['headers'])['User-Agent'] == 'decorest/{v}'.format(v=__version__)
+    assert ci(
+        res['headers'])['User-Agent'] == 'decorest/{v}'.format(v=__version__)
     assert ci(res['headers'])['A'] == 'AA'
     assert ci(res['headers'])['B'] == 'CC'
 
@@ -140,11 +161,39 @@ def test_headers(client):
 
     assert ci(res['headers'])['B'] == 'BB'
 
+
+@pytest.mark.parametrize("client", pytest_params)
+def test_headers_in_args(client):
+    """
+    """
     # Check passing header value in arguments
     res = client.headers_in_args('1234', 'ABCD')
 
-    assert ci(res['headers'])['First'] == '1234'
-    assert ci(res['headers'])['SecondHeader'] == 'ABCD'
+    ci = CaseInsensitiveDict(res['headers'])
+
+    assert ci['First'] == '1234'
+    assert ci['Second-Header'] == 'ABCD'
+    assert ci['Third-Header'] == 'Third header value'
+    assert ci['Fourth-Header'] == 'WXYZ'
+    assert ci['Content-Type'] == 'application/json'
+    assert ci['Accept'] == 'application/xml'
+
+
+@pytest.mark.parametrize("client", pytest_params)
+def test_headers_multivalue(client):
+    """
+    """
+    # Check passing header value in arguments
+    res = client.headers_multivalue_headers()
+    ci = CaseInsensitiveDict(res['headers'])
+
+    assert ci['A'] == '3, 2, 1'
+    assert ci['B'] == 'X, Y, Z'
+
+    res = client.headers_multi_accept()
+    ci = CaseInsensitiveDict(res['headers'])
+
+    assert ci['accept'] == 'application/xml, application/json, text/plain'
 
 
 @pytest.mark.parametrize("client", pytest_params)
@@ -183,30 +232,35 @@ def test_post_form(client):
 def test_post_multipart(client):
     """
     """
-    f = 'tests/testdata/multipart.dat'
+    file = 'tests/testdata/multipart.dat'
 
-    if client._backend() == 'requests':
-        m = MultipartEncoder(
-            fields={'test': ('filename', open(f, 'rb'), 'text/plain')})
-        res = client.post(None, content=m.content_type, data=m)
-    else:
-        res = client.post(
-            None, files={'test': ('filename', open(f, 'rb'), 'text/plain')})
+    with open(file, 'rb') as f:
+        if client._backend() == 'requests':
+            m = MultipartEncoder(
+                fields={'test': ('filename', f, 'text/plain')})
+            res = client.post(None, content=m.content_type, data=m)
+        else:
+            res = client.post(None,
+                              files={'test': ('filename', f, 'text/plain')})
 
-    assert res["files"]["test"] == open(f, 'rb').read().decode("utf-8")
+    with open(file, 'rb') as f:
+        assert res["files"]["test"] == f.read().decode("utf-8")
 
 
 @pytest.mark.parametrize("client", pytest_params)
 def test_post_multipart_decorators(client):
     """
     """
-    f = 'tests/testdata/multipart.dat'
-    res = client.post_multipart('TEST1', 'TEST2',
-                                ('filename', open(f, 'rb'), 'text/plain'))
+    file = 'tests/testdata/multipart.dat'
+
+    with open(file, 'rb') as f:
+        res = client.post_multipart(b'TEST1', b'TEST2',
+                                    ('filename', f, 'text/plain'))
 
     assert res["files"]["part1"] == 'TEST1'
     assert res["files"]["part2"] == 'TEST2'
-    assert res["files"]["test"] == open(f, 'rb').read().decode("utf-8")
+    with open(file, 'rb') as f:
+        assert res["files"]["test"] == f.read().decode("utf-8")
 
 
 @pytest.mark.parametrize("client", pytest_params)
@@ -332,7 +386,7 @@ def test_redirect_to(client):
     """
     res = client.redirect_to('http://httpbin.org',
                              on={302: lambda r: 'REDIRECTED'},
-                             allow_redirects=False)
+                             follow_redirects=False)
 
     assert res == 'REDIRECTED'
 
@@ -369,6 +423,18 @@ def test_absolute_redirect(client):
                                    allow_redirects=False)
 
     assert res.endswith('/get')
+
+
+@pytest.mark.parametrize("client", pytest_params)
+def test_max_redirect(client):
+    """
+    """
+    with client.session_(max_redirects=1) as s:
+        with pytest.raises(HTTPErrorWrapper) as e:
+            s.redirect(5, on={302: lambda r: 'REDIRECTED'})
+
+        assert isinstance(e.value.wrapped,
+                          (requests.TooManyRedirects, httpx.TooManyRedirects))
 
 
 @pytest.mark.parametrize("client", pytest_params)
@@ -417,7 +483,7 @@ def test_cookies_session_with_contextmanager(client):
     """
     """
     with client._session() as s:
-        s._requests_session.verify = False
+        s._backend_session.verify = False
         res = s.cookies_set(query={"cookie1": "A", "cookie2": "B"})
 
         assert res["cookies"]["cookie1"] == "A"

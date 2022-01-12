@@ -1,5 +1,15 @@
 .. :changelog:
 
+0.1.0 (...)
+++++++++++++++++++
+
+* Deprecated Python 2 support
+* Added typing support and mypy tests
+* Added asyncio support through httpx
+* Fixed handling of multiple header decorators
+* Treat warnings as errors in tests
+
+
 0.0.7 (2021-11-27)
 ++++++++++++++++++
 

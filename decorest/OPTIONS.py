@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018-2021 Bartosz Kryza <bkryza@gmail.com>
+# Copyright 2018-2022 Bartosz Kryza <bkryza@gmail.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,25 +14,39 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """OPTIONS Http method decorator."""
-
+import asyncio
+import typing
 from functools import wraps
 
-from .decorators import HttpMethodDecorator, set_decor
-from .types import HttpMethod
+from .decorator_utils import set_decor
+from .decorators import HttpMethodDecorator
+from .types import HttpMethod, TDecor
 
 
 class OPTIONS(HttpMethodDecorator):
     """OPTIONS HTTP method decorator."""
-    def __init__(self, path):
+    def __init__(self, path: str):
         """Initialize with endpoint relative path."""
         super(OPTIONS, self).__init__(path)
 
-    def __call__(self, func):
+    def __call__(self, func: TDecor) -> TDecor:
         """Callable operator."""
         set_decor(func, 'http_method', HttpMethod.OPTIONS)
 
+        if asyncio.iscoroutinefunction(func):
+
+            @wraps(func)
+            async def async_options_decorator(*args: typing.Any,
+                                              **kwargs: typing.Any) \
+                    -> typing.Any:
+                return await super(OPTIONS,
+                                   self).call_async(func, *args, **kwargs)
+
+            return typing.cast(TDecor, async_options_decorator)
+
         @wraps(func)
-        def options_decorator(*args, **kwargs):
+        def options_decorator(*args: typing.Any, **kwargs: typing.Any) \
+                -> typing.Any:
             return super(OPTIONS, self).call(func, *args, **kwargs)
 
-        return options_decorator
+        return typing.cast(TDecor, options_decorator)

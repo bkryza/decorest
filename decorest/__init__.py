@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018-2021 Bartosz Kryza <bkryza@gmail.com>
+# Copyright 2018-2022 Bartosz Kryza <bkryza@gmail.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,16 +23,18 @@ from .PATCH import PATCH
 from .POST import POST
 from .PUT import PUT
 from .client import RestClient
-from .decorators import accept, body, content, endpoint, form, header
+from .decorators import accept, backend, body, content, endpoint, form, header
 from .decorators import multipart, on, query, stream, timeout
 from .errors import HTTPErrorWrapper
+from .request import HttpRequest
 from .types import HttpMethod, HttpStatus
+from .utils import CaseInsensitiveDict
 
 __all__ = [
     'GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS', 'RestClient',
-    'HTTPErrorWrapper', 'HttpMethod', 'HttpStatus', 'query', 'body', 'header',
-    'on', 'accept', 'content', 'endpoint', 'timeout', 'stream', 'form',
-    'multipart'
+    'HTTPErrorWrapper', 'HttpMethod', 'HttpStatus', 'HttpRequest',
+    'CaseInsensitiveDict', 'query', 'body', 'header', 'on', 'accept',
+    'content', 'endpoint', 'timeout', 'stream', 'form', 'multipart', 'backend'
 ]
 
-__version__ = "0.0.7"
+__version__ = "0.1.0"

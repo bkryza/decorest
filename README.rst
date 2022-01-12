@@ -4,6 +4,9 @@ decorest - decorator heavy REST client for Python
 .. image:: https://github.com/bkryza/decorest/actions/workflows/workflow.yml/badge.svg
     :target: https://github.com/bkryza/decorest/actions/workflows/workflow.yml
 
+.. image:: https://codecov.io/gh/bkryza/decorest/branch/master/graph/badge.svg?token=UGSU07W732
+    :target: https://codecov.io/gh/bkryza/decorest
+
 .. image:: https://img.shields.io/pypi/v/decorest.svg
     :target: https://pypi.python.org/pypi/decorest
 
@@ -47,14 +50,49 @@ For example:
     print(client.list_subbreeds('hound'))
 
 
+or for an async version (please note the :py:`async` keyword in the API method definition):
+
+.. code-block:: python
+
+    import asyncio
+    from decorest import backend, RestClient, GET
+
+    @backend('httpx')
+    class DogClient(RestClient):
+        @GET('breed/{breed_name}/list')
+        async def list_subbreeds(self, breed_name):
+            """List all sub-breeds"""
+
+    async def main():
+        client = DogClient('https://dog.ceo/api')
+
+        print(await client.list_subbreeds('hound'))
+
+    asyncio.run(main())
+
+
 Installation
 ============
+
+**Note:** *As of version `0.1.0`, decorest supports only Python 3.6+.*
 
 Using pip:
 
 .. code-block:: bash
 
     pip install decorest
+
+To install the library with a specific backend, an environment variable must be provided, e.g.:
+
+.. code-block:: bash
+
+    # This will only install requests and its dependencies (default)
+    DECOREST_BACKEND=requests pip install decorest
+
+    # This will only install httpx and its dependencies
+    DECOREST_BACKEND=httpx pip install decorest
+
+Of course both requests_ and httpx_ can be installed together and used exchangeably.
 
 Usage
 =====
@@ -67,7 +105,7 @@ subclass of :py:`decorest.RestClient` and define methods, which will perform cal
 to the actual REST service. You can declare how each function should perform
 the request to the service solely using decorators attached to the
 method definition. The method itself is not expected to have any implementation,
-except maybe for a docstring.
+except for a docstring.
 
 After your API client class definition is complete, simply create an instance
 of it and you're good to go. This library relies on the functionality provided
@@ -81,8 +119,8 @@ Choosing backend
 ----------------
 
 decorest_ supports currently 2 backends:
-  * requests_ (Python 2 and 3)
-  * httpx_ (only Python 3)
+  * requests_ (default)
+  * httpx_
 
 To select a specific backend, simply pass it's name to the constructor of the client:
 
@@ -90,9 +128,25 @@ To select a specific backend, simply pass it's name to the constructor of the cl
 
     client = DogClient('https://dog.ceo/api', backend='httpx')
 
+Another option is to declare a specific default backend for the client using :py:`@backend()`
+decorator, for instance:
+
+.. code-block:: python
+
+    @decorest.backend('httpx')
+    class DogClient(decorest.RestClient):
+        @GET('breed/{breed_name}/list')
+        def list_subbreeds(self, breed_name):
+            """List all sub-breeds"""
+
+    client = DogClient('https://dog.ceo/api')
+
 If no backend is provided, requests_ is used by default. The client usage is largely
 independent of the backend, however there some minor differences in handling streams
-and multipart messages, please consult tests in `httpbin test suite`_.
+and multipart messages, please consult tests in `httpbin test suite`_
+and `httpx compatibility guide`_.
+
+Please note, that :py:`asyncio` is only supported on the httpx_ backend.
 
 Decorators
 ----------
@@ -247,13 +301,35 @@ name matches one of the arguments, e.g.:
 
         @GET('breed/{breed_name}/list')
         @header('accept')
-        def list_subbreeds(self, breed_name, accept):
+        @header('user_agent', 'user-agent')
+        def list_subbreeds(self, breed_name, accept, user_agent='decorest'):
             """List all sub-breeds"""
+
+In case the first argument of the header decorator matches one of the
+method args, it's optional second value determines the actual header
+name that will be send in the request. A default value for the header
+in such case must be provided in the method signature.
+
+Multiple values for the same header can be provided either as separate
+decorators or as a decorator with a list of values, e.g.:
+
+.. code-block:: python
+
+        @GET('breed/{breed_name}/list')
+        @header('abc', 'a')
+        @header('abc', 'b')
+        @header('abc', 'c')
+        @header('xyz', ['x', 'y', 'z'])
+        def list_subbreeds(self, breed_name):
+            """List all sub-breeds"""
+
+Multiple values will be concatenated to a comma separated list and sent out
+as a single header (according to the rfc2616_).
 
 @body
 ~~~~~
 
-Body decorator enables to specify which of the method parameters should provide
+Body decorator enables to specify, which of the method parameters should provide
 the body content to the request, e.g.:
 
 .. code-block:: python
@@ -280,12 +356,12 @@ logic. For example:
         """Add a new pet to the store"""
 
 The above code will automatically stringify the dictionary provided as
-value of 'pet' argument using :py:`json.dumps()` function.
+value of :py:`pet` argument using :py:`json.dumps()` function.
 
 @on
 ~~~
 
-By default the request method will not return requests_ response object,
+By default the request method will not return requests_ or httpx_ response object,
 but the response will depend on the content type of the response.
 
 In case the HTTP request succeeds the following results are expected:
@@ -295,12 +371,12 @@ In case the HTTP request succeeds the following results are expected:
 - :py:`response.text` otherwise
 
 In case the request fails, :py:`response.raise_for_status()` is called and
-should be handled in the code.
+should be handled in the client code.
 
 In case another behavior is required, custom handlers can be provided
 for each method using lambdas or functions. The provided handler is
-expected to take only a single argument, which is the requests_ response
-object, e.g.:
+expected to take only a single argument, which is the requests_ or httpx_
+response object, e.g.:
 
 .. code-block:: python
 
@@ -311,10 +387,10 @@ object, e.g.:
             """List all sub-breeds"""
 
 This decorator can be applied to both methods and classes, however when
-applied to a class the handler will be called for method which receives
+applied to a class the handler will be called for the method which receives
 the provided status code.
 
-The first argument of this decorator must be an integer. On Python 3 it
+The first argument of this decorator must be an :py:`int`. It is
 also possible to pass :py:`...` (i.e. Ellipsis) object, which is equivalent
 to :py:`HttpStatus.ANY`. Any other value passed for this argument will
 raise :py:`TypeError`.
@@ -344,6 +420,25 @@ This decorator is a shortcut for :py:`@header('accept', ...)`, e.g:
         def list_subbreeds(self, breed_name):
             """List all sub-breeds"""
 
+Multiple :py:`@accept()` decorators can be added and will be joined into
+a list, e.g.:
+
+.. code-block:: python
+
+        @GET('breed/{breed_name}/list')
+        @content('application/json')
+        @accept('application/xml')
+        @accept('application/json')
+        @accept('text/plain')
+        def list_subbreeds(self, breed_name):
+            """List all sub-breeds"""
+
+will submit the following header to the server:
+
+.. code-block:: bash
+
+        Accept: text/plain, application/json, application/xml
+
 @endpoint
 ~~~~~~~~~
 This decorator enables to define a default endpoint for the service,
@@ -362,7 +457,7 @@ however.
 
 @timeout
 ~~~~~~~~
-Specifies a default timeout value (in seconds) for method or entire API.
+Specifies a default timeout value (in seconds) for a method or entire API.
 
 .. code-block:: python
 
@@ -376,8 +471,8 @@ Specifies a default timeout value (in seconds) for method or entire API.
 ~~~~~~~
 This decorator allows to specify a method which returns binary stream of data.
 Adding this decorator to a method will add a :py:`stream=True`
-argument to the requests_ call and will by default return entire requests
-object which then can be accessed for instance using :py:`iter_content()` method.
+argument to the requests_ or httpx_ call and will by default returns entire response
+object, which then can be accessed for instance using :py:`iter_content()` method.
 
 .. code-block:: python
 
@@ -400,10 +495,51 @@ object which then can be accessed for instance using :py:`iter_content()` method
             content.append(b)
 
 
+or for an async API:
+
+.. code-block:: python
+
+    ...
+
+    @backend('httpx')
+    class MyClient(RestClient):
+        ...
+
+        @GET('stream/{n}/{m}')
+        @stream
+        @query('size')
+        @query('offset', 'off')
+        async def stream(self, n, m, size, offset):
+            """Get data range"""
+
+    ...
+    async def main():
+        async with client.async_session_() as s:
+            r = await s.stream(5)
+            async for _ in r.aiter_raw(chunk_size=100):
+                content.append(b)
+
+
+@backend
+~~~~~~~~
+Specifies the default backend to use by the client, currently the only possible
+values are :py:`'requests'` (default) and :py:`'httpx'`, e.g.:
+
+.. code-block:: python
+
+        @endpoint('https://dog.ceo/api')
+        @backend('httpx')
+        class DogClient(RestClient):
+            """List all sub-breeds"""
+            ...
+
+The backend provided in the constructor arguments when creating client instance has precedence
+over the value provided in this decorator. This decorator can only be applied to classes.
+
 Sessions
 --------
 
-Based on the functionality provided by requests_ library in the form of
+Based on the functionality provided by the backend HTTP library in the form of
 session objects, sessions can significantly improve the performance of the
 client in case multiple responses are performed as well as maintain certain
 information between requests such as session cookies.
@@ -412,16 +548,16 @@ Sessions in decorest_ can either be created and closed manually:
 
 .. code-block:: python
 
-        s = client._session()
+        s = client.session_()
         s.list_subbreeds('hound')
         s.list_subbreeds('husky')
-        s._close()
+        s.close_()
 
 or can be used via the context manager :py:`with` operator:
 
 .. code-block:: python
 
-        with client._session() as s:
+        with client.session_() as s:
             s.list_subbreeds('hound')
             s.list_subbreeds('husky')
 
@@ -430,15 +566,26 @@ to interfere with any possible API method names defined in the base client
 class.
 
 If some additional customization of the session is required, the underlying
-`requests session`_ object can be retrieved from decorest_ session object
-using :py:`_requests_session` attribute:
+`requests session`_ or `httpx session`object can be retrieved from decorest_
+session object using :py:`backend_session_` attribute:
 
 .. code-block:: python
 
-        with client._session() as s:
-            s._requests_session.verify = '/path/to/cert.pem'
+        with client.session_() as s:
+            s.backend_session_.verify = '/path/to/cert.pem'
             s.list_subbreeds('hound')
             s.list_subbreeds('husky')
+
+Async sessions can be created in a similar manner, using :py:`async_session_()` method,
+for instance:
+
+.. code-block:: python
+
+        async def main():
+            async with client.async_session_() as s:
+                await s.list_subbreeds('hound')
+                await s.list_subbreeds('husky')
+
 
 Authentication
 --------------
@@ -446,19 +593,26 @@ Authentication
 Since authentication is highly specific to actual invocation of the REST API,
 and not to it's specification, there is not decorator for authentication,
 but instead an authentication object (compatible with `requests_`
-authentication mechanism) can be set in the client object using
-:py:`_set_auth()` method, for example:
+or `httpx_` authentication mechanism) can be set in the client object using
+:py:`set_auth_()` method, for example:
 
 .. code-block:: python
 
-        client._set_auth(HTTPBasicAuth('user', 'password'))
-        with client._session() as s:
-            s._requests_session.verify = '/path/to/cert.pem'
+        client.set_auth_(HTTPBasicAuth('user', 'password'))
+        with client.session_() as s:
+            s.backend_session_.verify = '/path/to/cert.pem'
             s.list_subbreeds('hound')
             s.list_subbreeds('husky')
 
 The authentication object will be used in both regular API calls, as well
 as when using sessions.
+
+Furthermore, the `auth` object - specific for selected backend - can be also
+passed to the client constructor, e.g.:
+
+.. code-block:: python
+
+        client = DogClient(backend='httpx', auth=httpx.BasicAuth('user', 'password'))
 
 
 Error handling
@@ -489,7 +643,63 @@ This can be achieved by creating separate client classes for each group
 of operations and then create a common class, which inherits from all the
 group clients and provides entire API from one instance.
 
-For example of this checkout the `Petstore Swagger client example`_.
+.. code-block:: python
+
+    class A(RestClient):
+        """API One client"""
+        @GET('stuff/{sth}')
+        @on(200, lambda r: r.json())
+        def get(self, sth: str) -> typing.Any:
+            """Get what"""
+
+
+    class B(RestClient):
+        """API One client"""
+        @PUT('stuff/{sth}')
+        @body('body')
+        @on(204, lambda _: True)
+        def put_b(self, sth: str, body: bytes) -> typing.Any:
+            """Put sth"""
+
+
+    @endpoint('https://put.example.com')
+    class BB(B):
+        """API One client"""
+        @PUT('stuff/{sth}')
+        @body('body')
+        @on(204, lambda _: True)
+        def put_bb(self, sth: str, body: bytes) -> typing.Any:
+            """Put sth"""
+
+
+    @endpoint('https://patches.example.com')
+    class C(RestClient):
+        """API Three client"""
+        @PATCH('stuff/{sth}')
+        @body('body')
+        @on(204, lambda _: True)
+        @on(..., lambda _: False)
+        def patch(self, sth: str, body: bytes) -> typing.Any:
+            """Patch sth"""
+
+
+    @accept('application/json')
+    @content('application/xml')
+    @header('X-Auth-Key', 'ABCD')
+    @endpoint('https://example.com')
+    @backend('httpx')
+    class InheritedClient(A, BB, C):
+        ...
+
+
+Please note that the :py:`@endpoint()` decorator can be specified for each
+sub API with a different value if necessary. It will be inherited by methods
+backwards with respect to the inheritance chain, i.e. the more abstract class
+will use the first endpoint specified in it's subclass chain. In the above example
+method :py:`B.put_b()` will use :py:`'https://put.example.com'` endpoint, and
+method :py:`C.patch()` will use :py:`'https://patches.example.com'`.
+
+For real world example checkout the `Petstore Swagger client example`_.
 
 
 Caveats
@@ -524,7 +734,7 @@ module namespace:
 Compatibility with other decorators
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In general the decorators should work with other decorators, which return
+In general, decorest_ decorators should work with other decorators, which return
 function objects, but your mileage may vary. In general third-party decorators
 should be added above the HTTP method decorators as only the HTTP decorators
 make the actual HTTP request. Thus, typical decorators, which try to wrap
@@ -543,13 +753,9 @@ Create virtual env
 
 .. code-block:: bash
 
-    # For Python 3
-    virtualenv -p /usr/bin/python3.8 venv3
-    source venv3/bin/activate
+    virtualenv -p /usr/bin/python3 venv
+    source venv/bin/activate
 
-    # For Python 2
-    virtualenv -p /usr/bin/python2.7 venv2
-    source venv2/bin/activate
 
 Formatting
 ----------
@@ -566,11 +772,7 @@ tox_ and tox-docker_.
 
 .. code-block:: bash
 
-    # Python 3
-    python -m tox -e flake8,basic,httpbin,swaggerpetstore
-
-    # Python 2
-    python -m tox -c tox-py2.ini -e flake8,basic,httpbin,swaggerpetstore
+    python -m tox -e yapf,rstcheck,mypy,flake8,basic,httpbin,asynchttpbin,swaggerpetstore
 
 
 Checking README syntax
@@ -607,3 +809,5 @@ limitations under the License.
 .. _`httpbin test suite`: https://github.com/bkryza/decorest/blob/master/tests/httpbin_test.py
 .. _tox: https://github.com/tox-dev/tox
 .. _tox-docker: https://github.com/tox-dev/tox-docker
+.. _httpx compatibility guide: https://www.python-httpx.org/compatibility/
+.. _rfc2616: https://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html

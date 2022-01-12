@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018-2021 Bartosz Kryza <bkryza@gmail.com>
+# Copyright 2018-2022 Bartosz Kryza <bkryza@gmail.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,25 +14,38 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """PUT Http method decorator."""
-
+import asyncio
+import typing
 from functools import wraps
 
-from .decorators import HttpMethodDecorator, set_decor
-from .types import HttpMethod
+from .decorator_utils import set_decor
+from .decorators import HttpMethodDecorator
+from .types import HttpMethod, TDecor
 
 
 class PUT(HttpMethodDecorator):
     """PUT HTTP method decorator."""
-    def __init__(self, path):
+    def __init__(self, path: str):
         """Initialize with endpoint relative path."""
         super(PUT, self).__init__(path)
 
-    def __call__(self, func):
+    def __call__(self, func: TDecor) -> TDecor:
         """Callable operator."""
         set_decor(func, 'http_method', HttpMethod.PUT)
 
+        if asyncio.iscoroutinefunction(func):
+
+            @wraps(func)
+            async def async_put_decorator(*args: typing.Any,
+                                          **kwargs: typing.Any) \
+                    -> typing.Any:
+                return await super(PUT, self).call_async(func, *args, **kwargs)
+
+            return typing.cast(TDecor, async_put_decorator)
+
         @wraps(func)
-        def put_decorator(*args, **kwargs):
+        def put_decorator(*args: typing.Any, **kwargs: typing.Any) \
+                -> typing.Any:
             return super(PUT, self).call(func, *args, **kwargs)
 
-        return put_decorator
+        return typing.cast(TDecor, put_decorator)

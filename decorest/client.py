@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018-2021 Bartosz Kryza <bkryza@gmail.com>
+# Copyright 2018-2022 Bartosz Kryza <bkryza@gmail.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,132 +19,190 @@ Base Http client implementation.
 This module contains also some enums for HTTP protocol.
 """
 import logging as LOG
+import typing
+import urllib.parse
 
-import six
-from six.moves.urllib.parse import urljoin
-
-from .decorators import get_decor
+from .decorator_utils import get_backend_decor, get_endpoint_decor
+from .session import RestClientAsyncSession, RestClientSession
+from .types import ArgsDict, AuthTypes, Backends
 from .utils import normalize_url
 
 
-class RestClientSession(object):
-    """Wrap a `requests` session for specific API client."""
-    def __init__(self, client):
-        """Initialize the session instance with a specific API client."""
-        self.__client = client
+class RestClient:
+    """
+    Base class for decorest REST clients.
 
-        # Create a session of type specific for given backend
-        if client._backend() == 'requests':
-            import requests
-            self.__session = requests.Session()
-        else:
-            import httpx
-            self.__session = httpx.Client()
+    Method naming conventions for this class:
+      - rule #1: do not restrict user's API
+      - internal methods should be prefixed with '_'
+      - user accessible methods should be suffixed with '_'
+    """
+    __backend: Backends
+    __endpoint: str
+    __client_args: typing.Any
 
-        if self.__client.auth is not None:
-            self.__session.auth = self.__client.auth
-
-    def __enter__(self):
-        """Context manager initialization."""
-        return self
-
-    def __exit__(self, *args):
-        """Context manager destruction."""
-        self.__session.close()
-        return False
-
-    def __getattr__(self, name):
-        """Forward any method invocation to actual client with session."""
-        if name == '_requests_session':
-            return self.__session
-
-        if name == '_client':
-            return self.__client
-
-        if name == '_close':
-            return self.__session.close
-
-        def invoker(*args, **kwargs):
-            kwargs['__session'] = self.__session
-            return getattr(self.__client, name)(*args, **kwargs)
-
-        return invoker
-
-
-class RestClient(object):
-    """Base class for decorest REST clients."""
-    def __init__(self, endpoint=None, auth=None, backend='requests'):
+    def __init__(self,
+                 endpoint: typing.Optional[str] = None,
+                 **kwargs: typing.Any):
         """Initialize the client with optional endpoint."""
-        self.endpoint = get_decor(self, 'endpoint')
-        self.auth = auth
-        self._set_backend(backend)
-        if endpoint is not None:
-            self.endpoint = endpoint
+        # First determine the preferred backend
+        backend = None
+        if 'backend' in kwargs:
+            backend = kwargs['backend']
+            del kwargs['backend']
+        self.__backend = backend or get_backend_decor(self) or 'requests'
 
-    def _session(self):
+        # Check if the client arguments contain endpoint value
+        self.__endpoint = endpoint  # type: ignore
+
+        # Check if the other named arguments match the allowed arguments
+        # for specified backend
+        if self.__backend == 'requests':
+            import requests
+            valid_client_args = requests.Session.__attrs__
+        elif self.__backend == 'httpx':
+            import httpx
+            import inspect
+            valid_client_args \
+                = inspect.getfullargspec(httpx.Client.__init__).kwonlyargs
+        else:
+            raise ValueError(f'Invalid backend: {self.backend_}')
+
+        if not set(kwargs.keys()).issubset(set(valid_client_args)):
+            raise ValueError(f'Invalid named arguments passed to the client: '
+                             f'{set(kwargs.keys()) - set(valid_client_args)}')
+
+        self.__client_args = kwargs
+
+    def __getitem__(self, key: str) -> typing.Any:
+        """Return named client argument."""
+        return self._get_or_none(key)
+
+    def __setitem__(self, key: str, value: typing.Any) -> None:
+        """Set named client argument."""
+        self.__client_args[key] = value
+
+    def __repr__(self) -> str:
+        """Return instance representation."""
+        return f'<{type(self).__name__} backend: {self.__backend} ' \
+               f'endpoint: \'{self.__endpoint or get_endpoint_decor(self)}\'>'
+
+    def session_(self, **kwargs: ArgsDict) -> RestClientSession:
         """
         Initialize RestClientSession session object.
 
-        The `decorest` session object wraps a `requests` session object.
+        The `decorest` session object wraps a `requests` or `httpx`
+         session object.
 
         Each valid API method defined in the API client can be called
         directly via the session object.
         """
-        return RestClientSession(self)
+        return RestClientSession(self, **kwargs)
 
-    def _set_auth(self, auth):
+    def async_session_(self, **kwargs: ArgsDict) -> RestClientAsyncSession:
         """
-        Set a default authentication method for the client.
+        Initialize RestClientAsyncSession session object.
 
-        Currently the object must be a proper subclass of
-        `requests.auth.AuthBase` class.
+        The `decorest` session object wraps a `requests` or `httpx`
+        session object.
+
+        Each valid API method defined in the API client can be called
+        directly via the session object.
         """
-        self.auth = auth
+        return RestClientAsyncSession(self, **kwargs)
 
-    def _auth(self):
-        """
-        Get authentication object.
-
-        Returns the authentication object set for this client.
-        """
-        return self.auth
-
-    def _set_backend(self, backend):
-        """
-        Set preferred backend.
-
-        This method allows to select which backend should be used for
-        making actual HTTP[S] requests, currently supported are:
-            * requests (default)
-            * httpx
-
-        The options should be passed as string.
-        """
-        if backend not in ('requests', 'httpx'):
-            raise ValueError('{} backend not supported...'.format(backend))
-
-        if backend == 'httpx' and six.PY2:
-            raise ValueError('httpx backend is not supported on Python 2')
-
-        self.backend = backend
-
-    def _backend(self):
+    @property
+    def backend_(self) -> str:
         """
         Get active backend.
 
         Returns the name of the active backend.
         """
-        return self.backend
+        return self.__backend
 
-    def build_request(self, path_components=[]):
+    @property
+    def endpoint_(self) -> str:
         """
-        Build request.
+        Get server endpoint.
+
+        Returns the endpoint for the server, which was provided in the
+        class decorator or in the client constructor arguments.
+        """
+        return self.__endpoint
+
+    @property
+    def client_args_(self) -> typing.Any:
+        """
+        Get arguments provided to client.
+
+        Returns the dictionary with arguments that will be passed
+        to session objects or requests. The dictionary keys depend
+        on the backend:
+          - for requests the valid keys are specified in:
+              requests.Session.__attrs__
+          - for httpx the valid keys are specified in the
+            method:
+              https.Client.__init__
+        """
+        return self.__client_args
+
+    def _get_or_none(self, key: str) -> typing.Any:
+        if key in self.__client_args:
+            return self.__client_args[key]
+
+        return None
+
+    def build_path_(self, path_components: typing.List[str],
+                    endpoint: typing.Optional[str]) -> str:
+        """
+        Build request path.
 
         Request is built by combining the endpoint with path
-        and query components.
+        components.
         """
         LOG.debug("Building request from path tokens: %s", path_components)
 
-        req = urljoin(normalize_url(self.endpoint), "/".join(path_components))
+        if not endpoint:
+            endpoint = self.__endpoint
+
+        if not endpoint:
+            raise ValueError("Server endpoint was not provided.")
+
+        req = urllib.parse.urljoin(normalize_url(endpoint),
+                                   "/".join(path_components))
 
         return req
+
+    # here start the deprecated methods for compatibility
+    def set_auth_(self, auth: AuthTypes) -> None:
+        """Set authentication for the client."""
+        self.__client_args['auth'] = auth
+
+    def auth_(self) -> typing.Any:
+        """Return the client authentication."""
+        return self._get_or_none('auth')
+
+    def _backend(self) -> str:
+        """
+        Get active backend [deprecated].
+
+        Returns the name of the active backend.
+        """
+        return self.__backend
+
+    def _auth(self) -> AuthTypes:
+        """
+        Get auth method if specified [deprecated].
+
+        Returns the authentication object provided in the arguments.
+        """
+        return self.auth_()
+
+    def _session(self) -> RestClientSession:
+        return self.session_()
+
+    def _async_session(self) -> RestClientAsyncSession:
+        return self.async_session_()
+
+    def _set_auth(self, auth: AuthTypes) -> None:
+        self.set_auth_(auth)
