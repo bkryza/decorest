@@ -24,7 +24,7 @@ import typing
 from decorest.types import ArgsDict, StrDict
 
 
-class CaseInsensitiveDict(collections.abc.MutableMapping[str, typing.Any]):
+class CaseInsensitiveDict(typing.MutableMapping[str, typing.Any]):
     """
     Case insensitive dict for storing header values.
 
