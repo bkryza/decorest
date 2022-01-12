@@ -4,6 +4,9 @@ decorest - decorator heavy REST client for Python
 .. image:: https://github.com/bkryza/decorest/actions/workflows/workflow.yml/badge.svg
     :target: https://github.com/bkryza/decorest/actions/workflows/workflow.yml
 
+.. image:: https://codecov.io/gh/bkryza/decorest/branch/master/graph/badge.svg?token=UGSU07W732
+    :target: https://codecov.io/gh/bkryza/decorest
+
 .. image:: https://img.shields.io/pypi/v/decorest.svg
     :target: https://pypi.python.org/pypi/decorest
 
