@@ -64,7 +64,7 @@ class CaseInsensitiveDict(typing.MutableMapping[str, typing.Any]):
 
     def __eq__(self, d: StrDict) -> bool:  # type: ignore[override]
         """Compare with another dict."""
-        if isinstance(d, collections.Mapping):
+        if isinstance(d, collections.abc.Mapping):
             d = CaseInsensitiveDict(d)
         else:
             raise NotImplementedError
