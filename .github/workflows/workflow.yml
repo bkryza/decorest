@@ -29,3 +29,7 @@ jobs:
 
     - run: pip install tox tox-gh-actions tox-docker==$TOX_DOCKER_VERSION
     - run: tox -c tox.ini -e yapf,rstcheck,flake8,mypy,basic,swaggerpetstore,httpbin,asynchttpbin
+    - run: coverage xml
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v2
