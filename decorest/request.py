@@ -304,10 +304,18 @@ class HttpRequest:
         Translates and converts argument names and values from
         requests to httpx, e.g.
             'allow_redirects' -> 'follow_redirects'
+
+        Removes None valued entries from params as requests hides them
+        but httpx treats them as empty valued.
         """
         if 'allow_redirects' in kwargs:
             kwargs['follow_redirects'] = kwargs['allow_redirects']
             del kwargs['allow_redirects']
+        if 'params' in kwargs:
+            kwargs['params'] = {
+                k: v
+                for k, v in kwargs['params'].items() if v is not None
+            }
 
     def _normalize_for_requests(self, kwargs: ArgsDict) -> None:
         """
