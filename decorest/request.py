@@ -85,12 +85,13 @@ class HttpRequest:
         # Merge query parameters from common values for all method
         # invocations with arguments provided in the method
         # arguments
-        query_parameters = self._merge_args(args_dict, func, 'query')
-        form_parameters = self._merge_args(args_dict, func, 'form')
-        multipart_parameters = self._merge_args(args_dict, func, 'multipart')
+        query_parameters = self._merge_args(args_dict, kwargs, func, 'query')
+        form_parameters = self._merge_args(args_dict, kwargs, func, 'form')
+        multipart_parameters = self._merge_args(args_dict, kwargs, func,
+                                                'multipart')
         header_parameters = CaseInsensitiveDict(
             merge_dicts(get_header_decor(self.rest_client.__class__),
-                        self._merge_args(args_dict, func, 'header')))
+                        self._merge_args(args_dict, kwargs, func, 'header')))
 
         # Merge header parameters with default values, treat header
         # decorators with 2 params as default values only if they
@@ -374,7 +375,7 @@ class HttpRequest:
             raise TypeError("{} value must be an instance of {}".format(
                 decor, cls.__name__))
 
-    def _merge_args(self, args_dict: ArgsDict,
+    def _merge_args(self, args_dict: ArgsDict, kwargs: ArgsDict,
                     func: typing.Callable[..., typing.Any], decor: str) \
             -> ArgsDict:
         """
@@ -392,9 +393,14 @@ class HttpRequest:
         parameters = {}
         if args_decor:
             for arg, value in args_decor.items():
-                if (isinstance(value, str)) \
-                        and arg in args_dict.keys():
-                    parameters[value] = args_dict[arg]
+                if (isinstance(value, str)):
+                    if arg in args_dict.keys():
+                        parameters[value] = args_dict[arg]
+                    if arg in kwargs.keys():
+                        parameters[value] = kwargs[arg]
+                        # Delete from kwargs so that we don't
+                        # pass them on to requests/httpx
+                        del (kwargs[arg])
                 else:
                     parameters[arg] = value
         return parameters
