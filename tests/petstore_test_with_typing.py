@@ -151,3 +151,45 @@ def test_user_methods(client: PetstoreClientWithTyping) -> None:
     assert res['password'] == 'guess'
 
     client.delete_user('swagger')
+
+
+def test_user_methods_with_kwargs_params(
+        client: PetstoreClientWithTyping) -> None:
+
+    res = client.create_user({
+        'username': 'swagger',
+        'firstName': 'Swagger',
+        'lastName': 'Petstore',
+        'email': 'swagger@example.com',
+        'password': 'guess',
+        'phone': '001-111-CALL-ME',
+        "userStatus": 0
+    })
+
+    assert res is True
+
+    res = client.login('swagger', password='petstore')
+
+    assert res.decode("utf-8").startswith('logged in user session:')
+
+    res = client.get_user(username='swagger')
+
+    assert res['phone'] == '001-111-CALL-ME'
+
+    client.update_user(
+        123, {
+            'username': 'swagger',
+            'firstName': 'Swagger',
+            'lastName': 'Petstore',
+            'email': 'swagger@example.com',
+            'password': 'guess',
+            'phone': '001-111-CALL-ME',
+            "userStatus": 0
+        })
+
+    res = client.get_user(username='swagger')
+
+    assert res['email'] == 'swagger@example.com'
+    assert res['password'] == 'guess'
+
+    client.delete_user(username='swagger')
