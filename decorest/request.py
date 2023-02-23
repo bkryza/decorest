@@ -72,7 +72,7 @@ class HttpRequest:
         self.rest_client = args[0]
 
         args_dict = dict_from_args(func, *args)
-        self.req_path = render_path(self.path_template, args_dict)
+        self.req_path = render_path(self.path_template, args_dict, kwargs)
         self.session = None
         if '__session' in self.kwargs:
             self.session = self.kwargs['__session']
@@ -400,7 +400,7 @@ class HttpRequest:
                         parameters[value] = kwargs[arg]
                         # Delete from kwargs so that we don't
                         # pass them on to requests/httpx
-                        del (kwargs[arg])
+                        del kwargs[arg]
                 else:
                     parameters[arg] = value
         return parameters
