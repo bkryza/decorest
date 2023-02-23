@@ -82,17 +82,26 @@ class CaseInsensitiveDict(typing.MutableMapping[str, typing.Any]):
                 for (lkey, keyval) in self.__original.items())
 
 
-def render_path(path: str, args: ArgsDict) -> str:
+def render_path(path: str, args: ArgsDict, kwargs: ArgsDict) -> str:
     """Render REST path from *args."""
-    LOG.debug('RENDERING PATH FROM: %s,  %s', path, args)
+    LOG.debug('RENDERING PATH FROM: %s,  %s', path, args, kwargs)
     result = path
     matches = re.search(r'{([^}.]*)}', result)
+    used_kwargs = []
     while matches:
         path_token = matches.group(1)
-        if path_token not in args:
+        if path_token in kwargs:
+            result = re.sub('{%s}' % path_token, str(kwargs[path_token]),
+                            result)
+            matches = re.search(r'{([^}.]*)}', result)
+            used_kwargs.append(path_token)
+        elif path_token in args:
+            result = re.sub('{%s}' % path_token, str(args[path_token]), result)
+            matches = re.search(r'{([^}.]*)}', result)
+        else:
             raise ValueError("Missing argument %s in REST call." % path_token)
-        result = re.sub('{%s}' % path_token, str(args[path_token]), result)
-        matches = re.search(r'{([^}.]*)}', result)
+    for used_kwarg in used_kwargs:
+        del kwargs[used_kwarg]
     return result
 
 

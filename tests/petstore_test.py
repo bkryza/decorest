@@ -161,3 +161,49 @@ def test_user_methods(client):
 
     with pytest.raises(HTTPErrorWrapper) as e:
         client.get_user('swagger')
+
+
+@pytest.mark.parametrize("client", pytest_params)
+def test_user_methods_with_kwargs_params(client):
+
+    res = client.create_user({
+        'username': 'swagger',
+        'firstName': 'Swagger',
+        'lastName': 'Petstore',
+        'email': 'swagger@example.com',
+        'password': 'guess',
+        'phone': '001-111-CALL-ME',
+        "userStatus": 0
+    })
+
+    assert res is True
+
+    # Mixed usage
+    res = client.login('swagger', password='petstore')
+
+    assert res.decode("utf-8").startswith('logged in user session:')
+
+    res = client.get_user(username='swagger')
+
+    assert res['phone'] == '001-111-CALL-ME'
+
+    client.update_user(
+        'swagger', {
+            'username': 'swagger',
+            'firstName': 'Swagger',
+            'lastName': 'Petstore',
+            'email': 'swagger@example.com',
+            'password': 'guess',
+            'phone': '001-111-CALL-ME',
+            "userStatus": 0
+        })
+
+    res = client.get_user(username='swagger')
+
+    assert res['email'] == 'swagger@example.com'
+    assert res['password'] == 'guess'
+
+    client.delete_user(username='swagger')
+
+    with pytest.raises(HTTPErrorWrapper) as e:
+        client.get_user(username='swagger')
