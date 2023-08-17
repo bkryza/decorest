@@ -27,7 +27,7 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - run: pip install coverage tox tox-gh-actions tox-docker==$TOX_DOCKER_VERSION
+    - run: pip install coverage 'urllib3<2' 'requests<2.29.0' tox tox-gh-actions tox-docker==$TOX_DOCKER_VERSION
     - run: tox -c tox.ini -e yapf,rstcheck,flake8,mypy,basic,swaggerpetstore,httpbin,asynchttpbin
     - run: coverage xml
 
