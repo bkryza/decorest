@@ -27,6 +27,8 @@ from decorest import HttpStatus, RestClient
 from decorest import __version__, accept, body, content, endpoint, form
 from decorest import header, multipart, on, query, stream, timeout
 
+# mypy: disable-error-code=empty-body
+
 JsonDictType = typing.Dict[str, typing.Any]
 
 F = typing.TypeVar('F', bound=typing.Callable[..., typing.Any])

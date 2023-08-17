@@ -96,8 +96,8 @@ def render_path(path: str, args: ArgsDict) -> str:
     return result
 
 
-def dict_from_args(func: typing.Callable[..., typing.Any],
-                   *args: typing.Any) -> ArgsDict:
+def dict_from_args(func: typing.Callable[..., typing.Any], *args:
+                   typing.Any) -> ArgsDict:
     """Convert function arguments to a dictionary."""
     result = {}
 

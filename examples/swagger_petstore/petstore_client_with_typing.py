@@ -33,6 +33,8 @@ from decorest import accept, body, content, endpoint, header, on, query
 
 JsonDictType = typing.Dict[str, typing.Any]
 
+# mypy: disable-error-code=empty-body
+
 
 class PetAPI(RestClient):
     """Everything about your Pets."""

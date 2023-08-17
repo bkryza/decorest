@@ -199,9 +199,8 @@ class HttpMethodDecorator:
         """Initialize decorator with endpoint relative path."""
         self.path_template = path
 
-    async def call_async(self, func: typing.Callable[..., typing.Any],
-                         *args: typing.Any,
-                         **kwargs: typing.Any) -> typing.Any:
+    async def call_async(self, func: typing.Callable[..., typing.Any], *args:
+                         typing.Any, **kwargs: typing.Any) -> typing.Any:
         """Execute async HTTP request."""
         http_request = HttpRequest(func, self.path_template, args, kwargs)
 
