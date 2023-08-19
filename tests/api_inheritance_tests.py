@@ -13,20 +13,29 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import functools
 import json
 import pprint
 import typing
 
 import httpx
 import pytest
-import functools
-
-from requests.auth import HTTPBasicAuth as r_HTTPBasicAuth
 from httpx import BasicAuth as x_HTTPBasicAuth
+from requests.auth import HTTPBasicAuth as r_HTTPBasicAuth
 
-from decorest import RestClient, on
-from decorest import accept, backend, body, content, endpoint, header
-from decorest import GET, PATCH, PUT
+from decorest import (
+    GET,
+    PATCH,
+    PUT,
+    RestClient,
+    accept,
+    backend,
+    body,
+    content,
+    endpoint,
+    header,
+    on,
+)
 
 
 class A(RestClient):

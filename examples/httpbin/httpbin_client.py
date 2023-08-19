@@ -21,10 +21,29 @@ import json
 
 from PIL import Image
 
-from decorest import DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT
-from decorest import HttpStatus, RestClient
-from decorest import __version__, accept, body, content, endpoint, form
-from decorest import header, multipart, on, query, stream, timeout
+from decorest import (
+    DELETE,
+    GET,
+    HEAD,
+    OPTIONS,
+    PATCH,
+    POST,
+    PUT,
+    HttpStatus,
+    RestClient,
+    __version__,
+    accept,
+    body,
+    content,
+    endpoint,
+    form,
+    header,
+    multipart,
+    on,
+    query,
+    stream,
+    timeout,
+)
 
 
 def repeatdecorator(f):

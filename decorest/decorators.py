@@ -20,9 +20,11 @@ a dictionary with decorator values provided by decorators
 added to the client class or method.
 """
 
+import asyncio
 import inspect
 import numbers
 import typing
+from functools import wraps
 from operator import methodcaller
 
 from . import types
@@ -199,6 +201,11 @@ class HttpMethodDecorator:
         """Initialize decorator with endpoint relative path."""
         self.path_template = path
 
+    def __call__(self, func: TDecor) -> typing.Any:
+        """Execute the API HTTP request."""
+        raise NotImplementedError(
+            'Not implemented - needed to make mypy happy')
+
     async def call_async(self, func: typing.Callable[..., typing.Any], *args:
                          typing.Any, **kwargs: typing.Any) -> typing.Any:
         """Execute async HTTP request."""
@@ -305,3 +312,48 @@ class HttpMethodDecorator:
         else:
             return await http_request.execution_context.request(
                 method.upper(), http_request.req, **http_request.kwargs)
+
+
+def _http_method_decorator_factory(
+        http_method: HttpMethod) -> typing.Type[HttpMethodDecorator]:
+    """Create a subclass of HttpMethodDecorator for a specific HttpMethod."""
+    def init(self: HttpMethodDecorator, path: str) -> None:
+        """Initialize with endpoint relative path."""
+        HttpMethodDecorator.__init__(self, path)
+
+    def call(self: HttpMethodDecorator, func: TDecor) -> TDecor:
+        """Callable operator."""
+        set_decor(func, 'http_method', http_method)
+
+        if asyncio.iscoroutinefunction(func):
+
+            @wraps(func)
+            async def async_method_decorator(*args: typing.Any,
+                                             **kwargs: typing.Any) \
+                    -> typing.Any:
+                return await HttpMethodDecorator.call_async(
+                    self, func, *args, **kwargs)
+
+            return typing.cast(TDecor, async_method_decorator)
+
+        @wraps(func)
+        def method_decorator(*args: typing.Any, **kwargs: typing.Any) \
+                -> typing.Any:
+            return HttpMethodDecorator.call(self, func, *args, **kwargs)
+
+        return typing.cast(TDecor, method_decorator)
+
+    class_attrs = dict(__init__=init, __call__=call)
+
+    return typing.cast(
+        typing.Type[HttpMethodDecorator],
+        type(str(http_method), (HttpMethodDecorator, ), class_attrs))
+
+
+DELETE = _http_method_decorator_factory(HttpMethod.DELETE)
+GET = _http_method_decorator_factory(HttpMethod.GET)
+HEAD = _http_method_decorator_factory(HttpMethod.HEAD)
+OPTIONS = _http_method_decorator_factory(HttpMethod.OPTIONS)
+PATCH = _http_method_decorator_factory(HttpMethod.PATCH)
+POST = _http_method_decorator_factory(HttpMethod.POST)
+PUT = _http_method_decorator_factory(HttpMethod.PUT)

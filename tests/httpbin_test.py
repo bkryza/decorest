@@ -13,24 +13,27 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import json
+import os
 import pprint
+import sys
+import time
+import xml.etree.ElementTree as ET
 
 import httpx
 import pytest
-import time
-import os
-import sys
-import json
-
 import requests
-
-from decorest import __version__
-from decorest import CaseInsensitiveDict, HttpStatus, HTTPErrorWrapper
 from requests import cookies
-from requests.exceptions import ReadTimeout
 from requests.auth import HTTPBasicAuth, HTTPDigestAuth
+from requests.exceptions import ReadTimeout
 from requests_toolbelt.multipart.encoder import MultipartEncoder
-import xml.etree.ElementTree as ET
+
+from decorest import (
+    CaseInsensitiveDict,
+    HTTPErrorWrapper,
+    HttpStatus,
+    __version__,
+)
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../examples")
 from httpbin.httpbin_client import HttpBinClient, parse_image

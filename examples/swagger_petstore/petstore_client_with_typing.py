@@ -26,10 +26,22 @@ import xml.etree.ElementTree as ET
 
 from PIL.Image import Image
 
-from decorest import DELETE, GET, POST, PUT
-from decorest import HttpStatus, RestClient
-from decorest import __version__
-from decorest import accept, body, content, endpoint, header, on, query
+from decorest import (
+    DELETE,
+    GET,
+    POST,
+    PUT,
+    HttpStatus,
+    RestClient,
+    __version__,
+    accept,
+    body,
+    content,
+    endpoint,
+    header,
+    on,
+    query,
+)
 
 JsonDictType = typing.Dict[str, typing.Any]
 

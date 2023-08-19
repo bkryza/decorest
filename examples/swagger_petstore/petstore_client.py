@@ -23,10 +23,23 @@ Example decorest based client to Swagger Petstore sample service.
 import json
 import xml.etree.ElementTree as ET
 
-from decorest import DELETE, GET, HEAD, POST, PUT
-from decorest import HttpStatus, RestClient
-from decorest import __version__
-from decorest import accept, body, content, endpoint, header, on, query
+from decorest import (
+    DELETE,
+    GET,
+    HEAD,
+    POST,
+    PUT,
+    HttpStatus,
+    RestClient,
+    __version__,
+    accept,
+    body,
+    content,
+    endpoint,
+    header,
+    on,
+    query,
+)
 
 
 class PetAPI(RestClient):

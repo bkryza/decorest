@@ -61,8 +61,9 @@ class RestClient:
             import requests
             valid_client_args = requests.Session.__attrs__
         elif self.__backend == 'httpx':
-            import httpx
             import inspect
+
+            import httpx
             valid_client_args \
                 = inspect.getfullargspec(httpx.Client.__init__).kwonlyargs
         else:

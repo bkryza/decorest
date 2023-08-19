@@ -14,22 +14,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import asyncio
+import json
+import os
 import pprint
+import sys
+import time
+import xml.etree.ElementTree as ET
 from operator import methodcaller
 
-import pytest
-import time
-import os
-import sys
-import json
-
 import httpx
+import pytest
 from httpx import BasicAuth
-
-from decorest import __version__
-from decorest import CaseInsensitiveDict, HttpStatus, HTTPErrorWrapper
 from requests import cookies
-import xml.etree.ElementTree as ET
+
+from decorest import (
+    CaseInsensitiveDict,
+    HTTPErrorWrapper,
+    HttpStatus,
+    __version__,
+)
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../examples")
 from httpbin.httpbin_async_client import HttpBinAsyncClient, parse_image

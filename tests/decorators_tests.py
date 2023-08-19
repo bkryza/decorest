@@ -13,22 +13,52 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import functools
 import typing
 
 import pytest
-import functools
-
-from requests.auth import HTTPBasicAuth as r_HTTPBasicAuth
 from httpx import BasicAuth as x_HTTPBasicAuth
+from requests.auth import HTTPBasicAuth as r_HTTPBasicAuth
 
-from decorest import RestClient, HttpMethod, HTTPErrorWrapper, multipart, on, HttpRequest, CaseInsensitiveDict
-from decorest import GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS
-from decorest import accept, backend, content, endpoint, form, header
-from decorest import query, stream
-from decorest.decorator_utils import get_backend_decor, get_header_decor, \
-    get_endpoint_decor, get_form_decor, get_query_decor, \
-    get_stream_decor, get_on_decor, get_method_decor, get_method_class_decor, get_multipart_decor, get_accept_decor, \
-    get_content_decor, set_decor
+from decorest import (
+    DELETE,
+    GET,
+    HEAD,
+    OPTIONS,
+    PATCH,
+    POST,
+    PUT,
+    CaseInsensitiveDict,
+    HTTPErrorWrapper,
+    HttpMethod,
+    HttpRequest,
+    RestClient,
+    accept,
+    backend,
+    content,
+    endpoint,
+    form,
+    header,
+    multipart,
+    on,
+    query,
+    stream,
+)
+from decorest.decorator_utils import (
+    get_accept_decor,
+    get_backend_decor,
+    get_content_decor,
+    get_endpoint_decor,
+    get_form_decor,
+    get_header_decor,
+    get_method_class_decor,
+    get_method_decor,
+    get_multipart_decor,
+    get_on_decor,
+    get_query_decor,
+    get_stream_decor,
+    set_decor,
+)
 from decorest.utils import merge_header_dicts
 
 

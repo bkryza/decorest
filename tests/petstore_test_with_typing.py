@@ -14,17 +14,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import os
 import sys
-import typing
-
 import time
-import json
+import typing
 import xml.etree.ElementTree as ET
+
 from decorest import HTTPErrorWrapper
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../examples")
-from swagger_petstore.petstore_client_with_typing import PetstoreClientWithTyping
+from swagger_petstore.petstore_client_with_typing import (
+    PetstoreClientWithTyping)
 
 
 def client(backend: typing.Literal['requests', 'httpx']) \

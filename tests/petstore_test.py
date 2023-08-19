@@ -14,12 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import os
 import sys
-import pytest
 import time
-import json
 import xml.etree.ElementTree as ET
+
+import pytest
+
 from decorest import HTTPErrorWrapper
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../examples")

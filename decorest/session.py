@@ -41,6 +41,7 @@ class RestClientSession:
         # Create a session of type specific for given backend
         if self.__client.backend_ == 'requests':
             import requests
+
             from decorest.types import SessionTypes
             self.__session: SessionTypes = requests.Session()
             for a in requests.Session.__attrs__:

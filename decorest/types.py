@@ -55,8 +55,8 @@ class HttpStatus(DIntEnum):
 if typing.TYPE_CHECKING:
     # If not available, these imports will be ignored through settings
     # in mypy.ini
-    import requests
     import httpx
+    import requests
 
 ArgsDict = typing.MutableMapping[str, typing.Any]
 StrDict = typing.Mapping[str, typing.Any]

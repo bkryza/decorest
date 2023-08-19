@@ -20,13 +20,25 @@ import numbers
 import typing
 
 from .client import RestClient
-from .decorator_utils import DECOR_LIST, get_body_decor, get_decor, \
-    get_header_decor, get_method_class_decor, get_method_decor, \
-    get_on_decor, get_stream_decor, get_timeout_decor
+from .decorator_utils import (
+    DECOR_LIST,
+    get_body_decor,
+    get_decor,
+    get_header_decor,
+    get_method_class_decor,
+    get_method_decor,
+    get_on_decor,
+    get_stream_decor,
+    get_timeout_decor,
+)
 from .errors import HTTPErrorWrapper
 from .types import ArgsDict, HTTPErrors, HttpMethod, HttpStatus
-from .utils import CaseInsensitiveDict
-from .utils import dict_from_args, merge_dicts, render_path
+from .utils import (
+    CaseInsensitiveDict,
+    dict_from_args,
+    merge_dicts,
+    render_path,
+)
 
 
 class HttpRequest:
